@@ -159,6 +159,8 @@ public final class ScribesLecternScreen extends AbstractContainerScreen<ScribesL
     drawBlockSpherePreview(g,left+28+laneOffset,top+h/2,menu.radiusAt(cell),menu.visualAt(cell));
    }else if(type==SpellPresentation.TYPE_BOX){
     drawBlockBoxPreview(g,left+28+laneOffset,top+h/2,menu.boxWidthAt(cell),menu.boxHeightAt(cell),menu.boxDepthAt(cell),menu.visualAt(cell));
+   }else if(type==SpellPresentation.TYPE_CONE){
+    drawBlockConePreview(g,left+20+laneOffset,top+h/2,menu.boxWidthAt(cell),menu.boxHeightAt(cell),menu.boxDepthAt(cell),menu.visualAt(cell));
    }else if(type==SpellPresentation.TYPE_DAMAGE){
     int px=left+52+laneOffset,py=top+h/2-8;
     g.renderItem(SyntacticWizardry.DAMAGE_EFFECT.get().getDefaultInstance(),px,py);
@@ -194,6 +196,25 @@ public final class ScribesLecternScreen extends AbstractContainerScreen<ScribesL
    g.pose().scale(scale,scale,1.0F);
    g.renderItem(stack,-8,-8);
    g.pose().popPose();
+  }
+ }
+ private void drawBlockConePreview(GuiGraphics g,int cx,int cy,int width,int height,int depth,int visual){
+  int d=Math.min(depth,5),w=Math.min(width,5),h=Math.min(height,5);
+  ItemStack stack=SpellPresentation.visualStack(visual);
+  for(int layer=0;layer<d;layer++){
+   double scale=(layer+1)/(double)d;
+   int lw=Math.max(1,(int)Math.ceil(w*scale));
+   int lh=Math.max(1,(int)Math.ceil(h*scale));
+   for(int yi=0;yi<lh;yi++)for(int xi=0;xi<lw;xi++){
+    double xo=xi-(lw-1)/2.0,yo=yi-(lh-1)/2.0;
+    int px=cx+layer*5+(int)Math.round(xo*3.0);
+    int py=cy-(int)Math.round(yo*3.0);
+    g.pose().pushPose();
+    g.pose().translate(px,py,0.0F);
+    g.pose().scale(0.18F,0.18F,1.0F);
+    g.renderItem(stack,-8,-8);
+    g.pose().popPose();
+   }
   }
  }
  private int previewY(int base,double t,int style){if(style==SpellPresentation.STYLE_ARC)return base-(int)(Math.sin(Math.PI*t)*10.0);if(style==SpellPresentation.STYLE_SPIRAL)return base+(int)(Math.sin(t*Math.PI*4.0)*6.0);return base;}
