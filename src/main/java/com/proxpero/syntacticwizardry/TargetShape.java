@@ -13,7 +13,7 @@ public final class TargetShape {
  public static ShapeResolution resolve(SpellExecutionContext context){
   ServerLevel level=context.level();
   Vec3 start=context.parent().origin();
-  Vec3 direction=context.parent().direction().lengthSqr()>1.0E-8?context.parent().direction().normalize():new Vec3(0.0,0.0,1.0);
+  Vec3 direction=context.shapeDirection().lengthSqr()>1.0E-8?context.shapeDirection().normalize():new Vec3(0.0,0.0,1.0);
   Vec3 end=start.add(direction.scale(RANGE));
   BlockHitResult blockHit=level.clip(new ClipContext(start,end,ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,context.owner()));
   boolean hasBlock=blockHit.getType()!=HitResult.Type.MISS;

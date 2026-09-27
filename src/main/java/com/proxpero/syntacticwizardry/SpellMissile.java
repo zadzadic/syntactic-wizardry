@@ -13,11 +13,28 @@ public final class SpellMissile extends Snowball {
  private double startX,startY,startZ;
  public SpellMissile(EntityType<? extends SpellMissile> type,Level level){super(type,level);}
  public SpellMissile(Level level,LivingEntity owner){this(SyntacticWizardry.SPELL_MISSILE.get(),level);setOwner(owner);setPos(owner.getX(),owner.getEyeY()-0.1,owner.getZ());markStart();}
- public void prepare(Entity owner,Vec3 origin,Vec3 direction,int[] plan,int[] settings,int row,int cell){setOwner(owner);setPos(origin.x,origin.y,origin.z);setItem(SpellPresentation.projectileStack(plan,settings,row,cell));markStart();Vec3 dir=direction.lengthSqr()>1.0E-8?direction.normalize():new Vec3(0.0,0.0,1.0);shoot(dir.x,dir.y,dir.z,1.5F,0.0F);}
+ public void prepare(Entity owner,Vec3 origin,Vec3 direction,Vec3 castYaw,int[] plan,int[] settings,int row,int cell){
+  setOwner(owner);
+  setPos(origin.x,origin.y,origin.z);
+  setItem(SpellPresentation.projectileStack(plan,settings,row,cell,castYaw));
+  markStart();
+  Vec3 dir=direction.lengthSqr()>1.0E-8?direction.normalize():new Vec3(0.0,0.0,1.0);
+  shoot(dir.x,dir.y,dir.z,1.5F,0.0F);
+ }
  public int presentationStyle(){return SpellPresentation.readStyle(getItem());}
  public int presentationVisual(){return SpellPresentation.readVisual(getItem());}
  private void markStart(){startX=getX();startY=getY();startZ=getZ();}
  @Override public boolean isNoGravity(){return true;}
  @Override public void tick(){super.tick();if(!level().isClientSide){double dx=getX()-startX,dy=getY()-startY,dz=getZ()-startZ;if(dx*dx+dy*dy+dz*dz>=MAX_DISTANCE_SQR)discard();}}
- @Override protected void onHit(HitResult result){if(!level().isClientSide&&level() instanceof ServerLevel server){int[] plan=SpellPresentation.readPlan(getItem());int[] settings=SpellPresentation.readSettings(getItem());Entity hit=result instanceof EntityHitResult entityHit?entityHit.getEntity():null;ShapeResolution resolved=ShapeResolution.impact(result.getLocation(),getDeltaMovement(),hit);SpellExecutor.continueFrom(server,getOwner(),plan,settings,SpellPresentation.readRow(getItem()),resolved);}discard();}
+ @Override protected void onHit(HitResult result){
+  if(!level().isClientSide&&level() instanceof ServerLevel server){
+   int[] plan=SpellPresentation.readPlan(getItem());
+   int[] settings=SpellPresentation.readSettings(getItem());
+   Vec3 castYaw=SpellPresentation.readCastYaw(getItem());
+   Entity hit=result instanceof EntityHitResult entityHit?entityHit.getEntity():null;
+   ShapeResolution resolved=ShapeResolution.impact(result.getLocation(),getDeltaMovement(),hit);
+   SpellExecutor.continueFrom(server,getOwner(),plan,settings,SpellPresentation.readRow(getItem()),resolved,castYaw);
+  }
+  discard();
+ }
 }
