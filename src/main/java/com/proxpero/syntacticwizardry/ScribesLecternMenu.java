@@ -62,9 +62,11 @@ public final class ScribesLecternMenu extends AbstractContainerMenu {
   if(id>=ACTION_POTENCE_BASE&&id<ACTION_POTENCE_BASE+SpellPresentation.CELLS*SpellPresentation.POTENCE_COUNT){int code=id-ACTION_POTENCE_BASE,cell=code/SpellPresentation.POTENCE_COUNT,value=SpellPresentation.POTENCE_MIN+(code%SpellPresentation.POTENCE_COUNT);if(typeAt(cell)==SpellPresentation.TYPE_DAMAGE)spellData.set(POTENCE_DATA_BASE+cell,value);return true;}
   if(id==ACTION_WRITE){
    if(!hasAny())return false;
-   ItemStack paperStack=paper.getItem(0);
-   if(!paperStack.is(Items.PAPER)||paperStack.isEmpty())return false;
-   paperStack.shrink(1);paper.setChanged();
+   if(!player.getAbilities().instabuild){
+    ItemStack paperStack=paper.getItem(0);
+    if(!paperStack.is(Items.PAPER)||paperStack.isEmpty())return false;
+    paperStack.shrink(1);paper.setChanged();
+   }
    ItemStack written=WrittenSpellItem.create(snapshotPlan(),snapshotRadii(),snapshotDamageKinds(),snapshotPotences());
    if(!player.addItem(written))player.drop(written,false);
    return true;
