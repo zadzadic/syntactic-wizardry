@@ -12,6 +12,8 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
+      - name: Read mod version
+        run: echo "MOD_VERSION=$(grep '^mod_version=' gradle.properties | cut -d= -f2)" >> "$GITHUB_ENV"
       - name: Install Gradle 9.2.1
         run: |
           wget -q https://services.gradle.org/distributions/gradle-9.2.1-bin.zip
@@ -19,8 +21,15 @@ jobs:
           echo "$PWD/gradle-9.2.1/bin" >> "$GITHUB_PATH"
       - name: Build
         run: gradle build --stacktrace
+      - name: Package source
+        run: |
+          SOURCE_ZIP="syntactic-magic-development.${MOD_VERSION}.zip"
+          zip -qr "$SOURCE_ZIP" . \
+            -x ".git/*" "build/*" "gradle-9.2.1/*" "gradle-9.2.1-bin.zip" "$SOURCE_ZIP"
       - uses: actions/upload-artifact@v4
         with:
-          name: syntactic-wizardry-0.1.0
-          path: build/libs/*.jar
+          name: syntactic-wizardry-${{ env.MOD_VERSION }}
+          path: |
+            build/libs/*.jar
+            syntactic-magic-development.${{ env.MOD_VERSION }}.zip
           if-no-files-found: error
