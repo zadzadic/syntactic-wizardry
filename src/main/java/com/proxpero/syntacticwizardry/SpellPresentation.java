@@ -38,6 +38,12 @@ public final class SpellPresentation {
    default->new ItemStack(Items.SNOWBALL);
   };
  }
+ public static ItemStack sphereVisualStack(int style,int visual,int radius){
+  ItemStack stack=visualStack(visual);
+  CustomData.update(DataComponents.CUSTOM_DATA,stack,tag->{tag.putString("sw_shape","sphere_visual");tag.putInt("sw_style",STYLE_DEFAULT);tag.putInt("sw_visual",Mth.clamp(visual,0,VISUAL_COUNT-1));tag.putInt("sw_sphere_radius",Mth.clamp(radius,RADIUS_MIN,RADIUS_MAX));});
+  return stack;
+ }
+ public static int readSphereVisualRadius(ItemStack stack){return Mth.clamp(stack.getOrDefault(DataComponents.CUSTOM_DATA,CustomData.EMPTY).copyTag().getInt("sw_sphere_radius"),RADIUS_MIN,RADIUS_MAX);}
  public static void writePlan(ItemStack stack,int[] source,int[] radiusSource){
   int[] plan=normalizePlan(source);
   int[] radii=normalizeRadii(radiusSource);

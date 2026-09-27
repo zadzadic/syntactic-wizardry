@@ -71,12 +71,11 @@ public final class ScribesLecternScreen extends AbstractContainerScreen<ScribesL
    }
   }else{
    g.drawString(font,"Visual",x+220,y+33,0xCFE5FF,false);
-   int count=selectedType==SpellPresentation.TYPE_MISSILE?SpellPresentation.VISUAL_COUNT:1;
+   int count=selectedType==SpellPresentation.TYPE_EMPTY?0:SpellPresentation.VISUAL_COUNT;
    for(int i=0;i<count;i++){
     int col=i%3,row=i/3,ox=x+177+col*42,oy=y+52+row*34;
     g.fill(ox,oy,ox+CELL,oy+CELL,selectedCell>=0&&menu.visualAt(selectedCell)==i?0xFF5B86B8:0xFF2A3B55);
-    if(selectedType==SpellPresentation.TYPE_MISSILE)g.renderItem(SpellPresentation.visualStack(i),ox,oy);
-    else g.renderItem(SyntacticWizardry.SPHERE_SHAPE.get().getDefaultInstance(),ox,oy);
+    g.renderItem(SpellPresentation.visualStack(i),ox,oy);
    }
   }
  }
@@ -102,17 +101,23 @@ public final class ScribesLecternScreen extends AbstractContainerScreen<ScribesL
     int py=previewY(top+h/2+laneOffset/3,t,SpellPresentation.styleAt(plan,cell))-8;
     g.renderItem(SpellPresentation.visualStack(SpellPresentation.visualAt(plan,cell)),px,py);
    }else if(type==SpellPresentation.TYPE_SPHERE){
-    drawBlockSpherePreview(g,left+20+laneOffset,top+h/2,menu.radiusAt(cell));
+    drawBlockSpherePreview(g,left+28+laneOffset,top+h/2,menu.radiusAt(cell),menu.visualAt(cell));
    }
   }
   g.drawString(font,"Row "+(activeRow+1),x+274,y+181,0x9EB7CF,false);
  }
- private void drawBlockSpherePreview(GuiGraphics g,int cx,int cy,int radius){
+ private void drawBlockSpherePreview(GuiGraphics g,int cx,int cy,int radius,int visual){
   int r=Math.min(radius,4);
-  int size=Math.max(1,4-r/2);
+  float scale=r<=2?0.25F:0.18F;
+  int spacing=r<=2?5:3;
+  ItemStack stack=SpellPresentation.visualStack(visual);
   for(int dy=-r;dy<=r;dy++)for(int dx=-r;dx<=r;dx++)if(dx*dx+dy*dy<=r*r){
-   int px=cx+dx*size,py=cy+dy*size;
-   g.fill(px,py,px+size,py+size,0xCC77A9D8);
+   int px=cx+dx*spacing,py=cy+dy*spacing;
+   g.pose().pushPose();
+   g.pose().translate(px,py,0.0F);
+   g.pose().scale(scale,scale,1.0F);
+   g.renderItem(stack,-8,-8);
+   g.pose().popPose();
   }
  }
  private int previewY(int base,double t,int style){if(style==SpellPresentation.STYLE_ARC)return base-(int)(Math.sin(Math.PI*t)*10.0);if(style==SpellPresentation.STYLE_SPIRAL)return base+(int)(Math.sin(t*Math.PI*4.0)*6.0);return base;}
@@ -141,7 +146,7 @@ public final class ScribesLecternScreen extends AbstractContainerScreen<ScribesL
     for(int i=0;i<count;i++)if(inside(mx,my,174,51+i*21,126,18)){sendAction(ScribesLecternMenu.ACTION_STYLE_BASE+selectedCell*SpellPresentation.STYLE_COUNT+i);return true;}
    }
    if(editorMode==EditorMode.VISUAL&&selectedCell>=0){
-    int count=menu.typeAt(selectedCell)==SpellPresentation.TYPE_MISSILE?SpellPresentation.VISUAL_COUNT:1;
+    int count=menu.typeAt(selectedCell)==SpellPresentation.TYPE_EMPTY?0:SpellPresentation.VISUAL_COUNT;
     for(int i=0;i<count;i++){int col=i%3,row=i/3;if(inside(mx,my,177+col*42,52+row*34,CELL,CELL)){sendAction(ScribesLecternMenu.ACTION_VISUAL_BASE+selectedCell*SpellPresentation.VISUAL_COUNT+i);return true;}}
    }
    if(editorMode==EditorMode.COMPONENTS&&inside(mx,my,MISSILE_X,SELECTOR_Y,CELL,CELL)){beginNewDrag(SpellPresentation.TYPE_MISSILE);return true;}
@@ -172,7 +177,7 @@ public final class ScribesLecternScreen extends AbstractContainerScreen<ScribesL
   renderTooltip(g,mx,my);
   if(editorMode==EditorMode.COMPONENTS&&inside(mx,my,MISSILE_X,SELECTOR_Y,CELL,CELL))g.renderTooltip(font,Component.literal("Missile"),mx,my);
   if(editorMode==EditorMode.COMPONENTS&&inside(mx,my,SPHERE_X,SELECTOR_Y,CELL,CELL))g.renderTooltip(font,Component.literal("Sphere"),mx,my);
-  if(editorMode==EditorMode.VISUAL&&selectedCell>=0){int count=menu.typeAt(selectedCell)==SpellPresentation.TYPE_MISSILE?SpellPresentation.VISUAL_COUNT:1;for(int i=0;i<count;i++){int col=i%3,row=i/3;if(inside(mx,my,177+col*42,52+row*34,CELL,CELL))g.renderTooltip(font,Component.literal(menu.typeAt(selectedCell)==SpellPresentation.TYPE_MISSILE?SpellPresentation.visualName(i):"Default"),mx,my);}}
+  if(editorMode==EditorMode.VISUAL&&selectedCell>=0){int count=menu.typeAt(selectedCell)==SpellPresentation.TYPE_EMPTY?0:SpellPresentation.VISUAL_COUNT;for(int i=0;i<count;i++){int col=i%3,row=i/3;if(inside(mx,my,177+col*42,52+row*34,CELL,CELL))g.renderTooltip(font,Component.literal(SpellPresentation.visualName(i)),mx,my);}}
   int type=draggedType();
   if(type!=SpellPresentation.TYPE_EMPTY)g.renderItem(shapeStack(type),mx-8,my-8);
  }

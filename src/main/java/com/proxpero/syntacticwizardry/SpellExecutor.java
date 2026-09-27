@@ -19,7 +19,10 @@ public final class SpellExecutor {
     missile.prepare(owner,parent.origin(),parent.direction(),plan,radii,row,cell);
     level.addFreshEntity(missile);
    }else if(type==SpellPresentation.TYPE_SPHERE){
-    ShapeResolution resolved=ShapeResolution.sphere(parent.origin(),parent.direction(),SpellPresentation.radiusAt(radii,cell));
+    int radius=SpellPresentation.radiusAt(radii,cell);
+    ShapeResolution resolved=ShapeResolution.sphere(parent.origin(),parent.direction(),radius);
+    SphereVisualEntity visual=new SphereVisualEntity(level,resolved.origin(),radius,SpellPresentation.styleAt(plan,cell),SpellPresentation.visualAt(plan,cell));
+    level.addFreshEntity(visual);
     continueFrom(level,owner,plan,radii,row,resolved);
    }
   }

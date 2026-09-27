@@ -27,6 +27,7 @@ public final class SyntacticWizardry {
  public static final DeferredBlock<Block> SCRIBES_LECTERN=BLOCKS.register("scribes_lectern",()->new ScribesLecternBlock(Block.Properties.ofFullCopy(Blocks.LECTERN)));
  public static final DeferredItem<BlockItem> SCRIBES_LECTERN_ITEM=ITEMS.register("scribes_lectern",()->new BlockItem(SCRIBES_LECTERN.get(),new Item.Properties()));
  public static final DeferredHolder<EntityType<?>,EntityType<SpellMissile>> SPELL_MISSILE=ENTITIES.register("spell_missile",()->EntityType.Builder.<SpellMissile>of(SpellMissile::new,MobCategory.MISC).sized(0.25F,0.25F).clientTrackingRange(4).updateInterval(10).build("spell_missile"));
+ public static final DeferredHolder<EntityType<?>,EntityType<SphereVisualEntity>> SPHERE_VISUAL=ENTITIES.register("sphere_visual",()->EntityType.Builder.<SphereVisualEntity>of(SphereVisualEntity::new,MobCategory.MISC).sized(0.1F,0.1F).clientTrackingRange(32).updateInterval(1).noSave().noSummon().build("sphere_visual"));
  public static final DeferredItem<MissileShapeItem> MISSILE_SHAPE=ITEMS.register("missile_shape",()->new MissileShapeItem(new Item.Properties().stacksTo(1)));
  public static final DeferredItem<Item> SPHERE_SHAPE=ITEMS.register("sphere_shape",()->new Item(new Item.Properties().stacksTo(1)));
  public static final DeferredItem<WrittenSpellItem> WRITTEN_SPELL=ITEMS.register("written_spell",()->new WrittenSpellItem(new Item.Properties().stacksTo(1)));

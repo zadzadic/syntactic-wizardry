@@ -8,5 +8,8 @@ import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 @EventBusSubscriber(modid=SyntacticWizardry.MOD_ID,bus=EventBusSubscriber.Bus.MOD,value=Dist.CLIENT)
 public final class ClientEvents {
  @SubscribeEvent public static void registerScreens(RegisterMenuScreensEvent e){e.register(SyntacticWizardry.SCRIBES_LECTERN_MENU.get(),ScribesLecternScreen::new);}
- @SubscribeEvent public static void registerRenderers(EntityRenderersEvent.RegisterRenderers e){e.registerEntityRenderer(SyntacticWizardry.SPELL_MISSILE.get(),SpellMissileRenderer::new);}
+ @SubscribeEvent public static void registerRenderers(EntityRenderersEvent.RegisterRenderers e){
+  e.registerEntityRenderer(SyntacticWizardry.SPELL_MISSILE.get(),SpellMissileRenderer::new);
+  e.registerEntityRenderer(SyntacticWizardry.SPHERE_VISUAL.get(),SphereVisualRenderer::new);
+ }
 }
