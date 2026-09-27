@@ -32,6 +32,7 @@ public final class SyntacticWizardry {
  public static final DeferredItem<MissileShapeItem> MISSILE_SHAPE=ITEMS.register("missile_shape",()->new MissileShapeItem(new Item.Properties().stacksTo(1)));
  public static final DeferredItem<Item> SPHERE_SHAPE=ITEMS.register("sphere_shape",()->new Item(new Item.Properties().stacksTo(1)));
  public static final DeferredItem<Item> BOX_SHAPE=ITEMS.register("box_shape",()->new Item(new Item.Properties().stacksTo(1)));
+ public static final DeferredItem<Item> TARGET_SHAPE=ITEMS.register("target_shape",()->new Item(new Item.Properties().stacksTo(1)));
  public static final DeferredItem<Item> DAMAGE_EFFECT=ITEMS.register("damage_effect",()->new Item(new Item.Properties().stacksTo(1)));
  public static final DeferredItem<WrittenSpellItem> WRITTEN_SPELL=ITEMS.register("written_spell",()->new WrittenSpellItem(new Item.Properties().stacksTo(1)));
  public static final DeferredHolder<MenuType<?>,MenuType<ScribesLecternMenu>> SCRIBES_LECTERN_MENU=MENUS.register("scribes_lectern",()->IMenuTypeExtension.create((id,inv,data)->new ScribesLecternMenu(id,inv)));
