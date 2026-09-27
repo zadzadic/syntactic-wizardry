@@ -7,7 +7,7 @@ import net.minecraft.world.phys.HitResult;
 public final class SpellMissile extends Snowball {
  private static final double MAX_DISTANCE_SQR=16.0*16.0;
  private double startX,startY,startZ;
- public SpellMissile(EntityType<? extends SpellMissile> type,Level level){super(type,level);markStart();}
+ public SpellMissile(EntityType<? extends SpellMissile> type,Level level){super(type,level);}
  public SpellMissile(Level level,LivingEntity owner){this(SyntacticWizardry.SPELL_MISSILE.get(),level);setOwner(owner);setPos(owner.getX(),owner.getEyeY()-0.1,owner.getZ());markStart();}
  public void configure(int style,int visual){setItem(SpellPresentation.projectileStack(style,visual));}
  public int presentationStyle(){return SpellPresentation.readStyle(getItem());}
@@ -16,8 +16,10 @@ public final class SpellMissile extends Snowball {
  @Override public boolean isNoGravity(){return true;}
  @Override public void tick(){
   super.tick();
-  double dx=getX()-startX,dy=getY()-startY,dz=getZ()-startZ;
-  if(dx*dx+dy*dy+dz*dz>=MAX_DISTANCE_SQR)discard();
+  if(!level().isClientSide){
+   double dx=getX()-startX,dy=getY()-startY,dz=getZ()-startZ;
+   if(dx*dx+dy*dy+dz*dz>=MAX_DISTANCE_SQR)discard();
+  }
  }
  @Override protected void onHit(HitResult result){discard();}
 }
