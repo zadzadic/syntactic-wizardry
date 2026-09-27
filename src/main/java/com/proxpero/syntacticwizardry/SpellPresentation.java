@@ -31,8 +31,9 @@ public final class SpellPresentation {
  private static boolean valid(int[] plan,int cell){return plan!=null&&plan.length>=PLAN_DATA_SIZE&&cell>=0&&cell<CELLS;}
  public static boolean rowHasComponents(int[] plan,int row){if(row<0||row>=ROWS)return false;for(int c=0;c<COLS;c++)if(typeAt(plan,row*COLS+c)!=TYPE_EMPTY)return true;return false;}
  public static int firstOccupiedRow(int[] plan){for(int r=0;r<ROWS;r++)if(rowHasComponents(plan,r))return r;return -1;}
- public static boolean isShape(int type){return type==TYPE_MISSILE||type==TYPE_SPHERE;}
- public static String shapeName(int type){return switch(type){case TYPE_MISSILE->"Missile";case TYPE_SPHERE->"Sphere";case TYPE_DAMAGE->"Damage";default->"Empty";};}
+ public static boolean isShape(int type){SpellComponentDefinition definition=SpellComponents.byType(type);return definition!=null&&definition.isShape();}
+ public static String shapeName(int type){return componentName(type);}
+ public static String componentName(int type){SpellComponentDefinition definition=SpellComponents.byType(type);return definition!=null?definition.displayName():"Empty";}
  public static String styleName(int id){return switch(Mth.clamp(id,0,STYLE_COUNT-1)){case STYLE_ARC->"Arc";case STYLE_SPIRAL->"Spiral";case STYLE_INNER->"Inner";case STYLE_OUTER->"Outer";default->"Default";};}
  public static String visualName(int id){return switch(Mth.clamp(id,0,VISUAL_COUNT-1)){case VISUAL_LARGE_CHUNK->"Large Chunk";case VISUAL_SWORD->"Sword";case VISUAL_AXE->"Axe";case VISUAL_TRIDENT->"Trident";case VISUAL_FLAMES->"Flames";default->"Default";};}
  public static String damageKindName(int id){return switch(Mth.clamp(id,0,DAMAGE_KIND_COUNT-1)){case DAMAGE_FIRE->"Fire";case DAMAGE_FROST->"Frost";case DAMAGE_FORCE->"Force";case DAMAGE_PHYSICAL->"Physical";case DAMAGE_ENTROPIC->"Entropic";case DAMAGE_HOLY->"Holy";default->"Arcane";};}
@@ -74,7 +75,12 @@ public final class SpellPresentation {
  private static int[] normalizePlan(int[] source){
   int[] plan=emptyPlan();
   if(source!=null)System.arraycopy(source,0,plan,0,Math.min(source.length,plan.length));
-  for(int i=0;i<CELLS;i++){int o=off(i);if(plan[o]!=TYPE_MISSILE&&plan[o]!=TYPE_SPHERE&&plan[o]!=TYPE_DAMAGE)plan[o]=TYPE_EMPTY;plan[o+1]=Mth.clamp(plan[o+1],0,STYLE_COUNT-1);plan[o+2]=Mth.clamp(plan[o+2],0,VISUAL_COUNT-1);}
+  for(int i=0;i<CELLS;i++){
+   int o=off(i);
+   if(plan[o]!=TYPE_EMPTY&&SpellComponents.byType(plan[o])==null)plan[o]=TYPE_EMPTY;
+   plan[o+1]=Mth.clamp(plan[o+1],0,STYLE_COUNT-1);
+   plan[o+2]=Mth.clamp(plan[o+2],0,VISUAL_COUNT-1);
+  }
   return plan;
  }
  private static int[] normalizeRadii(int[] source){int[] values=emptyRadii();if(source!=null&&source.length>0)System.arraycopy(source,0,values,0,Math.min(source.length,values.length));for(int i=0;i<values.length;i++)values[i]=Mth.clamp(values[i],RADIUS_MIN,RADIUS_MAX);return values;}

@@ -13,22 +13,11 @@ public final class SpellExecutor {
   boolean spawnedShape=false;
   for(int col=0;col<SpellPresentation.COLS;col++){
    int cell=row*SpellPresentation.COLS+col;
-   int type=SpellPresentation.typeAt(plan,cell);
-   if(type==SpellPresentation.TYPE_DAMAGE){
-    DamageEffect.apply(level,owner,parent,SpellPresentation.damageKindAt(damageKinds,cell),SpellPresentation.potenceAt(potences,cell));
-   }else if(type==SpellPresentation.TYPE_MISSILE){
-    spawnedShape=true;
-    SpellMissile missile=new SpellMissile(SyntacticWizardry.SPELL_MISSILE.get(),level);
-    missile.prepare(owner,parent.origin(),parent.direction(),plan,radii,damageKinds,potences,row,cell);
-    level.addFreshEntity(missile);
-   }else if(type==SpellPresentation.TYPE_SPHERE){
-    spawnedShape=true;
-    int radius=SpellPresentation.radiusAt(radii,cell);
-    ShapeResolution resolved=ShapeResolution.sphere(parent.origin(),parent.direction(),radius);
-    SphereVisualEntity visual=new SphereVisualEntity(level,resolved.origin(),radius,SpellPresentation.styleAt(plan,cell),SpellPresentation.visualAt(plan,cell));
-    level.addFreshEntity(visual);
-    continueFrom(level,owner,plan,radii,damageKinds,potences,row,resolved);
-   }
+   SpellComponentDefinition definition=SpellComponents.byType(SpellPresentation.typeAt(plan,cell));
+   if(definition==null)continue;
+   ComponentExecutionResult result=definition.execute(new SpellExecutionContext(level,owner,plan,radii,damageKinds,potences,row,cell,parent));
+   if(result.spawnedShape())spawnedShape=true;
+   for(ShapeResolution resolution:result.continuations())continueFrom(level,owner,plan,radii,damageKinds,potences,row,resolution);
   }
   if(!spawnedShape)continueFrom(level,owner,plan,radii,damageKinds,potences,row,parent);
  }

@@ -1,6 +1,11 @@
 package com.proxpero.syntacticwizardry.client;
 import com.proxpero.syntacticwizardry.ScribesLecternMenu;
+import com.proxpero.syntacticwizardry.SpellComponentDefinition;
+import com.proxpero.syntacticwizardry.SpellComponents;
 import com.proxpero.syntacticwizardry.SpellPresentation;
+import com.proxpero.syntacticwizardry.SpellPropertyDefinition;
+import com.proxpero.syntacticwizardry.SpellPropertyKey;
+import com.proxpero.syntacticwizardry.SpellPropertyKind;
 import com.proxpero.syntacticwizardry.SyntacticWizardry;
 import net.minecraft.Util;
 import net.minecraft.client.gui.GuiGraphics;
@@ -9,29 +14,27 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
+import java.util.List;
 public final class ScribesLecternScreen extends AbstractContainerScreen<ScribesLecternMenu> {
  private enum PropertyTab{STYLE,VISUAL,SETTINGS}
- private static final int MISSILE_X=175,SPHERE_X=195,SHAPE_Y=43,DAMAGE_X=175,DAMAGE_Y=82;
+ private static final int SELECTOR_START_X=175,SHAPE_Y=43,EFFECT_Y=82;
  private static final int GRID_X=20,GRID_Y=47,CELL=16,STEP=18;
  private static final int NO_CELL=-1;
  private PropertyTab propertyTab=PropertyTab.SETTINGS;
  private int selectedCell=NO_CELL,dragSource=NO_CELL,dragNewType=SpellPresentation.TYPE_EMPTY;
- private boolean damageTypeMenu=false;
+ private SpellPropertyKey openOptionsProperty=null;
  private Button writeButton;
  public ScribesLecternScreen(ScribesLecternMenu menu,Inventory inv,Component title){super(menu,inv,title);imageWidth=ScribesLecternMenu.WIDTH;imageHeight=ScribesLecternMenu.HEIGHT;}
  @Override protected void init(){super.init();writeButton=addRenderableWidget(Button.builder(Component.literal("Write Spell"),b->sendAction(ScribesLecternMenu.ACTION_WRITE)).bounds(leftPos+20,topPos+174,120,15).build());}
  private void sendAction(int id){if(minecraft!=null&&minecraft.gameMode!=null)minecraft.gameMode.handleInventoryButtonClick(menu.containerId,id);}
- private ItemStack componentStack(int type){
-  if(type==SpellPresentation.TYPE_SPHERE)return SyntacticWizardry.SPHERE_SHAPE.get().getDefaultInstance();
-  if(type==SpellPresentation.TYPE_DAMAGE)return SyntacticWizardry.DAMAGE_EFFECT.get().getDefaultInstance();
-  return SyntacticWizardry.MISSILE_SHAPE.get().getDefaultInstance();
- }
+ private ItemStack componentStack(int type){SpellComponentDefinition definition=SpellComponents.byType(type);return definition!=null?definition.createEditorIcon():ItemStack.EMPTY;}
  private boolean hasSelection(){return selectedCell>=0&&menu.typeAt(selectedCell)!=SpellPresentation.TYPE_EMPTY;}
+ private SpellComponentDefinition selectedDefinition(){return hasSelection()?menu.definitionAt(selectedCell):null;}
  @Override protected void renderBg(GuiGraphics g,float partial,int mx,int my){
   int x=leftPos,y=topPos;
   g.fill(x,y,x+320,y+232,0xE0101826);
   panel(g,x+10,y+10,145,184,"Spell Workspace");
-  panel(g,x+165,y+10,145,116,hasSelection()?"Properties: "+SpellPresentation.shapeName(menu.typeAt(selectedCell)):"Component Selector");
+  panel(g,x+165,y+10,145,116,hasSelection()?"Properties: "+menu.definitionAt(selectedCell).displayName():"Component Selector");
   panel(g,x+165,y+136,145,58,"Spell Preview");
   g.fill(x+75,y+199,x+247,y+227,0xC0182233);
   g.fill(x+19,y+24,x+37,y+42,0xFF335A88);
@@ -59,33 +62,35 @@ public final class ScribesLecternScreen extends AbstractContainerScreen<ScribesL
  }
  private void renderComponentSelector(GuiGraphics g,int x,int y){
   g.drawString(font,"Shapes",x+173,y+29,0xCFE5FF,false);
-  g.fill(x+MISSILE_X,y+SHAPE_Y,x+MISSILE_X+CELL,y+SHAPE_Y+CELL,0xFF2A3B55);
-  g.renderItem(SyntacticWizardry.MISSILE_SHAPE.get().getDefaultInstance(),x+MISSILE_X,y+SHAPE_Y);
-  g.fill(x+SPHERE_X,y+SHAPE_Y,x+SPHERE_X+CELL,y+SHAPE_Y+CELL,0xFF2A3B55);
-  g.renderItem(SyntacticWizardry.SPHERE_SHAPE.get().getDefaultInstance(),x+SPHERE_X,y+SHAPE_Y);
+  int index=0;
+  for(SpellComponentDefinition definition:SpellComponents.shapes()){
+   int ox=x+SELECTOR_START_X+index*20;
+   g.fill(ox,y+SHAPE_Y,ox+CELL,y+SHAPE_Y+CELL,0xFF2A3B55);
+   g.renderItem(definition.createEditorIcon(),ox,y+SHAPE_Y);
+   index++;
+  }
   g.drawString(font,"Effects",x+173,y+68,0xCFE5FF,false);
-  g.fill(x+DAMAGE_X,y+DAMAGE_Y,x+DAMAGE_X+CELL,y+DAMAGE_Y+CELL,0xFF2A3B55);
-  g.renderItem(SyntacticWizardry.DAMAGE_EFFECT.get().getDefaultInstance(),x+DAMAGE_X,y+DAMAGE_Y);
+  index=0;
+  for(SpellComponentDefinition definition:SpellComponents.effects()){
+   int ox=x+SELECTOR_START_X+index*20;
+   g.fill(ox,y+EFFECT_Y,ox+CELL,y+EFFECT_Y+CELL,0xFF2A3B55);
+   g.renderItem(definition.createEditorIcon(),ox,y+EFFECT_Y);
+   index++;
+  }
  }
  private void renderStyleTab(GuiGraphics g,int x,int y){
-  int type=menu.typeAt(selectedCell);
-  if(!SpellPresentation.isShape(type)){g.drawCenteredString(font,"Not applicable",x+237,y+73,0x9EB7CF);return;}
-  if(type==SpellPresentation.TYPE_SPHERE){
-   int style=menu.styleAt(selectedCell);
-   g.drawString(font,"Orientation",x+174,y+53,0xCFE5FF,false);
-   tabBox(g,x+174,y+67,61,18,"Inner",style==SpellPresentation.STYLE_INNER);
-   tabBox(g,x+239,y+67,61,18,"Outer",style==SpellPresentation.STYLE_OUTER);
-   if(style==SpellPresentation.STYLE_DEFAULT)g.drawCenteredString(font,"Default",x+237,y+93,0x9EB7CF);
-   return;
-  }
-  for(int i=SpellPresentation.STYLE_DEFAULT;i<=SpellPresentation.STYLE_SPIRAL;i++){
-   int oy=y+52+i*21;
-   g.fill(x+174,oy,x+300,oy+18,menu.styleAt(selectedCell)==i?0xFF36587A:0xB02A3B55);
-   g.drawString(font,SpellPresentation.styleName(i),x+181,oy+5,0xE8F3FF,false);
+  SpellComponentDefinition definition=selectedDefinition();
+  if(definition==null||definition.styleOptions().isEmpty()){g.drawCenteredString(font,"Not applicable",x+237,y+73,0x9EB7CF);return;}
+  List<Integer> styles=definition.styleOptions();
+  for(int i=0;i<styles.size();i++){
+   int styleId=styles.get(i),oy=y+52+i*21;
+   g.fill(x+174,oy,x+300,oy+18,menu.styleAt(selectedCell)==styleId?0xFF36587A:0xB02A3B55);
+   g.drawString(font,SpellPresentation.styleName(styleId),x+181,oy+5,0xE8F3FF,false);
   }
  }
  private void renderVisualTab(GuiGraphics g,int x,int y){
-  if(!SpellPresentation.isShape(menu.typeAt(selectedCell))){g.drawCenteredString(font,"Not applicable",x+237,y+73,0x9EB7CF);return;}
+  SpellComponentDefinition definition=selectedDefinition();
+  if(definition==null||!definition.supportsVisuals()){g.drawCenteredString(font,"Not applicable",x+237,y+73,0x9EB7CF);return;}
   for(int i=0;i<SpellPresentation.VISUAL_COUNT;i++){
    int col=i%3,row=i/3,ox=x+177+col*42,oy=y+55+row*34;
    g.fill(ox,oy,ox+CELL,oy+CELL,menu.visualAt(selectedCell)==i?0xFF5B86B8:0xFF2A3B55);
@@ -93,31 +98,41 @@ public final class ScribesLecternScreen extends AbstractContainerScreen<ScribesL
   }
  }
  private void renderSettingsTab(GuiGraphics g,int x,int y){
-  int type=menu.typeAt(selectedCell);
-  if(type==SpellPresentation.TYPE_SPHERE){
-   settingNumber(g,x,y+58,"Radius",menu.radiusAt(selectedCell));
-   return;
-  }
-  if(type==SpellPresentation.TYPE_DAMAGE){
-   if(damageTypeMenu){renderDamageTypes(g,x,y);return;}
-   settingNumber(g,x,y+55,"Potence",menu.potenceAt(selectedCell));
-   buttonBox(g,x+174,y+80,126,18,"Type: "+SpellPresentation.damageKindName(menu.damageKindAt(selectedCell)));
-   return;
-  }
-  g.drawCenteredString(font,"No settings",x+237,y+73,0x9EB7CF);
- }
- private void renderDamageTypes(GuiGraphics g,int x,int y){
-  for(int i=0;i<SpellPresentation.DAMAGE_KIND_COUNT;i++){
-   int col=i%2,row=i/2,ox=x+174+col*64,oy=y+51+row*18;
-   g.fill(ox,oy,ox+61,oy+15,menu.damageKindAt(selectedCell)==i?0xFF36587A:0xB02A3B55);
-   g.drawCenteredString(font,SpellPresentation.damageKindName(i),ox+30,oy+4,0xE8F3FF);
+  SpellComponentDefinition definition=selectedDefinition();
+  if(definition==null||definition.settings().isEmpty()){g.drawCenteredString(font,"No settings",x+237,y+73,0x9EB7CF);return;}
+  if(openOptionsProperty!=null){renderOptionMenu(g,x,y);return;}
+  int rowY=y+55;
+  for(SpellPropertyDefinition property:definition.settings()){
+   if(property.kind()==SpellPropertyKind.STEPPER){
+    renderStepper(g,x,rowY,property.label(),menu.propertyValue(selectedCell,property.key()));
+   }else{
+    buttonBox(g,x+174,rowY,126,18,property.label()+": "+property.format(menu.propertyValue(selectedCell,property.key())));
+   }
+   rowY+=25;
   }
  }
- private void settingNumber(GuiGraphics g,int x,int y,String label,int value){
+ private void renderStepper(GuiGraphics g,int x,int y,String label,int value){
   g.drawString(font,label+":",x+175,y+4,0xD9E9F7,false);
   buttonBox(g,x+245,y,16,16,"<");
   g.drawCenteredString(font,Integer.toString(value),x+272,y+4,0xE8F3FF);
   buttonBox(g,x+284,y,16,16,">");
+ }
+ private void renderOptionMenu(GuiGraphics g,int x,int y){
+  SpellPropertyDefinition property=findSetting(openOptionsProperty);
+  if(property==null)return;
+  int count=property.maxValue()-property.minValue()+1;
+  for(int i=0;i<count;i++){
+   int value=property.minValue()+i;
+   int col=i%2,row=i/2,ox=x+174+col*64,oy=y+51+row*18;
+   g.fill(ox,oy,ox+61,oy+15,menu.propertyValue(selectedCell,property.key())==value?0xFF36587A:0xB02A3B55);
+   g.drawCenteredString(font,property.format(value),ox+30,oy+4,0xE8F3FF);
+  }
+ }
+ private SpellPropertyDefinition findSetting(SpellPropertyKey key){
+  SpellComponentDefinition definition=selectedDefinition();
+  if(definition==null)return null;
+  for(SpellPropertyDefinition property:definition.settings())if(property.key()==key)return property;
+  return null;
  }
  private void renderPreview(GuiGraphics g,int x,int y){
   int[] plan=menu.snapshotPlan();
@@ -173,53 +188,71 @@ public final class ScribesLecternScreen extends AbstractContainerScreen<ScribesL
   for(int row=0;row<SpellPresentation.ROWS;row++)for(int col=0;col<SpellPresentation.COLS;col++){int x=GRID_X+col*STEP,y=GRID_Y+row*STEP;if(inside(mx,my,x,y,CELL,CELL))return row*SpellPresentation.COLS+col;}
   return NO_CELL;
  }
+ private SpellComponentDefinition selectorComponentAt(double mx,double my){
+  int index=0;
+  for(SpellComponentDefinition definition:SpellComponents.shapes()){
+   if(inside(mx,my,SELECTOR_START_X+index*20,SHAPE_Y,CELL,CELL))return definition;
+   index++;
+  }
+  index=0;
+  for(SpellComponentDefinition definition:SpellComponents.effects()){
+   if(inside(mx,my,SELECTOR_START_X+index*20,EFFECT_Y,CELL,CELL))return definition;
+   index++;
+  }
+  return null;
+ }
  private void beginNewDrag(int type){dragSource=NO_CELL;dragNewType=type;}
  private int draggedType(){return dragNewType!=SpellPresentation.TYPE_EMPTY?dragNewType:(dragSource>=0?menu.typeAt(dragSource):SpellPresentation.TYPE_EMPTY);}
- private void selectCell(int cell){selectedCell=cell;propertyTab=PropertyTab.SETTINGS;damageTypeMenu=false;}
- private void closeProperties(){selectedCell=NO_CELL;damageTypeMenu=false;}
+ private void selectCell(int cell){selectedCell=cell;propertyTab=PropertyTab.SETTINGS;openOptionsProperty=null;}
+ private void closeProperties(){selectedCell=NO_CELL;openOptionsProperty=null;}
  @Override public boolean mouseClicked(double mx,double my,int button){
   if(button==1){
    int cell=workspaceCellAt(mx,my);
-   if(cell>=0&&menu.typeAt(cell)!=SpellPresentation.TYPE_EMPTY){sendAction(ScribesLecternMenu.ACTION_CLEAR_BASE+cell);if(selectedCell==cell)closeProperties();return true;}
+   if(cell>=0&&menu.typeAt(cell)!=SpellPresentation.TYPE_EMPTY){sendAction(ScribesLecternMenu.actionClear(cell));if(selectedCell==cell)closeProperties();return true;}
   }
   if(button==0){
    if(hasSelection()){
     if(inside(mx,my,291,15,14,12)){closeProperties();return true;}
-    if(inside(mx,my,170,30,40,16)){propertyTab=PropertyTab.STYLE;damageTypeMenu=false;return true;}
-    if(inside(mx,my,212,30,40,16)){propertyTab=PropertyTab.VISUAL;damageTypeMenu=false;return true;}
-    if(inside(mx,my,254,30,51,16)){propertyTab=PropertyTab.SETTINGS;damageTypeMenu=false;return true;}
-    int type=menu.typeAt(selectedCell);
-    if(propertyTab==PropertyTab.STYLE&&SpellPresentation.isShape(type)){
-     if(type==SpellPresentation.TYPE_SPHERE){
-      int current=menu.styleAt(selectedCell);
-      if(inside(mx,my,174,67,61,18)){int value=current==SpellPresentation.STYLE_INNER?SpellPresentation.STYLE_DEFAULT:SpellPresentation.STYLE_INNER;sendAction(ScribesLecternMenu.ACTION_STYLE_BASE+selectedCell*SpellPresentation.STYLE_COUNT+value);return true;}
-      if(inside(mx,my,239,67,61,18)){int value=current==SpellPresentation.STYLE_OUTER?SpellPresentation.STYLE_DEFAULT:SpellPresentation.STYLE_OUTER;sendAction(ScribesLecternMenu.ACTION_STYLE_BASE+selectedCell*SpellPresentation.STYLE_COUNT+value);return true;}
-     }else{
-      for(int i=SpellPresentation.STYLE_DEFAULT;i<=SpellPresentation.STYLE_SPIRAL;i++)if(inside(mx,my,174,52+i*21,126,18)){sendAction(ScribesLecternMenu.ACTION_STYLE_BASE+selectedCell*SpellPresentation.STYLE_COUNT+i);return true;}
-     }
+    if(inside(mx,my,170,30,40,16)){propertyTab=PropertyTab.STYLE;openOptionsProperty=null;return true;}
+    if(inside(mx,my,212,30,40,16)){propertyTab=PropertyTab.VISUAL;openOptionsProperty=null;return true;}
+    if(inside(mx,my,254,30,51,16)){propertyTab=PropertyTab.SETTINGS;openOptionsProperty=null;return true;}
+    SpellComponentDefinition definition=selectedDefinition();
+    if(definition!=null&&propertyTab==PropertyTab.STYLE&&!definition.styleOptions().isEmpty()){
+      List<Integer> styles=definition.styleOptions();
+      for(int i=0;i<styles.size();i++)if(inside(mx,my,174,52+i*21,126,18)){sendAction(ScribesLecternMenu.actionSetProperty(selectedCell,SpellPropertyKey.STYLE,styles.get(i)));return true;}
     }
-    if(propertyTab==PropertyTab.VISUAL&&SpellPresentation.isShape(type)){
-     for(int i=0;i<SpellPresentation.VISUAL_COUNT;i++){int col=i%3,row=i/3;if(inside(mx,my,177+col*42,55+row*34,CELL,CELL)){sendAction(ScribesLecternMenu.ACTION_VISUAL_BASE+selectedCell*SpellPresentation.VISUAL_COUNT+i);return true;}}
+    if(definition!=null&&propertyTab==PropertyTab.VISUAL&&definition.supportsVisuals()){
+      for(int i=0;i<SpellPresentation.VISUAL_COUNT;i++){int col=i%3,row=i/3;if(inside(mx,my,177+col*42,55+row*34,CELL,CELL)){sendAction(ScribesLecternMenu.actionSetProperty(selectedCell,SpellPropertyKey.VISUAL,i));return true;}}
     }
-    if(propertyTab==PropertyTab.SETTINGS&&type==SpellPresentation.TYPE_SPHERE){
-     int current=menu.radiusAt(selectedCell);
-     if(inside(mx,my,245,58,16,16)){int value=Math.max(SpellPresentation.RADIUS_MIN,current-1);sendAction(ScribesLecternMenu.ACTION_RADIUS_BASE+selectedCell*SpellPresentation.RADIUS_COUNT+(value-SpellPresentation.RADIUS_MIN));return true;}
-     if(inside(mx,my,284,58,16,16)){int value=Math.min(SpellPresentation.RADIUS_MAX,current+1);sendAction(ScribesLecternMenu.ACTION_RADIUS_BASE+selectedCell*SpellPresentation.RADIUS_COUNT+(value-SpellPresentation.RADIUS_MIN));return true;}
-    }
-    if(propertyTab==PropertyTab.SETTINGS&&type==SpellPresentation.TYPE_DAMAGE){
-     if(damageTypeMenu){
-      for(int i=0;i<SpellPresentation.DAMAGE_KIND_COUNT;i++){int col=i%2,row=i/2;if(inside(mx,my,174+col*64,51+row*18,61,15)){sendAction(ScribesLecternMenu.ACTION_DAMAGE_KIND_BASE+selectedCell*SpellPresentation.DAMAGE_KIND_COUNT+i);damageTypeMenu=false;return true;}}
-     }else{
-      int current=menu.potenceAt(selectedCell);
-      if(inside(mx,my,245,55,16,16)){int value=Math.max(SpellPresentation.POTENCE_MIN,current-1);sendAction(ScribesLecternMenu.ACTION_POTENCE_BASE+selectedCell*SpellPresentation.POTENCE_COUNT+(value-SpellPresentation.POTENCE_MIN));return true;}
-      if(inside(mx,my,284,55,16,16)){int value=Math.min(SpellPresentation.POTENCE_MAX,current+1);sendAction(ScribesLecternMenu.ACTION_POTENCE_BASE+selectedCell*SpellPresentation.POTENCE_COUNT+(value-SpellPresentation.POTENCE_MIN));return true;}
-      if(inside(mx,my,174,80,126,18)){damageTypeMenu=true;return true;}
-     }
+    if(definition!=null&&propertyTab==PropertyTab.SETTINGS&&!definition.settings().isEmpty()){
+      if(openOptionsProperty!=null){
+        SpellPropertyDefinition property=findSetting(openOptionsProperty);
+        if(property!=null){
+         int count=property.maxValue()-property.minValue()+1;
+         for(int i=0;i<count;i++){
+          int value=property.minValue()+i;
+          int col=i%2,row=i/2;
+          if(inside(mx,my,174+col*64,51+row*18,61,15)){sendAction(ScribesLecternMenu.actionSetProperty(selectedCell,property.key(),value));openOptionsProperty=null;return true;}
+         }
+        }
+      }else{
+        int rowY=55;
+        for(SpellPropertyDefinition property:definition.settings()){
+         if(property.kind()==SpellPropertyKind.STEPPER){
+          int current=menu.propertyValue(selectedCell,property.key());
+          if(inside(mx,my,245,rowY,16,16)){sendAction(ScribesLecternMenu.actionSetProperty(selectedCell,property.key(),Math.max(property.minValue(),current-1)));return true;}
+          if(inside(mx,my,284,rowY,16,16)){sendAction(ScribesLecternMenu.actionSetProperty(selectedCell,property.key(),Math.min(property.maxValue(),current+1)));return true;}
+         }else if(inside(mx,my,174,rowY,126,18)){
+          openOptionsProperty=property.key();
+          return true;
+         }
+         rowY+=25;
+        }
+      }
     }
    }else{
-    if(inside(mx,my,MISSILE_X,SHAPE_Y,CELL,CELL)){beginNewDrag(SpellPresentation.TYPE_MISSILE);return true;}
-    if(inside(mx,my,SPHERE_X,SHAPE_Y,CELL,CELL)){beginNewDrag(SpellPresentation.TYPE_SPHERE);return true;}
-    if(inside(mx,my,DAMAGE_X,DAMAGE_Y,CELL,CELL)){beginNewDrag(SpellPresentation.TYPE_DAMAGE);return true;}
+    SpellComponentDefinition selector=selectorComponentAt(mx,my);
+    if(selector!=null){beginNewDrag(selector.typeId());return true;}
    }
    int cell=workspaceCellAt(mx,my);
    if(cell>=0&&menu.typeAt(cell)!=SpellPresentation.TYPE_EMPTY){selectCell(cell);dragSource=cell;dragNewType=SpellPresentation.TYPE_EMPTY;return true;}
@@ -231,10 +264,8 @@ public final class ScribesLecternScreen extends AbstractContainerScreen<ScribesL
   if(button==0&&(dragSource>=0||dragNewType!=SpellPresentation.TYPE_EMPTY)){
    int target=workspaceCellAt(mx,my);
    if(target>=0){
-    if(dragNewType==SpellPresentation.TYPE_MISSILE)sendAction(ScribesLecternMenu.ACTION_ADD_MISSILE_BASE+target);
-    else if(dragNewType==SpellPresentation.TYPE_SPHERE)sendAction(ScribesLecternMenu.ACTION_ADD_SPHERE_BASE+target);
-    else if(dragNewType==SpellPresentation.TYPE_DAMAGE)sendAction(ScribesLecternMenu.ACTION_ADD_DAMAGE_BASE+target);
-    else if(dragSource!=target)sendAction(ScribesLecternMenu.ACTION_MOVE_BASE+dragSource*SpellPresentation.CELLS+target);
+    if(dragNewType!=SpellPresentation.TYPE_EMPTY)sendAction(ScribesLecternMenu.actionAddComponent(target,dragNewType));
+    else if(dragSource!=target)sendAction(ScribesLecternMenu.actionMove(dragSource,target));
     selectCell(target);
    }
    dragSource=NO_CELL;dragNewType=SpellPresentation.TYPE_EMPTY;
@@ -247,11 +278,10 @@ public final class ScribesLecternScreen extends AbstractContainerScreen<ScribesL
   super.render(g,mx,my,partial);
   renderTooltip(g,mx,my);
   if(!hasSelection()){
-   if(inside(mx,my,MISSILE_X,SHAPE_Y,CELL,CELL))g.renderTooltip(font,Component.literal("Missile"),mx,my);
-   if(inside(mx,my,SPHERE_X,SHAPE_Y,CELL,CELL))g.renderTooltip(font,Component.literal("Sphere"),mx,my);
-   if(inside(mx,my,DAMAGE_X,DAMAGE_Y,CELL,CELL))g.renderTooltip(font,Component.literal("Damage"),mx,my);
+   SpellComponentDefinition selector=selectorComponentAt(mx,my);
+   if(selector!=null)g.renderTooltip(font,Component.literal(selector.displayName()),mx,my);
   }
-  if(hasSelection()&&propertyTab==PropertyTab.VISUAL&&SpellPresentation.isShape(menu.typeAt(selectedCell)))for(int i=0;i<SpellPresentation.VISUAL_COUNT;i++){int col=i%3,row=i/3;if(inside(mx,my,177+col*42,55+row*34,CELL,CELL))g.renderTooltip(font,Component.literal(SpellPresentation.visualName(i)),mx,my);}
+  if(hasSelection()&&propertyTab==PropertyTab.VISUAL&&selectedDefinition()!=null&&selectedDefinition().supportsVisuals())for(int i=0;i<SpellPresentation.VISUAL_COUNT;i++){int col=i%3,row=i/3;if(inside(mx,my,177+col*42,55+row*34,CELL,CELL))g.renderTooltip(font,Component.literal(SpellPresentation.visualName(i)),mx,my);}
   int type=draggedType();if(type!=SpellPresentation.TYPE_EMPTY)g.renderItem(componentStack(type),mx-8,my-8);
  }
  @Override protected void renderLabels(GuiGraphics g,int mx,int my){}
