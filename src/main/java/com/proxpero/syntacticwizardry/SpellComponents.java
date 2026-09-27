@@ -8,7 +8,10 @@ public final class SpellComponents {
  private static final SpellPropertyDefinition RADIUS_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.RADIUS,"Radius",SpellPropertyKind.STEPPER,SpellPresentation.RADIUS_MIN,SpellPresentation.RADIUS_MAX,SpellPresentation.RADIUS_DEFAULT,Integer::toString);
  private static final SpellPropertyDefinition POTENCE_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.POTENCE,"Potence",SpellPropertyKind.STEPPER,SpellPresentation.POTENCE_MIN,SpellPresentation.POTENCE_MAX,SpellPresentation.POTENCE_DEFAULT,Integer::toString);
  private static final SpellPropertyDefinition DAMAGE_KIND_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.DAMAGE_KIND,"Damage Type",SpellPropertyKind.OPTIONS,0,SpellPresentation.DAMAGE_KIND_COUNT-1,SpellPresentation.DAMAGE_KIND_DEFAULT,SpellPresentation::damageKindName);
- private static final List<SpellComponentDefinition> ALL=List.of(new MissileDefinition(),new SphereDefinition(),new DamageDefinition());
+ private static final SpellPropertyDefinition WIDTH_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.WIDTH,"Width",SpellPropertyKind.STEPPER,SpellPresentation.BOX_SIZE_MIN,SpellPresentation.BOX_SIZE_MAX,SpellPresentation.BOX_SIZE_DEFAULT,Integer::toString);
+ private static final SpellPropertyDefinition HEIGHT_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.HEIGHT,"Height",SpellPropertyKind.STEPPER,SpellPresentation.BOX_SIZE_MIN,SpellPresentation.BOX_SIZE_MAX,SpellPresentation.BOX_SIZE_DEFAULT,Integer::toString);
+ private static final SpellPropertyDefinition DEPTH_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.DEPTH,"Depth",SpellPropertyKind.STEPPER,SpellPresentation.BOX_SIZE_MIN,SpellPresentation.BOX_SIZE_MAX,SpellPresentation.BOX_SIZE_DEFAULT,Integer::toString);
+ private static final List<SpellComponentDefinition> ALL=List.of(new MissileDefinition(),new SphereDefinition(),new BoxDefinition(),new DamageDefinition());
  private static final Map<Integer,SpellComponentDefinition> BY_TYPE=ALL.stream().collect(Collectors.toUnmodifiableMap(SpellComponentDefinition::typeId,Function.identity()));
  private static final List<SpellComponentDefinition> SHAPES=ALL.stream().filter(SpellComponentDefinition::isShape).toList();
  private static final List<SpellComponentDefinition> EFFECTS=ALL.stream().filter(def->!def.isShape()).toList();
@@ -43,7 +46,7 @@ public final class SpellComponents {
   @Override public ItemStack createEditorIcon(){return SyntacticWizardry.MISSILE_SHAPE.get().getDefaultInstance();}
   @Override public ComponentExecutionResult execute(SpellExecutionContext context){
    SpellMissile missile=new SpellMissile(SyntacticWizardry.SPELL_MISSILE.get(),context.level());
-   missile.prepare(context.owner(),context.parent().origin(),context.parent().direction(),context.plan(),context.radii(),context.damageKinds(),context.potences(),context.row(),context.cell());
+   missile.prepare(context.owner(),context.parent().origin(),context.parent().direction(),context.plan(),context.radii(),context.damageKinds(),context.potences(),context.widths(),context.heights(),context.depths(),context.row(),context.cell());
    context.level().addFreshEntity(missile);
    return ComponentExecutionResult.spawned();
   }
@@ -54,6 +57,16 @@ public final class SpellComponents {
   @Override public ComponentExecutionResult execute(SpellExecutionContext context){
    ShapeResolution resolved=ShapeResolution.sphere(context.parent().origin(),context.parent().direction(),context.radius());
    SphereVisualEntity visual=new SphereVisualEntity(context.level(),resolved.origin(),context.radius(),context.style(),context.visual());
+   context.level().addFreshEntity(visual);
+   return ComponentExecutionResult.resolved(resolved);
+  }
+ }
+ private static final class BoxDefinition extends BaseDefinition {
+  BoxDefinition(){super(SpellPresentation.TYPE_BOX,"Box",true,SpellPresentation.STYLE_DEFAULT,SpellPresentation.VISUAL_DEFAULT,List.of(SpellPresentation.STYLE_DEFAULT),true,List.of(WIDTH_PROPERTY,HEIGHT_PROPERTY,DEPTH_PROPERTY));}
+  @Override public ItemStack createEditorIcon(){return SyntacticWizardry.BOX_SHAPE.get().getDefaultInstance();}
+  @Override public ComponentExecutionResult execute(SpellExecutionContext context){
+   ShapeResolution resolved=ShapeResolution.box(context.parent().origin(),context.parent().direction(),context.width(),context.height(),context.depth());
+   BoxVisualEntity visual=new BoxVisualEntity(context.level(),resolved.origin(),context.width(),context.height(),context.depth(),context.style(),context.visual());
    context.level().addFreshEntity(visual);
    return ComponentExecutionResult.resolved(resolved);
   }

@@ -4,7 +4,10 @@ public enum SpellPropertyKey {
  VISUAL(1),
  RADIUS(2),
  DAMAGE_KIND(3),
- POTENCE(4);
+ POTENCE(4),
+ WIDTH(5),
+ HEIGHT(6),
+ DEPTH(7);
  private final int id;
  SpellPropertyKey(int id){this.id=id;}
  public int id(){return id;}

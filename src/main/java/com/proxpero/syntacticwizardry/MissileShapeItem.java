@@ -16,8 +16,11 @@ public final class MissileShapeItem extends Item {
    int[] radii=SpellPresentation.emptyRadii();
    int[] damageKinds=SpellPresentation.emptyDamageKinds();
    int[] potences=SpellPresentation.emptyPotences();
+   int[] widths=SpellPresentation.emptyBoxWidths();
+   int[] heights=SpellPresentation.emptyBoxHeights();
+   int[] depths=SpellPresentation.emptyBoxDepths();
    SpellPresentation.setCell(plan,0,SpellPresentation.TYPE_MISSILE,SpellPresentation.STYLE_DEFAULT,SpellPresentation.VISUAL_DEFAULT);
-   SpellExecutor.castRoot(server,player,plan,radii,damageKinds,potences,new Vec3(player.getX(),player.getEyeY()-0.1,player.getZ()),player.getLookAngle());
+   SpellExecutor.castRoot(server,player,plan,radii,damageKinds,potences,widths,heights,depths,new Vec3(player.getX(),player.getEyeY()-0.1,player.getZ()),player.getLookAngle());
   }
   return InteractionResultHolder.sidedSuccess(stack,level.isClientSide());
  }

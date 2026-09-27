@@ -3,6 +3,7 @@
   "block.syntacticwizardry.scribes_lectern": "Scribe's Lectern",
   "item.syntacticwizardry.missile_shape": "Missile",
   "item.syntacticwizardry.sphere_shape": "Sphere",
+  "item.syntacticwizardry.box_shape": "Box",
   "item.syntacticwizardry.damage_effect": "Damage",
   "item.syntacticwizardry.written_spell": "Written Spell"
 }

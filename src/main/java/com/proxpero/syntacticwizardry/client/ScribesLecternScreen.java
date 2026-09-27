@@ -157,6 +157,8 @@ public final class ScribesLecternScreen extends AbstractContainerScreen<ScribesL
     g.renderItem(SpellPresentation.visualStack(SpellPresentation.visualAt(plan,cell)),px,py);
    }else if(type==SpellPresentation.TYPE_SPHERE){
     drawBlockSpherePreview(g,left+28+laneOffset,top+h/2,menu.radiusAt(cell),menu.visualAt(cell));
+   }else if(type==SpellPresentation.TYPE_BOX){
+    drawBlockBoxPreview(g,left+28+laneOffset,top+h/2,menu.boxWidthAt(cell),menu.boxHeightAt(cell),menu.boxDepthAt(cell),menu.visualAt(cell));
    }else if(type==SpellPresentation.TYPE_DAMAGE){
     int px=left+52+laneOffset,py=top+h/2-8;
     g.renderItem(SyntacticWizardry.DAMAGE_EFFECT.get().getDefaultInstance(),px,py);
@@ -172,6 +174,21 @@ public final class ScribesLecternScreen extends AbstractContainerScreen<ScribesL
   ItemStack stack=SpellPresentation.visualStack(visual);
   for(int dy=-r;dy<=r;dy++)for(int dx=-r;dx<=r;dx++)if(dx*dx+dy*dy<=r*r){
    int px=cx+dx*spacing,py=cy+dy*spacing;
+   g.pose().pushPose();
+   g.pose().translate(px,py,0.0F);
+   g.pose().scale(scale,scale,1.0F);
+   g.renderItem(stack,-8,-8);
+   g.pose().popPose();
+  }
+ }
+ private void drawBlockBoxPreview(GuiGraphics g,int cx,int cy,int width,int height,int depth,int visual){
+  int w=Math.min(width,4),h=Math.min(height,4),d=Math.min(depth,4);
+  float scale=0.18F;
+  int minX=-(w-1)/2,maxX=w/2,minY=-(h-1)/2,maxY=h/2,minZ=-(d-1)/2,maxZ=d/2;
+  ItemStack stack=SpellPresentation.visualStack(visual);
+  for(int y=maxY;y>=minY;y--)for(int z=minZ;z<=maxZ;z++)for(int x=minX;x<=maxX;x++){
+   int px=cx+x*4+z*2;
+   int py=cy-y*4-z*2;
    g.pose().pushPose();
    g.pose().translate(px,py,0.0F);
    g.pose().scale(scale,scale,1.0F);

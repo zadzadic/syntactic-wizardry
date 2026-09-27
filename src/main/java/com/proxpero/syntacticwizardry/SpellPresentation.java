@@ -8,10 +8,11 @@ import net.minecraft.world.item.component.CustomData;
 import java.util.Arrays;
 public final class SpellPresentation {
  public static final int ROWS=5,COLS=5,CELLS=ROWS*COLS,STRIDE=3,PLAN_DATA_SIZE=CELLS*STRIDE;
- public static final int TYPE_EMPTY=0,TYPE_MISSILE=1,TYPE_SPHERE=2,TYPE_DAMAGE=3;
+ public static final int TYPE_EMPTY=0,TYPE_MISSILE=1,TYPE_SPHERE=2,TYPE_BOX=3,TYPE_DAMAGE=4;
  public static final int STYLE_DEFAULT=0,STYLE_ARC=1,STYLE_SPIRAL=2,STYLE_INNER=3,STYLE_OUTER=4,STYLE_COUNT=5;
  public static final int VISUAL_DEFAULT=0,VISUAL_LARGE_CHUNK=1,VISUAL_SWORD=2,VISUAL_AXE=3,VISUAL_TRIDENT=4,VISUAL_FLAMES=5,VISUAL_COUNT=6;
  public static final int RADIUS_MIN=1,RADIUS_MAX=10,RADIUS_DEFAULT=1,RADIUS_COUNT=RADIUS_MAX-RADIUS_MIN+1;
+ public static final int BOX_SIZE_MIN=1,BOX_SIZE_MAX=10,BOX_SIZE_DEFAULT=1;
  public static final int DAMAGE_FIRE=0,DAMAGE_FROST=1,DAMAGE_FORCE=2,DAMAGE_PHYSICAL=3,DAMAGE_ARCANE=4,DAMAGE_ENTROPIC=5,DAMAGE_HOLY=6,DAMAGE_KIND_COUNT=7,DAMAGE_KIND_DEFAULT=DAMAGE_ARCANE;
  public static final int POTENCE_MIN=1,POTENCE_MAX=10,POTENCE_DEFAULT=1,POTENCE_COUNT=POTENCE_MAX-POTENCE_MIN+1;
  private SpellPresentation(){}
@@ -20,12 +21,19 @@ public final class SpellPresentation {
  public static int[] emptyRadii(){int[] r=new int[CELLS];Arrays.fill(r,RADIUS_DEFAULT);return r;}
  public static int[] emptyDamageKinds(){int[] d=new int[CELLS];Arrays.fill(d,DAMAGE_KIND_DEFAULT);return d;}
  public static int[] emptyPotences(){int[] p=new int[CELLS];Arrays.fill(p,POTENCE_DEFAULT);return p;}
+ public static int[] emptyBoxWidths(){int[] v=new int[CELLS];Arrays.fill(v,BOX_SIZE_DEFAULT);return v;}
+ public static int[] emptyBoxHeights(){int[] v=new int[CELLS];Arrays.fill(v,BOX_SIZE_DEFAULT);return v;}
+ public static int[] emptyBoxDepths(){int[] v=new int[CELLS];Arrays.fill(v,BOX_SIZE_DEFAULT);return v;}
  public static int typeAt(int[] plan,int cell){return valid(plan,cell)?plan[off(cell)]:TYPE_EMPTY;}
  public static int styleAt(int[] plan,int cell){return valid(plan,cell)?Mth.clamp(plan[off(cell)+1],0,STYLE_COUNT-1):STYLE_DEFAULT;}
  public static int visualAt(int[] plan,int cell){return valid(plan,cell)?Mth.clamp(plan[off(cell)+2],0,VISUAL_COUNT-1):VISUAL_DEFAULT;}
- public static int radiusAt(int[] radii,int cell){return radii!=null&&cell>=0&&cell<CELLS&&cell<radii.length?Mth.clamp(radii[cell],RADIUS_MIN,RADIUS_MAX):RADIUS_DEFAULT;}
- public static int damageKindAt(int[] kinds,int cell){return kinds!=null&&cell>=0&&cell<CELLS&&cell<kinds.length?Mth.clamp(kinds[cell],0,DAMAGE_KIND_COUNT-1):DAMAGE_KIND_DEFAULT;}
- public static int potenceAt(int[] potences,int cell){return potences!=null&&cell>=0&&cell<CELLS&&cell<potences.length?Mth.clamp(potences[cell],POTENCE_MIN,POTENCE_MAX):POTENCE_DEFAULT;}
+ public static int radiusAt(int[] radii,int cell){return arrayValue(radii,cell,RADIUS_DEFAULT,RADIUS_MIN,RADIUS_MAX);}
+ public static int damageKindAt(int[] kinds,int cell){return arrayValue(kinds,cell,DAMAGE_KIND_DEFAULT,0,DAMAGE_KIND_COUNT-1);}
+ public static int potenceAt(int[] potences,int cell){return arrayValue(potences,cell,POTENCE_DEFAULT,POTENCE_MIN,POTENCE_MAX);}
+ public static int boxWidthAt(int[] values,int cell){return arrayValue(values,cell,BOX_SIZE_DEFAULT,BOX_SIZE_MIN,BOX_SIZE_MAX);}
+ public static int boxHeightAt(int[] values,int cell){return arrayValue(values,cell,BOX_SIZE_DEFAULT,BOX_SIZE_MIN,BOX_SIZE_MAX);}
+ public static int boxDepthAt(int[] values,int cell){return arrayValue(values,cell,BOX_SIZE_DEFAULT,BOX_SIZE_MIN,BOX_SIZE_MAX);}
+ private static int arrayValue(int[] values,int cell,int fallback,int min,int max){return values!=null&&cell>=0&&cell<CELLS&&cell<values.length?Mth.clamp(values[cell],min,max):fallback;}
  public static void setCell(int[] plan,int cell,int type,int style,int visual){if(!valid(plan,cell))return;int o=off(cell);plan[o]=type;plan[o+1]=Mth.clamp(style,0,STYLE_COUNT-1);plan[o+2]=Mth.clamp(visual,0,VISUAL_COUNT-1);}
  public static void setRadius(int[] radii,int cell,int radius){if(radii!=null&&cell>=0&&cell<CELLS&&cell<radii.length)radii[cell]=Mth.clamp(radius,RADIUS_MIN,RADIUS_MAX);}
  private static boolean valid(int[] plan,int cell){return plan!=null&&plan.length>=PLAN_DATA_SIZE&&cell>=0&&cell<CELLS;}
@@ -52,15 +60,26 @@ public final class SpellPresentation {
   CustomData.update(DataComponents.CUSTOM_DATA,stack,tag->{tag.putString("sw_shape","sphere_visual");tag.putInt("sw_style",Mth.clamp(style,0,STYLE_COUNT-1));tag.putInt("sw_visual",Mth.clamp(visual,0,VISUAL_COUNT-1));tag.putInt("sw_sphere_radius",Mth.clamp(radius,RADIUS_MIN,RADIUS_MAX));});
   return stack;
  }
+ public static ItemStack boxVisualStack(int style,int visual,int width,int height,int depth){
+  ItemStack stack=visualStack(visual);
+  CustomData.update(DataComponents.CUSTOM_DATA,stack,tag->{tag.putString("sw_shape","box_visual");tag.putInt("sw_style",Mth.clamp(style,0,STYLE_COUNT-1));tag.putInt("sw_visual",Mth.clamp(visual,0,VISUAL_COUNT-1));tag.putInt("sw_box_width",Mth.clamp(width,BOX_SIZE_MIN,BOX_SIZE_MAX));tag.putInt("sw_box_height",Mth.clamp(height,BOX_SIZE_MIN,BOX_SIZE_MAX));tag.putInt("sw_box_depth",Mth.clamp(depth,BOX_SIZE_MIN,BOX_SIZE_MAX));});
+  return stack;
+ }
  public static int readSphereVisualRadius(ItemStack stack){return Mth.clamp(stack.getOrDefault(DataComponents.CUSTOM_DATA,CustomData.EMPTY).copyTag().getInt("sw_sphere_radius"),RADIUS_MIN,RADIUS_MAX);}
- public static void writePlan(ItemStack stack,int[] source,int[] radiusSource,int[] damageSource,int[] potenceSource){
+ public static int readBoxVisualWidth(ItemStack stack){return Mth.clamp(stack.getOrDefault(DataComponents.CUSTOM_DATA,CustomData.EMPTY).copyTag().getInt("sw_box_width"),BOX_SIZE_MIN,BOX_SIZE_MAX);}
+ public static int readBoxVisualHeight(ItemStack stack){return Mth.clamp(stack.getOrDefault(DataComponents.CUSTOM_DATA,CustomData.EMPTY).copyTag().getInt("sw_box_height"),BOX_SIZE_MIN,BOX_SIZE_MAX);}
+ public static int readBoxVisualDepth(ItemStack stack){return Mth.clamp(stack.getOrDefault(DataComponents.CUSTOM_DATA,CustomData.EMPTY).copyTag().getInt("sw_box_depth"),BOX_SIZE_MIN,BOX_SIZE_MAX);}
+ public static void writePlan(ItemStack stack,int[] source,int[] radiusSource,int[] damageSource,int[] potenceSource,int[] widthSource,int[] heightSource,int[] depthSource){
   int[] plan=normalizePlan(source);
   int[] radii=normalizeRadii(radiusSource);
   int[] damageKinds=normalizeDamageKinds(damageSource);
   int[] potences=normalizePotences(potenceSource);
-  CustomData.update(DataComponents.CUSTOM_DATA,stack,tag->{tag.putString("sw_shape","spell");tag.putIntArray("sw_plan",plan);tag.putIntArray("sw_radius",radii);tag.putIntArray("sw_damage_kind",damageKinds);tag.putIntArray("sw_potence",potences);});
+  int[] widths=normalizeBoxSizes(widthSource);
+  int[] heights=normalizeBoxSizes(heightSource);
+  int[] depths=normalizeBoxSizes(depthSource);
+  CustomData.update(DataComponents.CUSTOM_DATA,stack,tag->{tag.putString("sw_shape","spell");tag.putIntArray("sw_plan",plan);tag.putIntArray("sw_radius",radii);tag.putIntArray("sw_damage_kind",damageKinds);tag.putIntArray("sw_potence",potences);tag.putIntArray("sw_box_width",widths);tag.putIntArray("sw_box_height",heights);tag.putIntArray("sw_box_depth",depths);});
  }
- public static void writePlan(ItemStack stack,int[] source,int[] radiusSource){writePlan(stack,source,radiusSource,emptyDamageKinds(),emptyPotences());}
+ public static void writePlan(ItemStack stack,int[] source,int[] radiusSource,int[] damageSource,int[] potenceSource){writePlan(stack,source,radiusSource,damageSource,potenceSource,emptyBoxWidths(),emptyBoxHeights(),emptyBoxDepths());}
  public static int[] readPlan(ItemStack stack){
   CompoundTag tag=stack.getOrDefault(DataComponents.CUSTOM_DATA,CustomData.EMPTY).copyTag();
   int[] raw=tag.getIntArray("sw_plan");
@@ -72,6 +91,9 @@ public final class SpellPresentation {
  public static int[] readRadii(ItemStack stack){return normalizeRadii(stack.getOrDefault(DataComponents.CUSTOM_DATA,CustomData.EMPTY).copyTag().getIntArray("sw_radius"));}
  public static int[] readDamageKinds(ItemStack stack){return normalizeDamageKinds(stack.getOrDefault(DataComponents.CUSTOM_DATA,CustomData.EMPTY).copyTag().getIntArray("sw_damage_kind"));}
  public static int[] readPotences(ItemStack stack){return normalizePotences(stack.getOrDefault(DataComponents.CUSTOM_DATA,CustomData.EMPTY).copyTag().getIntArray("sw_potence"));}
+ public static int[] readBoxWidths(ItemStack stack){return normalizeBoxSizes(stack.getOrDefault(DataComponents.CUSTOM_DATA,CustomData.EMPTY).copyTag().getIntArray("sw_box_width"));}
+ public static int[] readBoxHeights(ItemStack stack){return normalizeBoxSizes(stack.getOrDefault(DataComponents.CUSTOM_DATA,CustomData.EMPTY).copyTag().getIntArray("sw_box_height"));}
+ public static int[] readBoxDepths(ItemStack stack){return normalizeBoxSizes(stack.getOrDefault(DataComponents.CUSTOM_DATA,CustomData.EMPTY).copyTag().getIntArray("sw_box_depth"));}
  private static int[] normalizePlan(int[] source){
   int[] plan=emptyPlan();
   if(source!=null)System.arraycopy(source,0,plan,0,Math.min(source.length,plan.length));
@@ -86,10 +108,11 @@ public final class SpellPresentation {
  private static int[] normalizeRadii(int[] source){int[] values=emptyRadii();if(source!=null&&source.length>0)System.arraycopy(source,0,values,0,Math.min(source.length,values.length));for(int i=0;i<values.length;i++)values[i]=Mth.clamp(values[i],RADIUS_MIN,RADIUS_MAX);return values;}
  private static int[] normalizeDamageKinds(int[] source){int[] values=emptyDamageKinds();if(source!=null&&source.length>0)System.arraycopy(source,0,values,0,Math.min(source.length,values.length));for(int i=0;i<values.length;i++)values[i]=Mth.clamp(values[i],0,DAMAGE_KIND_COUNT-1);return values;}
  private static int[] normalizePotences(int[] source){int[] values=emptyPotences();if(source!=null&&source.length>0)System.arraycopy(source,0,values,0,Math.min(source.length,values.length));for(int i=0;i<values.length;i++)values[i]=Mth.clamp(values[i],POTENCE_MIN,POTENCE_MAX);return values;}
- public static ItemStack projectileStack(int[] plan,int[] radii,int[] damageKinds,int[] potences,int row,int cell){
+ private static int[] normalizeBoxSizes(int[] source){int[] values=emptyBoxWidths();if(source!=null&&source.length>0)System.arraycopy(source,0,values,0,Math.min(source.length,values.length));for(int i=0;i<values.length;i++)values[i]=Mth.clamp(values[i],BOX_SIZE_MIN,BOX_SIZE_MAX);return values;}
+ public static ItemStack projectileStack(int[] plan,int[] radii,int[] damageKinds,int[] potences,int[] widths,int[] heights,int[] depths,int row,int cell){
   ItemStack stack=visualStack(visualAt(plan,cell));
-  int[] planCopy=normalizePlan(plan),radiusCopy=normalizeRadii(radii),damageCopy=normalizeDamageKinds(damageKinds),potenceCopy=normalizePotences(potences);
-  CustomData.update(DataComponents.CUSTOM_DATA,stack,tag->{tag.putString("sw_shape","missile");tag.putIntArray("sw_plan",planCopy);tag.putIntArray("sw_radius",radiusCopy);tag.putIntArray("sw_damage_kind",damageCopy);tag.putIntArray("sw_potence",potenceCopy);tag.putInt("sw_row",row);tag.putInt("sw_cell",cell);tag.putInt("sw_style",styleAt(planCopy,cell));tag.putInt("sw_visual",visualAt(planCopy,cell));});
+  int[] planCopy=normalizePlan(plan),radiusCopy=normalizeRadii(radii),damageCopy=normalizeDamageKinds(damageKinds),potenceCopy=normalizePotences(potences),widthCopy=normalizeBoxSizes(widths),heightCopy=normalizeBoxSizes(heights),depthCopy=normalizeBoxSizes(depths);
+  CustomData.update(DataComponents.CUSTOM_DATA,stack,tag->{tag.putString("sw_shape","missile");tag.putIntArray("sw_plan",planCopy);tag.putIntArray("sw_radius",radiusCopy);tag.putIntArray("sw_damage_kind",damageCopy);tag.putIntArray("sw_potence",potenceCopy);tag.putIntArray("sw_box_width",widthCopy);tag.putIntArray("sw_box_height",heightCopy);tag.putIntArray("sw_box_depth",depthCopy);tag.putInt("sw_row",row);tag.putInt("sw_cell",cell);tag.putInt("sw_style",styleAt(planCopy,cell));tag.putInt("sw_visual",visualAt(planCopy,cell));});
   return stack;
  }
  public static int readRow(ItemStack stack){return stack.getOrDefault(DataComponents.CUSTOM_DATA,CustomData.EMPTY).copyTag().getInt("sw_row");}

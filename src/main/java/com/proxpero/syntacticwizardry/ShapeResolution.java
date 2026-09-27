@@ -16,4 +16,8 @@ public record ShapeResolution(Vec3 origin,Vec3 direction,List<BlockPos> voxels,E
   Vec3 dir=direction.lengthSqr()>1.0E-8?direction.normalize():new Vec3(0.0,0.0,1.0);
   return new ShapeResolution(origin,dir,SphereShape.voxels(origin,radius),null);
  }
+ public static ShapeResolution box(Vec3 origin,Vec3 direction,int width,int height,int depth){
+  Vec3 dir=direction.lengthSqr()>1.0E-8?direction.normalize():new Vec3(0.0,0.0,1.0);
+  return new ShapeResolution(origin,dir,BoxShape.voxels(origin,width,height,depth),null);
+ }
 }

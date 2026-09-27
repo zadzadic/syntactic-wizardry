@@ -23,8 +23,11 @@ public final class ScribesLecternMenu extends AbstractContainerMenu {
  private static final int RADIUS_DATA_BASE=SpellPresentation.PLAN_DATA_SIZE;
  private static final int DAMAGE_KIND_DATA_BASE=RADIUS_DATA_BASE+SpellPresentation.CELLS;
  private static final int POTENCE_DATA_BASE=DAMAGE_KIND_DATA_BASE+SpellPresentation.CELLS;
+ private static final int BOX_WIDTH_DATA_BASE=POTENCE_DATA_BASE+SpellPresentation.CELLS;
+ private static final int BOX_HEIGHT_DATA_BASE=BOX_WIDTH_DATA_BASE+SpellPresentation.CELLS;
+ private static final int BOX_DEPTH_DATA_BASE=BOX_HEIGHT_DATA_BASE+SpellPresentation.CELLS;
  private final Container paper=new SimpleContainer(1);
- private final ContainerData spellData=new SimpleContainerData(POTENCE_DATA_BASE+SpellPresentation.CELLS);
+ private final ContainerData spellData=new SimpleContainerData(BOX_DEPTH_DATA_BASE+SpellPresentation.CELLS);
  public ScribesLecternMenu(int id,Inventory inv){super(SyntacticWizardry.SCRIBES_LECTERN_MENU.get(),id);
   addSlot(new Slot(paper,0,20,25){@Override public boolean mayPlace(ItemStack s){return s.is(Items.PAPER);}});
   int sx=80,sy=204;
@@ -43,6 +46,9 @@ public final class ScribesLecternMenu extends AbstractContainerMenu {
  public int radiusAt(int cell){return valid(cell)?Mth.clamp(spellData.get(RADIUS_DATA_BASE+cell),SpellPresentation.RADIUS_MIN,SpellPresentation.RADIUS_MAX):SpellPresentation.RADIUS_DEFAULT;}
  public int damageKindAt(int cell){return valid(cell)?Mth.clamp(spellData.get(DAMAGE_KIND_DATA_BASE+cell),0,SpellPresentation.DAMAGE_KIND_COUNT-1):SpellPresentation.DAMAGE_KIND_DEFAULT;}
  public int potenceAt(int cell){return valid(cell)?Mth.clamp(spellData.get(POTENCE_DATA_BASE+cell),SpellPresentation.POTENCE_MIN,SpellPresentation.POTENCE_MAX):SpellPresentation.POTENCE_DEFAULT;}
+ public int boxWidthAt(int cell){return valid(cell)?Mth.clamp(spellData.get(BOX_WIDTH_DATA_BASE+cell),SpellPresentation.BOX_SIZE_MIN,SpellPresentation.BOX_SIZE_MAX):SpellPresentation.BOX_SIZE_DEFAULT;}
+ public int boxHeightAt(int cell){return valid(cell)?Mth.clamp(spellData.get(BOX_HEIGHT_DATA_BASE+cell),SpellPresentation.BOX_SIZE_MIN,SpellPresentation.BOX_SIZE_MAX):SpellPresentation.BOX_SIZE_DEFAULT;}
+ public int boxDepthAt(int cell){return valid(cell)?Mth.clamp(spellData.get(BOX_DEPTH_DATA_BASE+cell),SpellPresentation.BOX_SIZE_MIN,SpellPresentation.BOX_SIZE_MAX):SpellPresentation.BOX_SIZE_DEFAULT;}
  public int propertyValue(int cell,SpellPropertyKey key){
   return switch(key){
    case STYLE -> styleAt(cell);
@@ -50,6 +56,9 @@ public final class ScribesLecternMenu extends AbstractContainerMenu {
    case RADIUS -> radiusAt(cell);
    case DAMAGE_KIND -> damageKindAt(cell);
    case POTENCE -> potenceAt(cell);
+   case WIDTH -> boxWidthAt(cell);
+   case HEIGHT -> boxHeightAt(cell);
+   case DEPTH -> boxDepthAt(cell);
   };
  }
  public SpellComponentDefinition definitionAt(int cell){return SpellComponents.byType(typeAt(cell));}
@@ -58,10 +67,11 @@ public final class ScribesLecternMenu extends AbstractContainerMenu {
  public int[] snapshotRadii(){int[] values=SpellPresentation.emptyRadii();for(int i=0;i<values.length;i++)values[i]=radiusAt(i);return values;}
  public int[] snapshotDamageKinds(){int[] values=SpellPresentation.emptyDamageKinds();for(int i=0;i<values.length;i++)values[i]=damageKindAt(i);return values;}
  public int[] snapshotPotences(){int[] values=SpellPresentation.emptyPotences();for(int i=0;i<values.length;i++)values[i]=potenceAt(i);return values;}
+ public int[] snapshotBoxWidths(){int[] values=SpellPresentation.emptyBoxWidths();for(int i=0;i<values.length;i++)values[i]=boxWidthAt(i);return values;}
+ public int[] snapshotBoxHeights(){int[] values=SpellPresentation.emptyBoxHeights();for(int i=0;i<values.length;i++)values[i]=boxHeightAt(i);return values;}
+ public int[] snapshotBoxDepths(){int[] values=SpellPresentation.emptyBoxDepths();for(int i=0;i<values.length;i++)values[i]=boxDepthAt(i);return values;}
  private boolean valid(int cell){return cell>=0&&cell<SpellPresentation.CELLS;}
- private void clearAllDefaults(){
-  for(int cell=0;cell<SpellPresentation.CELLS;cell++)resetPropertyDefaults(cell);
- }
+ private void clearAllDefaults(){for(int cell=0;cell<SpellPresentation.CELLS;cell++)resetPropertyDefaults(cell);}
  private void resetPropertyDefaults(int cell){
   int o=off(cell);
   spellData.set(o,SpellPresentation.TYPE_EMPTY);
@@ -70,6 +80,9 @@ public final class ScribesLecternMenu extends AbstractContainerMenu {
   spellData.set(RADIUS_DATA_BASE+cell,SpellPresentation.RADIUS_DEFAULT);
   spellData.set(DAMAGE_KIND_DATA_BASE+cell,SpellPresentation.DAMAGE_KIND_DEFAULT);
   spellData.set(POTENCE_DATA_BASE+cell,SpellPresentation.POTENCE_DEFAULT);
+  spellData.set(BOX_WIDTH_DATA_BASE+cell,SpellPresentation.BOX_SIZE_DEFAULT);
+  spellData.set(BOX_HEIGHT_DATA_BASE+cell,SpellPresentation.BOX_SIZE_DEFAULT);
+  spellData.set(BOX_DEPTH_DATA_BASE+cell,SpellPresentation.BOX_SIZE_DEFAULT);
  }
  private void setCellType(int cell,int type){
   if(!valid(cell))return;
@@ -86,7 +99,7 @@ public final class ScribesLecternMenu extends AbstractContainerMenu {
  private void swap(int a,int b){
   if(!valid(a)||!valid(b)||a==b)return;
   for(int k=0;k<SpellPresentation.STRIDE;k++){int oa=off(a)+k,ob=off(b)+k,v=spellData.get(oa);spellData.set(oa,spellData.get(ob));spellData.set(ob,v);}
-  swapData(RADIUS_DATA_BASE,a,b);swapData(DAMAGE_KIND_DATA_BASE,a,b);swapData(POTENCE_DATA_BASE,a,b);
+  swapData(RADIUS_DATA_BASE,a,b);swapData(DAMAGE_KIND_DATA_BASE,a,b);swapData(POTENCE_DATA_BASE,a,b);swapData(BOX_WIDTH_DATA_BASE,a,b);swapData(BOX_HEIGHT_DATA_BASE,a,b);swapData(BOX_DEPTH_DATA_BASE,a,b);
  }
  private void swapData(int base,int a,int b){int v=spellData.get(base+a);spellData.set(base+a,spellData.get(base+b));spellData.set(base+b,v);}
  private void setPropertyValue(int cell,SpellPropertyKey key,int value){
@@ -97,6 +110,9 @@ public final class ScribesLecternMenu extends AbstractContainerMenu {
    case RADIUS -> {if(typeAt(cell)==SpellPresentation.TYPE_SPHERE)spellData.set(RADIUS_DATA_BASE+cell,Mth.clamp(value,SpellPresentation.RADIUS_MIN,SpellPresentation.RADIUS_MAX));}
    case DAMAGE_KIND -> {if(typeAt(cell)==SpellPresentation.TYPE_DAMAGE)spellData.set(DAMAGE_KIND_DATA_BASE+cell,Mth.clamp(value,0,SpellPresentation.DAMAGE_KIND_COUNT-1));}
    case POTENCE -> {if(typeAt(cell)==SpellPresentation.TYPE_DAMAGE)spellData.set(POTENCE_DATA_BASE+cell,Mth.clamp(value,SpellPresentation.POTENCE_MIN,SpellPresentation.POTENCE_MAX));}
+   case WIDTH -> {if(typeAt(cell)==SpellPresentation.TYPE_BOX)spellData.set(BOX_WIDTH_DATA_BASE+cell,Mth.clamp(value,SpellPresentation.BOX_SIZE_MIN,SpellPresentation.BOX_SIZE_MAX));}
+   case HEIGHT -> {if(typeAt(cell)==SpellPresentation.TYPE_BOX)spellData.set(BOX_HEIGHT_DATA_BASE+cell,Mth.clamp(value,SpellPresentation.BOX_SIZE_MIN,SpellPresentation.BOX_SIZE_MAX));}
+   case DEPTH -> {if(typeAt(cell)==SpellPresentation.TYPE_BOX)spellData.set(BOX_DEPTH_DATA_BASE+cell,Mth.clamp(value,SpellPresentation.BOX_SIZE_MIN,SpellPresentation.BOX_SIZE_MAX));}
   }
  }
  @Override public boolean clickMenuButton(Player player,int id){
@@ -121,7 +137,7 @@ public final class ScribesLecternMenu extends AbstractContainerMenu {
     if(!paperStack.is(Items.PAPER)||paperStack.isEmpty())return false;
     paperStack.shrink(1);paper.setChanged();
    }
-   ItemStack written=WrittenSpellItem.create(snapshotPlan(),snapshotRadii(),snapshotDamageKinds(),snapshotPotences());
+   ItemStack written=WrittenSpellItem.create(snapshotPlan(),snapshotRadii(),snapshotDamageKinds(),snapshotPotences(),snapshotBoxWidths(),snapshotBoxHeights(),snapshotBoxDepths());
    if(!player.addItem(written))player.drop(written,false);
    return true;
   }
