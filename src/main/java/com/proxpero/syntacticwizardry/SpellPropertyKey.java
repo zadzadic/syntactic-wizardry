@@ -8,8 +8,9 @@ public enum SpellPropertyKey {
  WIDTH(5,3),
  HEIGHT(6,4),
  DEPTH(7,5),
- TARGET_TYPE(8,6);
- public static final int SETTING_COUNT=7;
+ TARGET_TYPE(8,6),
+ DISTANCE(9,7);
+ public static final int SETTING_COUNT=8;
  private final int id;
  private final int settingIndex;
  SpellPropertyKey(int id,int settingIndex){this.id=id;this.settingIndex=settingIndex;}

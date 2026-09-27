@@ -13,6 +13,7 @@ public record SpellExecutionContext(ServerLevel level,Entity owner,int[] plan,in
  public int height(){return setting(SpellPropertyKey.HEIGHT);}
  public int depth(){return setting(SpellPropertyKey.DEPTH);}
  public int targetType(){return setting(SpellPropertyKey.TARGET_TYPE);}
+ public int distance(){return setting(SpellPropertyKey.DISTANCE);}
  public Vec3 shapeDirection(){return rootCast?parent.direction():SpellExecutor.normalizeYaw(castYaw);}
  public Vec3 areaOrigin(){
   if(!rootCast)return parent.origin();

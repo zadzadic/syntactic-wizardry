@@ -34,10 +34,11 @@ public final class SyntacticWizardry {
  public static final DeferredItem<Item> SPHERE_SHAPE=ITEMS.register("sphere_shape",()->new Item(new Item.Properties().stacksTo(1)));
  public static final DeferredItem<Item> BOX_SHAPE=ITEMS.register("box_shape",()->new Item(new Item.Properties().stacksTo(1)));
  public static final DeferredItem<Item> CONE_SHAPE=ITEMS.register("cone_shape",()->new Item(new Item.Properties().stacksTo(1)));
+ public static final DeferredItem<Item> FLOATING_SHAPE=ITEMS.register("floating_shape",()->new Item(new Item.Properties().stacksTo(1)));
  public static final DeferredItem<Item> TARGET_SHAPE=ITEMS.register("target_shape",()->new Item(new Item.Properties().stacksTo(1)));
  public static final DeferredItem<Item> DAMAGE_EFFECT=ITEMS.register("damage_effect",()->new Item(new Item.Properties().stacksTo(1)));
  public static final DeferredItem<WrittenSpellItem> WRITTEN_SPELL=ITEMS.register("written_spell",()->new WrittenSpellItem(new Item.Properties().stacksTo(1)));
  public static final DeferredHolder<MenuType<?>,MenuType<ScribesLecternMenu>> SCRIBES_LECTERN_MENU=MENUS.register("scribes_lectern",()->IMenuTypeExtension.create((id,inv,data)->new ScribesLecternMenu(id,inv)));
- public static final DeferredHolder<CreativeModeTab,CreativeModeTab> SYNTACTIC_WIZARDRY_TAB=CREATIVE_TABS.register("syntactic_wizardry",()->CreativeModeTab.builder().title(Component.translatable("itemGroup.syntacticwizardry")).icon(()->SCRIBES_LECTERN_ITEM.get().getDefaultInstance()).displayItems((parameters,output)->{output.accept(SCRIBES_LECTERN_ITEM.get());output.accept(MISSILE_SHAPE.get());output.accept(SPHERE_SHAPE.get());output.accept(BOX_SHAPE.get());output.accept(CONE_SHAPE.get());output.accept(TARGET_SHAPE.get());output.accept(DAMAGE_EFFECT.get());}).build());
+ public static final DeferredHolder<CreativeModeTab,CreativeModeTab> SYNTACTIC_WIZARDRY_TAB=CREATIVE_TABS.register("syntactic_wizardry",()->CreativeModeTab.builder().title(Component.translatable("itemGroup.syntacticwizardry")).icon(()->SCRIBES_LECTERN_ITEM.get().getDefaultInstance()).displayItems((parameters,output)->{output.accept(SCRIBES_LECTERN_ITEM.get());output.accept(MISSILE_SHAPE.get());output.accept(SPHERE_SHAPE.get());output.accept(BOX_SHAPE.get());output.accept(CONE_SHAPE.get());output.accept(FLOATING_SHAPE.get());output.accept(TARGET_SHAPE.get());output.accept(DAMAGE_EFFECT.get());}).build());
  public SyntacticWizardry(IEventBus bus){BLOCKS.register(bus);ITEMS.register(bus);ENTITIES.register(bus);MENUS.register(bus);CREATIVE_TABS.register(bus);}
 }

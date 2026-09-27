@@ -7,7 +7,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.CustomData;
 public final class SpellPresentation {
  public static final int ROWS=5,COLS=5,CELLS=ROWS*COLS,STRIDE=3,PLAN_DATA_SIZE=CELLS*STRIDE;
- public static final int TYPE_EMPTY=0,TYPE_MISSILE=1,TYPE_SPHERE=2,TYPE_BOX=3,TYPE_DAMAGE=4,TYPE_TARGET=5,TYPE_CONE=6;
+ public static final int TYPE_EMPTY=0,TYPE_MISSILE=1,TYPE_SPHERE=2,TYPE_BOX=3,TYPE_DAMAGE=4,TYPE_TARGET=5,TYPE_CONE=6,TYPE_FLOATING=7;
  public static final int STYLE_DEFAULT=0,STYLE_ARC=1,STYLE_SPIRAL=2,STYLE_INNER=3,STYLE_OUTER=4,STYLE_COUNT=5;
  public static final int VISUAL_DEFAULT=0,VISUAL_LARGE_CHUNK=1,VISUAL_SWORD=2,VISUAL_AXE=3,VISUAL_TRIDENT=4,VISUAL_FLAMES=5,VISUAL_COUNT=6;
  public static final int RADIUS_MIN=1,RADIUS_MAX=10,RADIUS_DEFAULT=1,RADIUS_COUNT=RADIUS_MAX-RADIUS_MIN+1;
@@ -16,6 +16,8 @@ public final class SpellPresentation {
  public static final int DAMAGE_FIRE=0,DAMAGE_FROST=1,DAMAGE_FORCE=2,DAMAGE_PHYSICAL=3,DAMAGE_ARCANE=4,DAMAGE_ENTROPIC=5,DAMAGE_HOLY=6,DAMAGE_KIND_COUNT=7,DAMAGE_KIND_DEFAULT=DAMAGE_ARCANE;
  public static final int POTENCE_MIN=1,POTENCE_MAX=10,POTENCE_DEFAULT=1,POTENCE_COUNT=POTENCE_MAX-POTENCE_MIN+1;
  public static final int TARGET_BLOCKS=0,TARGET_ENTITIES=1,TARGET_ALL=2,TARGET_TYPE_COUNT=3,TARGET_TYPE_DEFAULT=TARGET_ALL;
+ public static final int DISTANCE_MIN=1,DISTANCE_MAX=32,DISTANCE_DEFAULT=8;
+ private static final int LEGACY_SETTING_COUNT=7;
  public static final int SETTINGS_DATA_SIZE=CELLS*SpellPropertyKey.SETTING_COUNT;
  private SpellPresentation(){}
  private static int off(int cell){return cell*STRIDE;}
@@ -34,9 +36,9 @@ public final class SpellPresentation {
   return clampSetting(key,settings[settingOff(cell,key)]);
  }
  public static void setSetting(int[] settings,int cell,SpellPropertyKey key,int value){if(key.isSetting()&&settings!=null&&settings.length>=SETTINGS_DATA_SIZE&&cell>=0&&cell<CELLS)settings[settingOff(cell,key)]=clampSetting(key,value);}
- public static int settingDefault(SpellPropertyKey key){return switch(key){case RADIUS->RADIUS_DEFAULT;case DAMAGE_KIND->DAMAGE_KIND_DEFAULT;case POTENCE->POTENCE_DEFAULT;case WIDTH,HEIGHT,DEPTH->BOX_SIZE_DEFAULT;case TARGET_TYPE->TARGET_TYPE_DEFAULT;default->0;};}
- public static int settingMin(SpellPropertyKey key){return switch(key){case RADIUS->RADIUS_MIN;case DAMAGE_KIND->0;case POTENCE->POTENCE_MIN;case WIDTH,HEIGHT,DEPTH->BOX_SIZE_MIN;case TARGET_TYPE->0;default->0;};}
- public static int settingMax(SpellPropertyKey key){return switch(key){case RADIUS->RADIUS_MAX;case DAMAGE_KIND->DAMAGE_KIND_COUNT-1;case POTENCE->POTENCE_MAX;case WIDTH,HEIGHT,DEPTH->BOX_SIZE_MAX;case TARGET_TYPE->TARGET_TYPE_COUNT-1;default->0;};}
+ public static int settingDefault(SpellPropertyKey key){return switch(key){case RADIUS->RADIUS_DEFAULT;case DAMAGE_KIND->DAMAGE_KIND_DEFAULT;case POTENCE->POTENCE_DEFAULT;case WIDTH,HEIGHT,DEPTH->BOX_SIZE_DEFAULT;case TARGET_TYPE->TARGET_TYPE_DEFAULT;case DISTANCE->DISTANCE_DEFAULT;default->0;};}
+ public static int settingMin(SpellPropertyKey key){return switch(key){case RADIUS->RADIUS_MIN;case DAMAGE_KIND->0;case POTENCE->POTENCE_MIN;case WIDTH,HEIGHT,DEPTH->BOX_SIZE_MIN;case TARGET_TYPE->0;case DISTANCE->DISTANCE_MIN;default->0;};}
+ public static int settingMax(SpellPropertyKey key){return switch(key){case RADIUS->RADIUS_MAX;case DAMAGE_KIND->DAMAGE_KIND_COUNT-1;case POTENCE->POTENCE_MAX;case WIDTH,HEIGHT,DEPTH->BOX_SIZE_MAX;case TARGET_TYPE->TARGET_TYPE_COUNT-1;case DISTANCE->DISTANCE_MAX;default->0;};}
  public static int clampSetting(SpellPropertyKey key,int value){return Mth.clamp(value,settingMin(key),settingMax(key));}
  public static int radiusAt(int[] settings,int cell){return settingAt(settings,cell,SpellPropertyKey.RADIUS);}
  public static int damageKindAt(int[] settings,int cell){return settingAt(settings,cell,SpellPropertyKey.DAMAGE_KIND);}
@@ -45,6 +47,7 @@ public final class SpellPresentation {
  public static int boxHeightAt(int[] settings,int cell){return settingAt(settings,cell,SpellPropertyKey.HEIGHT);}
  public static int boxDepthAt(int[] settings,int cell){return settingAt(settings,cell,SpellPropertyKey.DEPTH);}
  public static int targetTypeAt(int[] settings,int cell){return settingAt(settings,cell,SpellPropertyKey.TARGET_TYPE);}
+ public static int distanceAt(int[] settings,int cell){return settingAt(settings,cell,SpellPropertyKey.DISTANCE);}
  public static void setCell(int[] plan,int cell,int type,int style,int visual){if(!valid(plan,cell))return;int o=off(cell);plan[o]=type;plan[o+1]=Mth.clamp(style,0,STYLE_COUNT-1);plan[o+2]=Mth.clamp(visual,0,VISUAL_COUNT-1);}
  private static boolean valid(int[] plan,int cell){return plan!=null&&plan.length>=PLAN_DATA_SIZE&&cell>=0&&cell<CELLS;}
  public static boolean rowHasComponents(int[] plan,int row){if(row<0||row>=ROWS)return false;for(int c=0;c<COLS;c++)if(typeAt(plan,row*COLS+c)!=TYPE_EMPTY)return true;return false;}
@@ -86,7 +89,18 @@ public final class SpellPresentation {
  }
  private static void importLegacy(int[] settings,int[] legacy,SpellPropertyKey key){if(legacy==null||legacy.length==0)return;for(int cell=0;cell<Math.min(CELLS,legacy.length);cell++)setSetting(settings,cell,key,legacy[cell]);}
  private static int[] normalizePlan(int[] source){int[] plan=emptyPlan();if(source!=null)System.arraycopy(source,0,plan,0,Math.min(source.length,plan.length));for(int i=0;i<CELLS;i++){int o=off(i);if(plan[o]!=TYPE_EMPTY&&SpellComponents.byType(plan[o])==null)plan[o]=TYPE_EMPTY;plan[o+1]=Mth.clamp(plan[o+1],0,STYLE_COUNT-1);plan[o+2]=Mth.clamp(plan[o+2],0,VISUAL_COUNT-1);}return plan;}
- private static int[] normalizeSettings(int[] source){int[] values=emptySettings();if(source!=null)System.arraycopy(source,0,values,0,Math.min(source.length,values.length));for(int cell=0;cell<CELLS;cell++)for(SpellPropertyKey key:SpellPropertyKey.values())if(key.isSetting())values[settingOff(cell,key)]=clampSetting(key,values[settingOff(cell,key)]);return values;}
+ private static int[] normalizeSettings(int[] source){
+  int[] values=emptySettings();
+  if(source!=null){
+   if(source.length==CELLS*LEGACY_SETTING_COUNT){
+    for(int cell=0;cell<CELLS;cell++)for(int i=0;i<LEGACY_SETTING_COUNT;i++)values[cell*SpellPropertyKey.SETTING_COUNT+i]=source[cell*LEGACY_SETTING_COUNT+i];
+   }else{
+    System.arraycopy(source,0,values,0,Math.min(source.length,values.length));
+   }
+  }
+  for(int cell=0;cell<CELLS;cell++)for(SpellPropertyKey key:SpellPropertyKey.values())if(key.isSetting())values[settingOff(cell,key)]=clampSetting(key,values[settingOff(cell,key)]);
+  return values;
+ }
  public static ItemStack projectileStack(int[] plan,int[] settings,int row,int cell,net.minecraft.world.phys.Vec3 castYaw){ItemStack stack=visualStack(visualAt(plan,cell));int[] planCopy=normalizePlan(plan),settingsCopy=normalizeSettings(settings);net.minecraft.world.phys.Vec3 yaw=SpellExecutor.normalizeYaw(castYaw);CustomData.update(DataComponents.CUSTOM_DATA,stack,tag->{tag.putString("sw_shape","missile");tag.putIntArray("sw_plan",planCopy);tag.putIntArray("sw_settings",settingsCopy);tag.putInt("sw_row",row);tag.putInt("sw_cell",cell);tag.putInt("sw_style",styleAt(planCopy,cell));tag.putInt("sw_visual",visualAt(planCopy,cell));tag.putDouble("sw_cast_yaw_x",yaw.x);tag.putDouble("sw_cast_yaw_z",yaw.z);});return stack;}
  public static int readRow(ItemStack stack){return stack.getOrDefault(DataComponents.CUSTOM_DATA,CustomData.EMPTY).copyTag().getInt("sw_row");}
  public static int readCell(ItemStack stack){return stack.getOrDefault(DataComponents.CUSTOM_DATA,CustomData.EMPTY).copyTag().getInt("sw_cell");}
