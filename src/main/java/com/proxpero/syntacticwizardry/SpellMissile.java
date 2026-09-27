@@ -1,15 +1,25 @@
 package com.proxpero.syntacticwizardry;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.Snowball;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 public final class SpellMissile extends Snowball {
  private static final double MAX_DISTANCE_SQR=16.0*16.0;
  private double startX,startY,startZ;
  public SpellMissile(EntityType<? extends SpellMissile> type,Level level){super(type,level);}
  public SpellMissile(Level level,LivingEntity owner){this(SyntacticWizardry.SPELL_MISSILE.get(),level);setOwner(owner);setPos(owner.getX(),owner.getEyeY()-0.1,owner.getZ());markStart();}
- public void configure(int style,int visual){setItem(SpellPresentation.projectileStack(style,visual));}
+ public void prepare(Entity owner,Vec3 origin,Vec3 direction,int[] plan,int row,int cell){
+  setOwner(owner);
+  setPos(origin.x,origin.y,origin.z);
+  setItem(SpellPresentation.projectileStack(plan,row,cell));
+  markStart();
+  Vec3 dir=direction.lengthSqr()>1.0E-8?direction.normalize():new Vec3(0.0,0.0,1.0);
+  shoot(dir.x,dir.y,dir.z,1.5F,0.0F);
+ }
  public int presentationStyle(){return SpellPresentation.readStyle(getItem());}
  public int presentationVisual(){return SpellPresentation.readVisual(getItem());}
  private void markStart(){startX=getX();startY=getY();startZ=getZ();}
@@ -21,5 +31,15 @@ public final class SpellMissile extends Snowball {
    if(dx*dx+dy*dy+dz*dz>=MAX_DISTANCE_SQR)discard();
   }
  }
- @Override protected void onHit(HitResult result){discard();}
+ @Override protected void onHit(HitResult result){
+  if(!level().isClientSide&&level() instanceof ServerLevel server){
+   int[] plan=SpellPresentation.readPlan(getItem());
+   int nextRow=SpellPresentation.readRow(getItem())+1;
+   if(nextRow<SpellPresentation.ROWS&&SpellPresentation.rowHasComponents(plan,nextRow)){
+    Vec3 direction=getDeltaMovement();
+    SpellExecutor.castRow(server,getOwner(),plan,nextRow,result.getLocation(),direction);
+   }
+  }
+  discard();
+ }
 }
