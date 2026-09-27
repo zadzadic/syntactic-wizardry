@@ -70,8 +70,15 @@ public final class ScribesLecternScreen extends AbstractContainerScreen<ScribesL
  private void renderStyleTab(GuiGraphics g,int x,int y){
   int type=menu.typeAt(selectedCell);
   if(!SpellPresentation.isShape(type)){g.drawCenteredString(font,"Not applicable",x+237,y+73,0x9EB7CF);return;}
-  int count=type==SpellPresentation.TYPE_MISSILE?SpellPresentation.STYLE_COUNT:1;
-  for(int i=0;i<count;i++){
+  if(type==SpellPresentation.TYPE_SPHERE){
+   int style=menu.styleAt(selectedCell);
+   g.drawString(font,"Orientation",x+174,y+53,0xCFE5FF,false);
+   tabBox(g,x+174,y+67,61,18,"Inner",style==SpellPresentation.STYLE_INNER);
+   tabBox(g,x+239,y+67,61,18,"Outer",style==SpellPresentation.STYLE_OUTER);
+   if(style==SpellPresentation.STYLE_DEFAULT)g.drawCenteredString(font,"Default",x+237,y+93,0x9EB7CF);
+   return;
+  }
+  for(int i=SpellPresentation.STYLE_DEFAULT;i<=SpellPresentation.STYLE_SPIRAL;i++){
    int oy=y+52+i*21;
    g.fill(x+174,oy,x+300,oy+18,menu.styleAt(selectedCell)==i?0xFF36587A:0xB02A3B55);
    g.drawString(font,SpellPresentation.styleName(i),x+181,oy+5,0xE8F3FF,false);
@@ -183,8 +190,13 @@ public final class ScribesLecternScreen extends AbstractContainerScreen<ScribesL
     if(inside(mx,my,254,30,51,16)){propertyTab=PropertyTab.SETTINGS;damageTypeMenu=false;return true;}
     int type=menu.typeAt(selectedCell);
     if(propertyTab==PropertyTab.STYLE&&SpellPresentation.isShape(type)){
-     int count=type==SpellPresentation.TYPE_MISSILE?SpellPresentation.STYLE_COUNT:1;
-     for(int i=0;i<count;i++)if(inside(mx,my,174,52+i*21,126,18)){sendAction(ScribesLecternMenu.ACTION_STYLE_BASE+selectedCell*SpellPresentation.STYLE_COUNT+i);return true;}
+     if(type==SpellPresentation.TYPE_SPHERE){
+      int current=menu.styleAt(selectedCell);
+      if(inside(mx,my,174,67,61,18)){int value=current==SpellPresentation.STYLE_INNER?SpellPresentation.STYLE_DEFAULT:SpellPresentation.STYLE_INNER;sendAction(ScribesLecternMenu.ACTION_STYLE_BASE+selectedCell*SpellPresentation.STYLE_COUNT+value);return true;}
+      if(inside(mx,my,239,67,61,18)){int value=current==SpellPresentation.STYLE_OUTER?SpellPresentation.STYLE_DEFAULT:SpellPresentation.STYLE_OUTER;sendAction(ScribesLecternMenu.ACTION_STYLE_BASE+selectedCell*SpellPresentation.STYLE_COUNT+value);return true;}
+     }else{
+      for(int i=SpellPresentation.STYLE_DEFAULT;i<=SpellPresentation.STYLE_SPIRAL;i++)if(inside(mx,my,174,52+i*21,126,18)){sendAction(ScribesLecternMenu.ACTION_STYLE_BASE+selectedCell*SpellPresentation.STYLE_COUNT+i);return true;}
+     }
     }
     if(propertyTab==PropertyTab.VISUAL&&SpellPresentation.isShape(type)){
      for(int i=0;i<SpellPresentation.VISUAL_COUNT;i++){int col=i%3,row=i/3;if(inside(mx,my,177+col*42,55+row*34,CELL,CELL)){sendAction(ScribesLecternMenu.ACTION_VISUAL_BASE+selectedCell*SpellPresentation.VISUAL_COUNT+i);return true;}}
