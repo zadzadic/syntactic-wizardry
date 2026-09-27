@@ -2,5 +2,6 @@
   "itemGroup.syntacticwizardry": "Syntactic Wizardry",
   "block.syntacticwizardry.scribes_lectern": "Scribe's Lectern",
   "item.syntacticwizardry.missile_shape": "Missile",
-  "item.syntacticwizardry.written_spell": "Written Missile Spell"
+  "item.syntacticwizardry.sphere_shape": "Sphere",
+  "item.syntacticwizardry.written_spell": "Written Spell"
 }

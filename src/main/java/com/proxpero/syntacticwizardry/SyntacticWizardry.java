@@ -28,8 +28,9 @@ public final class SyntacticWizardry {
  public static final DeferredItem<BlockItem> SCRIBES_LECTERN_ITEM=ITEMS.register("scribes_lectern",()->new BlockItem(SCRIBES_LECTERN.get(),new Item.Properties()));
  public static final DeferredHolder<EntityType<?>,EntityType<SpellMissile>> SPELL_MISSILE=ENTITIES.register("spell_missile",()->EntityType.Builder.<SpellMissile>of(SpellMissile::new,MobCategory.MISC).sized(0.25F,0.25F).clientTrackingRange(4).updateInterval(10).build("spell_missile"));
  public static final DeferredItem<MissileShapeItem> MISSILE_SHAPE=ITEMS.register("missile_shape",()->new MissileShapeItem(new Item.Properties().stacksTo(1)));
+ public static final DeferredItem<Item> SPHERE_SHAPE=ITEMS.register("sphere_shape",()->new Item(new Item.Properties().stacksTo(1)));
  public static final DeferredItem<WrittenSpellItem> WRITTEN_SPELL=ITEMS.register("written_spell",()->new WrittenSpellItem(new Item.Properties().stacksTo(1)));
  public static final DeferredHolder<MenuType<?>,MenuType<ScribesLecternMenu>> SCRIBES_LECTERN_MENU=MENUS.register("scribes_lectern",()->IMenuTypeExtension.create((id,inv,data)->new ScribesLecternMenu(id,inv)));
- public static final DeferredHolder<CreativeModeTab,CreativeModeTab> SYNTACTIC_WIZARDRY_TAB=CREATIVE_TABS.register("syntactic_wizardry",()->CreativeModeTab.builder().title(Component.translatable("itemGroup.syntacticwizardry")).icon(()->SCRIBES_LECTERN_ITEM.get().getDefaultInstance()).displayItems((parameters,output)->{output.accept(SCRIBES_LECTERN_ITEM.get());output.accept(MISSILE_SHAPE.get());}).build());
+ public static final DeferredHolder<CreativeModeTab,CreativeModeTab> SYNTACTIC_WIZARDRY_TAB=CREATIVE_TABS.register("syntactic_wizardry",()->CreativeModeTab.builder().title(Component.translatable("itemGroup.syntacticwizardry")).icon(()->SCRIBES_LECTERN_ITEM.get().getDefaultInstance()).displayItems((parameters,output)->{output.accept(SCRIBES_LECTERN_ITEM.get());output.accept(MISSILE_SHAPE.get());output.accept(SPHERE_SHAPE.get());}).build());
  public SyntacticWizardry(IEventBus bus){BLOCKS.register(bus);ITEMS.register(bus);ENTITIES.register(bus);MENUS.register(bus);CREATIVE_TABS.register(bus);}
 }
