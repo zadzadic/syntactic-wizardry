@@ -41,7 +41,7 @@ public final class SpellComponents {
  private static final class BoxDefinition extends BaseDefinition {
   BoxDefinition(){super(SpellPresentation.TYPE_BOX,"Box",true,SpellPresentation.STYLE_DEFAULT,SpellPresentation.VISUAL_DEFAULT,List.of(SpellPresentation.STYLE_DEFAULT),true,List.of(WIDTH_PROPERTY,HEIGHT_PROPERTY,DEPTH_PROPERTY));}
   @Override public ItemStack createEditorIcon(){return SyntacticWizardry.BOX_SHAPE.get().getDefaultInstance();}
-  @Override public ComponentExecutionResult execute(SpellExecutionContext context){ShapeResolution resolved=ShapeResolution.box(context.areaOrigin(),context.shapeDirection(),context.width(),context.height(),context.depth());BoxVisualEntity visual=new BoxVisualEntity(context.level(),resolved.origin(),context.width(),context.height(),context.depth(),context.style(),context.visual());context.level().addFreshEntity(visual);return ComponentExecutionResult.resolved(resolved);}
+  @Override public ComponentExecutionResult execute(SpellExecutionContext context){ShapeResolution resolved=ShapeResolution.box(context.areaOrigin(),context.shapeDirection(),context.width(),context.height(),context.depth());BoxVisualEntity visual=new BoxVisualEntity(context.level(),resolved.origin(),resolved.direction(),context.width(),context.height(),context.depth(),context.style(),context.visual());context.level().addFreshEntity(visual);return ComponentExecutionResult.resolved(resolved);}
  }
  private static final class ConeDefinition extends BaseDefinition {
   ConeDefinition(){super(SpellPresentation.TYPE_CONE,"Cone",true,SpellPresentation.STYLE_DEFAULT,SpellPresentation.VISUAL_DEFAULT,List.of(SpellPresentation.STYLE_DEFAULT),true,List.of(DEPTH_PROPERTY,HEIGHT_PROPERTY,WIDTH_PROPERTY));}

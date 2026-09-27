@@ -11,10 +11,10 @@ public final class BoxVisualEntity extends ItemEntity {
   setInvulnerable(true);
   lifespan=8;
  }
- public BoxVisualEntity(Level level,Vec3 origin,int width,int height,int depth,int style,int visual){
+ public BoxVisualEntity(Level level,Vec3 origin,Vec3 direction,int width,int height,int depth,int style,int visual){
   this(SyntacticWizardry.BOX_VISUAL.get(),level);
   setPos(origin.x,origin.y,origin.z);
-  setItem(SpellPresentation.boxVisualStack(style,visual,width,height,depth));
+  setItem(SpellPresentation.boxVisualStack(style,visual,width,height,depth,direction));
   setDeltaMovement(Vec3.ZERO);
  }
  @Override public void tick(){
