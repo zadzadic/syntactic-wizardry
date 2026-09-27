@@ -11,6 +11,7 @@ public final class ClientEvents {
  @SubscribeEvent public static void registerRenderers(EntityRenderersEvent.RegisterRenderers e){
   e.registerEntityRenderer(SyntacticWizardry.SPELL_MISSILE.get(),SpellMissileRenderer::new);
   e.registerEntityRenderer(SyntacticWizardry.SPHERE_VISUAL.get(),SphereVisualRenderer::new);
-  e.registerEntityRenderer(SyntacticWizardry.BOX_VISUAL.get(),BoxVisualRenderer::new);\n  e.registerEntityRenderer(SyntacticWizardry.CONE_VISUAL.get(),ConeVisualRenderer::new);
+  e.registerEntityRenderer(SyntacticWizardry.BOX_VISUAL.get(),BoxVisualRenderer::new);
+  e.registerEntityRenderer(SyntacticWizardry.CONE_VISUAL.get(),ConeVisualRenderer::new);
  }
 }
