@@ -12,6 +12,10 @@ public record ShapeResolution(Vec3 origin,Vec3 direction,List<BlockPos> voxels,E
   Vec3 dir=direction.lengthSqr()>1.0E-8?direction.normalize():new Vec3(0.0,0.0,1.0);
   return new ShapeResolution(origin,dir,List.of(),directEntity);
  }
+ public static ShapeResolution block(Vec3 origin,Vec3 direction,BlockPos blockPos){
+  Vec3 dir=direction.lengthSqr()>1.0E-8?direction.normalize():new Vec3(0.0,0.0,1.0);
+  return new ShapeResolution(origin,dir,List.of(blockPos.immutable()),null);
+ }
  public static ShapeResolution sphere(Vec3 origin,Vec3 direction,int radius){
   Vec3 dir=direction.lengthSqr()>1.0E-8?direction.normalize():new Vec3(0.0,0.0,1.0);
   return new ShapeResolution(origin,dir,SphereShape.voxels(origin,radius),null);

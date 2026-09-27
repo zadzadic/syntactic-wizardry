@@ -1,13 +1,15 @@
 package com.proxpero.syntacticwizardry;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
-public record SpellExecutionContext(ServerLevel level,Entity owner,int[] plan,int[] radii,int[] damageKinds,int[] potences,int[] widths,int[] heights,int[] depths,int row,int cell,ShapeResolution parent) {
+public record SpellExecutionContext(ServerLevel level,Entity owner,int[] plan,int[] settings,int row,int cell,ShapeResolution parent) {
  public int style(){return SpellPresentation.styleAt(plan,cell);}
  public int visual(){return SpellPresentation.visualAt(plan,cell);}
- public int radius(){return SpellPresentation.radiusAt(radii,cell);}
- public int damageKind(){return SpellPresentation.damageKindAt(damageKinds,cell);}
- public int potence(){return SpellPresentation.potenceAt(potences,cell);}
- public int width(){return SpellPresentation.boxWidthAt(widths,cell);}
- public int height(){return SpellPresentation.boxHeightAt(heights,cell);}
- public int depth(){return SpellPresentation.boxDepthAt(depths,cell);}
+ public int setting(SpellPropertyKey key){return SpellPresentation.settingAt(settings,cell,key);}
+ public int radius(){return setting(SpellPropertyKey.RADIUS);}
+ public int damageKind(){return setting(SpellPropertyKey.DAMAGE_KIND);}
+ public int potence(){return setting(SpellPropertyKey.POTENCE);}
+ public int width(){return setting(SpellPropertyKey.WIDTH);}
+ public int height(){return setting(SpellPropertyKey.HEIGHT);}
+ public int depth(){return setting(SpellPropertyKey.DEPTH);}
+ public int targetType(){return setting(SpellPropertyKey.TARGET_TYPE);}
 }

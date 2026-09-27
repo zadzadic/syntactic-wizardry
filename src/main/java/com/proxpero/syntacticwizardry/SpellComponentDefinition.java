@@ -1,4 +1,5 @@
 package com.proxpero.syntacticwizardry;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
 import java.util.List;
 public interface SpellComponentDefinition {
@@ -12,4 +13,5 @@ public interface SpellComponentDefinition {
  List<SpellPropertyDefinition> settings();
  ItemStack createEditorIcon();
  ComponentExecutionResult execute(SpellExecutionContext context);
+ default boolean acceptsDirectEntity(Entity entity){return false;}
 }

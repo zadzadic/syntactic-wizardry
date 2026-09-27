@@ -4,6 +4,7 @@
   "item.syntacticwizardry.missile_shape": "Missile",
   "item.syntacticwizardry.sphere_shape": "Sphere",
   "item.syntacticwizardry.box_shape": "Box",
+  "item.syntacticwizardry.target_shape": "Target",
   "item.syntacticwizardry.damage_effect": "Damage",
   "item.syntacticwizardry.written_spell": "Written Spell"
 }
