@@ -9,7 +9,7 @@ import java.util.Arrays;
 public final class SpellPresentation {
  public static final int ROWS=5,COLS=5,CELLS=ROWS*COLS,STRIDE=3,PLAN_DATA_SIZE=CELLS*STRIDE;
  public static final int TYPE_EMPTY=0,TYPE_MISSILE=1,TYPE_SPHERE=2,TYPE_DAMAGE=3;
- public static final int STYLE_DEFAULT=0,STYLE_ARC=1,STYLE_SPIRAL=2,STYLE_COUNT=3;
+ public static final int STYLE_DEFAULT=0,STYLE_ARC=1,STYLE_SPIRAL=2,STYLE_INNER=3,STYLE_OUTER=4,STYLE_COUNT=5;
  public static final int VISUAL_DEFAULT=0,VISUAL_LARGE_CHUNK=1,VISUAL_SWORD=2,VISUAL_AXE=3,VISUAL_TRIDENT=4,VISUAL_FLAMES=5,VISUAL_COUNT=6;
  public static final int RADIUS_MIN=1,RADIUS_MAX=10,RADIUS_DEFAULT=1,RADIUS_COUNT=RADIUS_MAX-RADIUS_MIN+1;
  public static final int DAMAGE_FIRE=0,DAMAGE_FROST=1,DAMAGE_FORCE=2,DAMAGE_PHYSICAL=3,DAMAGE_ARCANE=4,DAMAGE_ENTROPIC=5,DAMAGE_HOLY=6,DAMAGE_KIND_COUNT=7,DAMAGE_KIND_DEFAULT=DAMAGE_ARCANE;
@@ -33,7 +33,7 @@ public final class SpellPresentation {
  public static int firstOccupiedRow(int[] plan){for(int r=0;r<ROWS;r++)if(rowHasComponents(plan,r))return r;return -1;}
  public static boolean isShape(int type){return type==TYPE_MISSILE||type==TYPE_SPHERE;}
  public static String shapeName(int type){return switch(type){case TYPE_MISSILE->"Missile";case TYPE_SPHERE->"Sphere";case TYPE_DAMAGE->"Damage";default->"Empty";};}
- public static String styleName(int id){return switch(Mth.clamp(id,0,STYLE_COUNT-1)){case STYLE_ARC->"Arc";case STYLE_SPIRAL->"Spiral";default->"Default";};}
+ public static String styleName(int id){return switch(Mth.clamp(id,0,STYLE_COUNT-1)){case STYLE_ARC->"Arc";case STYLE_SPIRAL->"Spiral";case STYLE_INNER->"Inner";case STYLE_OUTER->"Outer";default->"Default";};}
  public static String visualName(int id){return switch(Mth.clamp(id,0,VISUAL_COUNT-1)){case VISUAL_LARGE_CHUNK->"Large Chunk";case VISUAL_SWORD->"Sword";case VISUAL_AXE->"Axe";case VISUAL_TRIDENT->"Trident";case VISUAL_FLAMES->"Flames";default->"Default";};}
  public static String damageKindName(int id){return switch(Mth.clamp(id,0,DAMAGE_KIND_COUNT-1)){case DAMAGE_FIRE->"Fire";case DAMAGE_FROST->"Frost";case DAMAGE_FORCE->"Force";case DAMAGE_PHYSICAL->"Physical";case DAMAGE_ENTROPIC->"Entropic";case DAMAGE_HOLY->"Holy";default->"Arcane";};}
  public static ItemStack visualStack(int id){
@@ -48,7 +48,7 @@ public final class SpellPresentation {
  }
  public static ItemStack sphereVisualStack(int style,int visual,int radius){
   ItemStack stack=visualStack(visual);
-  CustomData.update(DataComponents.CUSTOM_DATA,stack,tag->{tag.putString("sw_shape","sphere_visual");tag.putInt("sw_style",STYLE_DEFAULT);tag.putInt("sw_visual",Mth.clamp(visual,0,VISUAL_COUNT-1));tag.putInt("sw_sphere_radius",Mth.clamp(radius,RADIUS_MIN,RADIUS_MAX));});
+  CustomData.update(DataComponents.CUSTOM_DATA,stack,tag->{tag.putString("sw_shape","sphere_visual");tag.putInt("sw_style",Mth.clamp(style,0,STYLE_COUNT-1));tag.putInt("sw_visual",Mth.clamp(visual,0,VISUAL_COUNT-1));tag.putInt("sw_sphere_radius",Mth.clamp(radius,RADIUS_MIN,RADIUS_MAX));});
   return stack;
  }
  public static int readSphereVisualRadius(ItemStack stack){return Mth.clamp(stack.getOrDefault(DataComponents.CUSTOM_DATA,CustomData.EMPTY).copyTag().getInt("sw_sphere_radius"),RADIUS_MIN,RADIUS_MAX);}
