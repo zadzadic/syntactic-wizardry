@@ -11,9 +11,8 @@ public final class ScribesLecternMenu extends AbstractContainerMenu {
  private final Container paper=new SimpleContainer(1);
  public ScribesLecternMenu(int id,Inventory inv){super(SyntacticWizardry.SCRIBES_LECTERN_MENU.get(),id);
   addSlot(new Slot(paper,0,20,25){@Override public boolean mayPlace(net.minecraft.world.item.ItemStack s){return s.is(Items.PAPER);}});
-  int sx=80, sy=150;
-  for(int r=0;r<3;r++)for(int c=0;c<9;c++)addSlot(new Slot(inv,c+r*9+9,sx+c*18,sy+r*18));
-  for(int c=0;c<9;c++)addSlot(new Slot(inv,c,sx+c*18,sy+58));
+  int sx=80, sy=179;
+  for(int c=0;c<9;c++)addSlot(new Slot(inv,c,sx+c*18,sy));
  }
  @Override public boolean stillValid(Player p){return true;}
  @Override public net.minecraft.world.item.ItemStack quickMoveStack(Player p,int index){return net.minecraft.world.item.ItemStack.EMPTY;}
