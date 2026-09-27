@@ -14,8 +14,7 @@ public final class ScribesLecternScreen extends AbstractContainerScreen<ScribesL
   panel(g,x+10,y+10,145,130,"Spell Workspace");
   panel(g,x+165,y+10,145,80,"Component Selector");
   panel(g,x+165,y+100,145,40,"Spell Preview");
-  g.fill(x+10,y+145,x+310,y+227,0xC0182233);
-  g.drawString(font,"Inventory",x+16,y+148,0xDDEBFF,false);
+  g.fill(x+75,y+145,x+247,y+231,0xC0182233);
   g.fill(x+19,y+24,x+37,y+42,0xFF335A88);
  }
  private void panel(GuiGraphics g,int x,int y,int w,int h,String name){g.fill(x,y,x+w,y+h,0xC0202D42);g.renderOutline(x,y,w,h,0xFF5B86B8);g.drawString(font,name,x+7,y+6,0xE8F3FF,false);}
