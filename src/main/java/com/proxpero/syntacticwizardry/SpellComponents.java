@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 public final class SpellComponents {
  private static final SpellPropertyDefinition RADIUS_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.RADIUS,"Radius",SpellPropertyKind.STEPPER,SpellPresentation.RADIUS_MIN,SpellPresentation.RADIUS_MAX,SpellPresentation.RADIUS_DEFAULT,Integer::toString);
  private static final SpellPropertyDefinition POTENCE_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.POTENCE,"Potence",SpellPropertyKind.STEPPER,SpellPresentation.POTENCE_MIN,SpellPresentation.POTENCE_MAX,SpellPresentation.POTENCE_DEFAULT,Integer::toString);
+ private static final SpellPropertyDefinition DIG_POTENCE_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.POTENCE,"Potence",SpellPropertyKind.STEPPER,1,5,1,Integer::toString);
  private static final SpellPropertyDefinition DAMAGE_KIND_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.DAMAGE_KIND,"Damage Type",SpellPropertyKind.OPTIONS,0,SpellPresentation.DAMAGE_KIND_COUNT-1,SpellPresentation.DAMAGE_KIND_DEFAULT,SpellPresentation::damageKindName);
  private static final SpellPropertyDefinition WIDTH_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.WIDTH,"Width",SpellPropertyKind.STEPPER,SpellPresentation.BOX_SIZE_MIN,SpellPresentation.BOX_SIZE_MAX,SpellPresentation.BOX_SIZE_DEFAULT,Integer::toString);
  private static final SpellPropertyDefinition HEIGHT_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.HEIGHT,"Height",SpellPropertyKind.STEPPER,SpellPresentation.BOX_SIZE_MIN,SpellPresentation.BOX_SIZE_MAX,SpellPresentation.BOX_SIZE_DEFAULT,Integer::toString);
@@ -16,7 +17,7 @@ public final class SpellComponents {
  private static final SpellPropertyDefinition TARGET_TYPE_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.TARGET_TYPE,"Target Type",SpellPropertyKind.OPTIONS,0,SpellPresentation.TARGET_TYPE_COUNT-1,SpellPresentation.TARGET_TYPE_DEFAULT,SpellPresentation::targetTypeName);
  private static final SpellPropertyDefinition TOUCH_TARGET_TYPE_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.TARGET_TYPE,"Target Type",SpellPropertyKind.OPTIONS,SpellPresentation.TARGET_BLOCKS,SpellPresentation.TARGET_ENTITIES,SpellPresentation.TARGET_BLOCKS,SpellPresentation::targetTypeName);
  private static final SpellPropertyDefinition DISTANCE_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.DISTANCE,"Distance",SpellPropertyKind.STEPPER,SpellPresentation.DISTANCE_MIN,SpellPresentation.DISTANCE_MAX,SpellPresentation.DISTANCE_DEFAULT,Integer::toString);
- private static final List<SpellComponentDefinition> ALL=List.of(new MissileDefinition(),new SphereDefinition(),new BoxDefinition(),new ConeDefinition(),new FloatingDefinition(),new TouchDefinition(),new TargetDefinition(),new DamageDefinition());
+ private static final List<SpellComponentDefinition> ALL=List.of(new MissileDefinition(),new SphereDefinition(),new BoxDefinition(),new ConeDefinition(),new FloatingDefinition(),new TouchDefinition(),new TargetDefinition(),new DamageDefinition(),new DigDefinition());
  private static final Map<Integer,SpellComponentDefinition> BY_TYPE=ALL.stream().collect(Collectors.toUnmodifiableMap(SpellComponentDefinition::typeId,Function.identity()));
  private static final List<SpellComponentDefinition> SHAPES=ALL.stream().filter(SpellComponentDefinition::isShape).toList();
  private static final List<SpellComponentDefinition> EFFECTS=ALL.stream().filter(def->!def.isShape()).toList();
@@ -64,6 +65,11 @@ public final class SpellComponents {
   TargetDefinition(){super(SpellPresentation.TYPE_TARGET,"Target",true,SpellPresentation.STYLE_DEFAULT,SpellPresentation.VISUAL_DEFAULT,List.of(),false,List.of(TARGET_TYPE_PROPERTY));}
   @Override public ItemStack createEditorIcon(){return SyntacticWizardry.TARGET_SHAPE.get().getDefaultInstance();}
   @Override public ComponentExecutionResult execute(SpellExecutionContext context){ShapeResolution resolved=TargetShape.resolve(context);return resolved==null?ComponentExecutionResult.spawned():ComponentExecutionResult.resolved(resolved);}
+ }
+ private static final class DigDefinition extends BaseDefinition {
+  DigDefinition(){super(SpellPresentation.TYPE_DIG,"Dig",false,0,0,List.of(),false,List.of(DIG_POTENCE_PROPERTY));}
+  @Override public ItemStack createEditorIcon(){return SyntacticWizardry.DIG_EFFECT.get().getDefaultInstance();}
+  @Override public ComponentExecutionResult execute(SpellExecutionContext context){AreaDigBulkRuntime.apply(context.level(),context.owner(),context.parent().voxels(),context.potence());return ComponentExecutionResult.NONE;}
  }
  private static final class DamageDefinition extends BaseDefinition {
   DamageDefinition(){super(SpellPresentation.TYPE_DAMAGE,"Damage",false,0,0,List.of(),false,List.of(POTENCE_PROPERTY,DAMAGE_KIND_PROPERTY));}

@@ -165,6 +165,10 @@ public final class ScribesLecternScreen extends AbstractContainerScreen<ScribesL
     int px=left+52+laneOffset,py=top+h/2-8;
     g.renderItem(SyntacticWizardry.DAMAGE_EFFECT.get().getDefaultInstance(),px,py);
     g.drawString(font,SpellPresentation.damageKindName(menu.damageKindAt(cell))+" "+menu.potenceAt(cell),px-5,py+17,0xB8CCE0,false);
+   }else if(type==SpellPresentation.TYPE_DIG){
+    int px=left+52+laneOffset,py=top+h/2-8;
+    g.renderItem(SyntacticWizardry.DIG_EFFECT.get().getDefaultInstance(),px,py);
+    g.drawString(font,"Dig "+menu.potenceAt(cell),px-5,py+17,0xB8CCE0,false);
    }
   }
   g.drawString(font,"Row "+(activeRow+1),x+274,y+181,0x9EB7CF,false);
