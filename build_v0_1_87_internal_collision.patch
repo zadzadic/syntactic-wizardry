@@ -1,6 +1,6 @@
-diff -ruN sw184/gradle.properties sw187/gradle.properties
---- sw184/gradle.properties
-+++ sw187/gradle.properties
+diff --git a/gradle.properties b/gradle.properties
+--- a/gradle.properties
++++ b/gradle.properties
 @@ -11,5 +11,5 @@
  mod_id=syntacticwizardry
  mod_name=Syntactic Wizardry
@@ -8,9 +8,9 @@ diff -ruN sw184/gradle.properties sw187/gradle.properties
 -mod_version=0.1.84
 +mod_version=0.1.87
  mod_group_id=com.proxpero.syntacticwizardry
-diff -ruN sw184/src/main/java/com/proxpero/syntacticwizardry/MovedBlockEntity.java sw187/src/main/java/com/proxpero/syntacticwizardry/MovedBlockEntity.java
---- sw184/src/main/java/com/proxpero/syntacticwizardry/MovedBlockEntity.java
-+++ sw187/src/main/java/com/proxpero/syntacticwizardry/MovedBlockEntity.java
+diff --git a/src/main/java/com/proxpero/syntacticwizardry/MovedBlockEntity.java b/src/main/java/com/proxpero/syntacticwizardry/MovedBlockEntity.java
+--- a/src/main/java/com/proxpero/syntacticwizardry/MovedBlockEntity.java
++++ b/src/main/java/com/proxpero/syntacticwizardry/MovedBlockEntity.java
 @@ -27,9 +27,9 @@
   *
   * A single moved block can still use the legacy independent physics path.
@@ -22,6 +22,8 @@ diff -ruN sw184/src/main/java/com/proxpero/syntacticwizardry/MovedBlockEntity.ja
 + * stop remain owned by the group as fixed internal collision markers until
 + * final settlement, so following layers cannot move through them.
   */
+ public final class MovedBlockEntity extends FallingBlockEntity {
+     private static final double GRAVITY = 0.04D;
 @@ -299,10 +299,21 @@
          }
      }
@@ -41,6 +43,9 @@ diff -ruN sw184/src/main/java/com/proxpero/syntacticwizardry/MovedBlockEntity.ja
          final UUID id;
          final List<RigidMember> members;
 +        final List<StoppedRigidMember> stoppedMembers = new ArrayList<>();
+         final double requiredDistance;
+         final int maxAssistedTicks;
+         final int maxLifetimeTicks;
 @@ -341,7 +352,7 @@
                  members.remove(i);
              }
@@ -49,6 +54,7 @@ diff -ruN sw184/src/main/java/com/proxpero/syntacticwizardry/MovedBlockEntity.ja
 +                finish(level);
                  return;
              }
+ 
 @@ -351,10 +362,10 @@
              translation = translation.add(actual);
              travelledDistance += Math.sqrt(actual.lengthSqr());
@@ -62,6 +68,7 @@ diff -ruN sw184/src/main/java/com/proxpero/syntacticwizardry/MovedBlockEntity.ja
 +                finish(level);
                  return;
              }
+ 
 @@ -389,19 +400,42 @@
  
          void finish(ServerLevel level) {
@@ -70,9 +77,8 @@ diff -ruN sw184/src/main/java/com/proxpero/syntacticwizardry/MovedBlockEntity.ja
 -            BlockPos preferred = nearestOffset(translation);
 -            BlockPos offset = canPlaceAtOffset(level, members, preferred) ? preferred : lastSafeOffset;
 -            if (!canPlaceAtOffset(level, members, offset)) offset = BlockPos.ZERO;
--
+ 
 -            boolean placed = placeAtOffset(level, members, offset);
-+
 +            Map<BlockPos, List<RigidMember>> clusters = new HashMap<>();
 +            BlockPos activeOffset = nearestOffset(translation);
 +            if (!members.isEmpty()) {
@@ -113,6 +119,7 @@ diff -ruN sw184/src/main/java/com/proxpero/syntacticwizardry/MovedBlockEntity.ja
 +            }
          }
      }
+ 
 @@ -426,23 +460,27 @@
  
              List<RigidMember> blocked = null;
@@ -136,7 +143,8 @@ diff -ruN sw184/src/main/java/com/proxpero/syntacticwizardry/MovedBlockEntity.ja
 +
 +                // Re-evaluate this exact movement step. Newly stopped members
 +                // are immediate internal collision markers for the members
-+                // still moving in the rigid group.
++                // still moving in the rigid group. This prevents the next
++                // layer from entering their space before Minecraft updates.
 +                continue;
              }
  
@@ -175,6 +183,8 @@ diff -ruN sw184/src/main/java/com/proxpero/syntacticwizardry/MovedBlockEntity.ja
 +        }
 +        return true;
      }
+ 
+     private static boolean canOccupy(ServerLevel level, List<RigidMember> members, Vec3 translation) {
 @@ -477,32 +527,37 @@
      }
  
