@@ -1,0 +1,12 @@
+diff --git a/sw187_base/src/main/java/com/proxpero/syntacticwizardry/SpellManaCost.java b/sw187/src/main/java/com/proxpero/syntacticwizardry/SpellManaCost.java
+index 3e91da0..bf73fb5 100644
+--- a/sw187_base/src/main/java/com/proxpero/syntacticwizardry/SpellManaCost.java
++++ b/sw187/src/main/java/com/proxpero/syntacticwizardry/SpellManaCost.java
+@@ -69,6 +69,7 @@ public final class SpellManaCost {
+         return switch (type) {
+             case SpellPresentation.TYPE_TOUCH -> 1.0F;
+             case SpellPresentation.TYPE_MISSILE -> 2.0F;
++            case SpellComponents.TYPE_CHAIN -> 2.0F;
+             case SpellPresentation.TYPE_SPHERE -> SphereShape.voxels(COST_ORIGIN,
+                     SpellPresentation.radiusAt(settings, cell),
+                     SpellPresentation.sphereHeightAt(settings, cell),
