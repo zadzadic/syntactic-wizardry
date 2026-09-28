@@ -1,0 +1,11 @@
+diff --git a/sw187_base/gradle.properties b/sw187/gradle.properties
+index a466b8e..dcc2823 100644
+--- a/sw187_base/gradle.properties
++++ b/sw187/gradle.properties
+@@ -11,5 +11,5 @@ loader_version_range=[1,)
+ mod_id=syntacticwizardry
+ mod_name=Syntactic Wizardry
+ mod_license=All Rights Reserved
+-mod_version=0.1.87
++mod_version=0.1.88
+ mod_group_id=com.proxpero.syntacticwizardry
