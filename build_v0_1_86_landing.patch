@@ -1,0 +1,107 @@
+--- a/src/main/java/com/proxpero/syntacticwizardry/MovedBlockEntity.java
++++ b/src/main/java/com/proxpero/syntacticwizardry/MovedBlockEntity.java
+@@ -292,6 +292,7 @@
+         final CompoundTag blockData;
+         final float hardness;
+         MovedBlockEntity entity;
++        Vec3 detachedTranslation;
+ 
+         RigidMember(BlockPos originalPos, BlockState state, CompoundTag blockData, float hardness) {
+             this.originalPos = originalPos;
+@@ -334,10 +335,18 @@
+             if (member != null) lostOriginalPositions.add(member.originalPos);
+         }
+ 
+-        List<RigidMember> survivingSnapshot() {
++        List<RigidMember> survivingSnapshot(BlockPos settlingOffset) {
+             ArrayList<RigidMember> surviving = new ArrayList<>(snapshot.size());
+             for (RigidMember member : snapshot) {
+-                if (!lostOriginalPositions.contains(member.originalPos)) surviving.add(member);
++                if (lostOriginalPositions.contains(member.originalPos)) continue;
++                if (members.contains(member)) {
++                    surviving.add(member);
++                    continue;
++                }
++                if (member.detachedTranslation != null
++                        && nearestOffset(member.detachedTranslation).equals(settlingOffset)) {
++                    surviving.add(member);
++                }
+             }
+             return surviving;
+         }
+@@ -359,7 +368,7 @@
+                 members.remove(i);
+             }
+             if (members.isEmpty()) {
+-                RIGID_GROUPS.remove(id);
++                finish(level);
+                 return;
+             }
+ 
+@@ -372,7 +381,7 @@
+             // Every member may have collided and detached while resolving this
+             // tick.  Detached entities now own their own vanilla falling logic.
+             if (members.isEmpty()) {
+-                RIGID_GROUPS.remove(id);
++                finish(level);
+                 return;
+             }
+ 
+@@ -407,11 +416,19 @@
+ 
+         void finish(ServerLevel level) {
+             RIGID_GROUPS.remove(id);
+-            List<RigidMember> settling = survivingSnapshot();
+-            if (settling.isEmpty()) return;
+             BlockPos preferred = nearestOffset(translation);
++            List<RigidMember> settling = survivingSnapshot(preferred);
++            if (settling.isEmpty()) return;
+             BlockPos offset = canPlaceAtOffset(level, settling, preferred) ? preferred : lastSafeOffset;
+-            if (!canPlaceAtOffset(level, settling, offset)) offset = BlockPos.ZERO;
++            if (!offset.equals(preferred)) {
++                settling = survivingSnapshot(offset);
++                if (settling.isEmpty()) return;
++            }
++            if (!canPlaceAtOffset(level, settling, offset)) {
++                offset = BlockPos.ZERO;
++                settling = survivingSnapshot(offset);
++                if (settling.isEmpty()) return;
++            }
+ 
+             boolean placed = pasteSnapshotAtOffset(level, settling, offset);
+             if (!placed) {
+@@ -454,7 +471,6 @@
+                 for (RigidMember member : blocked) {
+                     double contact = memberContactDistance(level, member, start, step, axis);
+                     Vec3 contactTranslation = start.add(axisVector(axis, contact));
+-                    group.markLost(member);
+                     detachMember(member, contactTranslation);
+                 }
+                 group.members.removeAll(blocked);
+@@ -517,6 +533,7 @@
+      * ordinary FallingBlockEntity gravity and collision.
+      */
+     private static void detachMember(RigidMember member, Vec3 translation) {
++        member.detachedTranslation = translation;
+         MovedBlockEntity entity = member.entity;
+         if (entity == null || entity.isRemoved()) return;
+         BlockPos p = member.originalPos;
+@@ -598,7 +615,8 @@
+     private static boolean canPlaceAtOffset(ServerLevel level, List<RigidMember> members, BlockPos offset) {
+         for (RigidMember member : members) {
+             BlockPos target = member.originalPos.offset(offset.getX(), offset.getY(), offset.getZ());
+-            if (!isPlaceable(level.getBlockState(target))) return false;
++            BlockState existing = level.getBlockState(target);
++            if (!isPlaceable(existing) && !existing.equals(member.state)) return false;
+         }
+         return true;
+     }
+--- a/gradle.properties
++++ b/gradle.properties
+@@ -11,5 +11,5 @@
+ mod_id=syntacticwizardry
+ mod_name=Syntactic Wizardry
+ mod_license=All Rights Reserved
+-mod_version=0.1.85
++mod_version=0.1.86
+ mod_group_id=com.proxpero.syntacticwizardry
