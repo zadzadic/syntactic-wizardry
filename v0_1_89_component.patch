@@ -1,0 +1,48 @@
+--- a/src/main/java/com/proxpero/syntacticwizardry/SpellComponents.java
++++ b/src/main/java/com/proxpero/syntacticwizardry/SpellComponents.java
+@@ -20,10 +20,12 @@
+  public static final int TYPE_RUNE=19;
+  public static final int TYPE_RELATIVE=20;
+  public static final int TYPE_CHAIN=21;
++ public static final int TYPE_PROTECTION=22;
+  private static final SpellPropertyDefinition RADIUS_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.RADIUS,"Radius",SpellPropertyKind.STEPPER,SpellPresentation.RADIUS_MIN,SpellPresentation.RADIUS_MAX,SpellPresentation.RADIUS_DEFAULT,Integer::toString);
+  private static final SpellPropertyDefinition SPHERE_MODE_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.SPHERE_MODE,"Shape",SpellPropertyKind.OPTIONS,0,SpellPresentation.SPHERE_MODE_COUNT-1,SpellPresentation.SPHERE_MODE_DEFAULT,SpellPresentation::sphereModeName);
+  private static final SpellPropertyDefinition POTENCE_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.POTENCE,"Potence",SpellPropertyKind.STEPPER,SpellPresentation.POTENCE_MIN,SpellPresentation.POTENCE_MAX,SpellPresentation.POTENCE_DEFAULT,Integer::toString);
+  private static final SpellPropertyDefinition DIG_POTENCE_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.POTENCE,"Potence",SpellPropertyKind.STEPPER,1,5,1,Integer::toString);
++ private static final SpellPropertyDefinition PROTECTION_KIND_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.PROTECTION_KIND,"Damage Type",SpellPropertyKind.OPTIONS,0,SpellPresentation.PROTECTION_KIND_COUNT-1,SpellPresentation.PROTECTION_KIND_DEFAULT,SpellPresentation::protectionKindName);
+  private static final SpellPropertyDefinition DAMAGE_KIND_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.DAMAGE_KIND,"Damage Type",SpellPropertyKind.OPTIONS,0,SpellPresentation.DAMAGE_KIND_COUNT-1,SpellPresentation.DAMAGE_KIND_DEFAULT,SpellPresentation::damageKindName);
+  private static final SpellPropertyDefinition WIDTH_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.WIDTH,"Width",SpellPropertyKind.STEPPER,SpellPresentation.BOX_SIZE_MIN,SpellPresentation.BOX_SIZE_MAX,SpellPresentation.BOX_SIZE_DEFAULT,Integer::toString);
+  private static final SpellPropertyDefinition HEIGHT_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.HEIGHT,"Height",SpellPropertyKind.STEPPER,SpellPresentation.BOX_SIZE_MIN,SpellPresentation.BOX_SIZE_MAX,SpellPresentation.BOX_SIZE_DEFAULT,Integer::toString);
+@@ -39,7 +41,7 @@
+  private static final SpellPropertyDefinition GRAVITY_MODE_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.GRAVITY_MODE,"Mode",SpellPropertyKind.OPTIONS,0,SpellPresentation.GRAVITY_MODE_COUNT-1,SpellPresentation.GRAVITY_MODE_DEFAULT,SpellPresentation::gravityModeName);
+  private static final SpellPropertyDefinition RELATIVE_DIRECTION_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.GRAVITY_MODE,"Direction",SpellPropertyKind.OPTIONS,0,SpellPresentation.RELATIVE_DIRECTION_COUNT-1,SpellPresentation.RELATIVE_DIRECTION_DEFAULT,SpellPresentation::relativeDirectionName);
+  private static final SpellPropertyDefinition TARGET_DIRECTION_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.IMPACT_DIRECTION,"Direction",SpellPropertyKind.OPTIONS,0,SpellPresentation.IMPACT_DIRECTION_COUNT-1,SpellPresentation.IMPACT_DIRECTION_DEFAULT,SpellPresentation::impactDirectionName);
+- private static final List<SpellComponentDefinition> ALL=List.of(new MissileDefinition(),new ChainDefinition(),new SphereDefinition(),new BoxDefinition(),new ConeDefinition(),new FloatingDefinition(),new TouchDefinition(),new TargetDefinition(),new DamageDefinition(),new DigDefinition(),new RestoreDefinition(),new MoveDefinition(),new SiphonDefinition(),new GravityDefinition(),new SelfDefinition(),new RelativeDefinition(),new RuneDefinition(),new ChannelDefinition(),new StreamDefinition(),new DurationDefinition(),new BlockInteractionDefinition());
++ private static final List<SpellComponentDefinition> ALL=List.of(new MissileDefinition(),new ChainDefinition(),new SphereDefinition(),new BoxDefinition(),new ConeDefinition(),new FloatingDefinition(),new TouchDefinition(),new TargetDefinition(),new DamageDefinition(),new DigDefinition(),new RestoreDefinition(),new MoveDefinition(),new SiphonDefinition(),new GravityDefinition(),new ProtectionDefinition(),new SelfDefinition(),new RelativeDefinition(),new RuneDefinition(),new ChannelDefinition(),new StreamDefinition(),new DurationDefinition(),new BlockInteractionDefinition());
+  private static final Map<Integer,SpellComponentDefinition> BY_TYPE=ALL.stream().collect(Collectors.toUnmodifiableMap(SpellComponentDefinition::typeId,Function.identity()));
+  private static final List<SpellComponentDefinition> SHAPES=ALL.stream().filter(SpellComponentDefinition::isShape).toList();
+  private static final List<SpellComponentDefinition> EFFECTS=ALL.stream().filter(SpellComponents::isEffect).toList();
+@@ -151,6 +153,13 @@
+   @Override public EffectReplayPolicy replayPolicy(){return EffectReplayPolicy.TICK;}
+   @Override public boolean supportsBlockInteraction(){return true;}
+  }
++ private static final class ProtectionDefinition extends BaseDefinition {
++  ProtectionDefinition(){super(TYPE_PROTECTION,"Protection",false,0,0,List.of(),false,List.of(POTENCE_PROPERTY,PROTECTION_KIND_PROPERTY));}
++  @Override public ItemStack createEditorIcon(){return Items.SHIELD.getDefaultInstance();}
++  @Override public boolean acceptsDirectEntity(Entity entity){return entity instanceof LivingEntity living&&living.isAlive();}
++  @Override public EffectReplayPolicy replayPolicy(){return EffectReplayPolicy.STATEFUL;}
++  @Override public ComponentExecutionResult execute(SpellExecutionContext context){ProtectionEffect.apply(context.level(),context.parent(),context.protectionKind(),context.potence(),context.activeDurationTicks());return ComponentExecutionResult.NONE;}
++ }
+  private static final class SelfDefinition extends BaseDefinition {
+   SelfDefinition(){super(TYPE_SELF,"Self",true,SpellPresentation.STYLE_DEFAULT,SpellPresentation.VISUAL_DEFAULT,List.of(),false,List.of());}
+   @Override public ItemStack createEditorIcon(){return Items.PLAYER_HEAD.getDefaultInstance();}
+--- a/src/main/java/com/proxpero/syntacticwizardry/SpellManaCost.java
++++ b/src/main/java/com/proxpero/syntacticwizardry/SpellManaCost.java
+@@ -92,6 +92,7 @@
+             case SpellComponents.TYPE_MOVE -> 0.5F * potence;
+             case SpellComponents.TYPE_SIPHON -> 3.0F * potence;
+             case SpellComponents.TYPE_GRAVITY -> 1.0F * potence;
++            case SpellComponents.TYPE_PROTECTION -> 5.0F * potence;
+             case SpellComponents.TYPE_DURATION -> 1.0F * SpellPresentation.durationSecondsAt(settings, cell);
+             case SpellComponents.TYPE_BLOCK_INTERACTION -> 0.0F;
+             case SpellComponents.TYPE_SELF -> 0.0F;
