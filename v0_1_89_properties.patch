@@ -1,0 +1,90 @@
+--- a/gradle.properties
++++ b/gradle.properties
+@@ -11,5 +11,5 @@
+ mod_id=syntacticwizardry
+ mod_name=Syntactic Wizardry
+ mod_license=All Rights Reserved
+-mod_version=0.1.88
++mod_version=0.1.89
+ mod_group_id=com.proxpero.syntacticwizardry
+--- a/src/main/java/com/proxpero/syntacticwizardry/SpellPropertyKey.java
++++ b/src/main/java/com/proxpero/syntacticwizardry/SpellPropertyKey.java
+@@ -16,8 +16,9 @@
+  SIPHON_MODE(13,11),
+  DURATION_SECONDS(14,12),
+  GRAVITY_MODE(15,13),
+- SPHERE_MODE(16,14);
+- public static final int SETTING_COUNT=15;
++ SPHERE_MODE(16,14),
++ PROTECTION_KIND(17,15);
++ public static final int SETTING_COUNT=16;
+  private final int id;
+  private final int settingIndex;
+  SpellPropertyKey(int id,int settingIndex){this.id=id;this.settingIndex=settingIndex;}
+--- a/src/main/java/com/proxpero/syntacticwizardry/SpellPresentation.java
++++ b/src/main/java/com/proxpero/syntacticwizardry/SpellPresentation.java
+@@ -16,6 +16,7 @@
+  public static final int DIMENSION_MIN=1,DIMENSION_MAX=10,DIMENSION_DEFAULT=1;
+  public static final int BOX_SIZE_MIN=DIMENSION_MIN,BOX_SIZE_MAX=DIMENSION_MAX,BOX_SIZE_DEFAULT=DIMENSION_DEFAULT;
+  public static final int DAMAGE_FIRE=0,DAMAGE_FROST=1,DAMAGE_FORCE=2,DAMAGE_PHYSICAL=3,DAMAGE_ARCANE=4,DAMAGE_ENTROPIC=5,DAMAGE_HOLY=6,DAMAGE_KIND_COUNT=7,DAMAGE_KIND_DEFAULT=DAMAGE_ARCANE;
++ public static final int PROTECTION_ALL=0,PROTECTION_KIND_COUNT=DAMAGE_KIND_COUNT+1,PROTECTION_KIND_DEFAULT=PROTECTION_ALL;
+  public static final int POTENCE_MIN=1,POTENCE_MAX=10,POTENCE_DEFAULT=1,POTENCE_COUNT=POTENCE_MAX-POTENCE_MIN+1;
+  public static final int TARGET_BLOCKS=0,TARGET_ENTITIES=1,TARGET_ALL=2,TARGET_TYPE_COUNT=3,TARGET_TYPE_DEFAULT=TARGET_ALL;
+  public static final int MOVE_PUSH=0,MOVE_PULL=1,MOVE_MODE_COUNT=2,MOVE_MODE_DEFAULT=MOVE_PUSH;
+@@ -32,6 +33,7 @@
+  private static final int PREVIOUS_SETTING_COUNT_3=10;
+  private static final int PREVIOUS_SETTING_COUNT_4=12;
+  private static final int PREVIOUS_SETTING_COUNT_5=14;
++ private static final int PREVIOUS_SETTING_COUNT_6=15;
+  public static final int SETTINGS_DATA_SIZE=CELLS*SpellPropertyKey.SETTING_COUNT;
+  private SpellPresentation(){}
+  private static int off(int cell){return cell*STRIDE;}
+@@ -50,9 +52,9 @@
+   return clampSetting(key,settings[settingOff(cell,key)]);
+  }
+  public static void setSetting(int[] settings,int cell,SpellPropertyKey key,int value){if(key.isSetting()&&settings!=null&&settings.length>=SETTINGS_DATA_SIZE&&cell>=0&&cell<CELLS)settings[settingOff(cell,key)]=clampSetting(key,value);}
+- public static int settingDefault(SpellPropertyKey key){return switch(key){case RADIUS->RADIUS_DEFAULT;case DAMAGE_KIND->DAMAGE_KIND_DEFAULT;case POTENCE->POTENCE_DEFAULT;case WIDTH,HEIGHT,DEPTH->BOX_SIZE_DEFAULT;case TARGET_TYPE->TARGET_TYPE_DEFAULT;case DISTANCE->DISTANCE_DEFAULT;case MOVE_MODE->MOVE_MODE_DEFAULT;case IMPACT_DIRECTION->IMPACT_DIRECTION_DEFAULT;case SIPHON_RESOURCE->SIPHON_RESOURCE_DEFAULT;case SIPHON_MODE->SIPHON_MODE_DEFAULT;case DURATION_SECONDS->DURATION_DEFAULT;case GRAVITY_MODE->GRAVITY_MODE_DEFAULT;case SPHERE_MODE->SPHERE_MODE_DEFAULT;default->0;};}
+- public static int settingMin(SpellPropertyKey key){return switch(key){case RADIUS->RADIUS_MIN;case DAMAGE_KIND->0;case POTENCE->POTENCE_MIN;case WIDTH,HEIGHT,DEPTH->BOX_SIZE_MIN;case TARGET_TYPE->0;case DISTANCE->DISTANCE_MIN;case MOVE_MODE->0;case IMPACT_DIRECTION,SIPHON_RESOURCE,SIPHON_MODE,GRAVITY_MODE,SPHERE_MODE->0;case DURATION_SECONDS->DURATION_MIN;default->0;};}
+- public static int settingMax(SpellPropertyKey key){return switch(key){case RADIUS->RADIUS_MAX;case DAMAGE_KIND->DAMAGE_KIND_COUNT-1;case POTENCE->POTENCE_MAX;case WIDTH,HEIGHT,DEPTH->BOX_SIZE_MAX;case TARGET_TYPE->TARGET_TYPE_COUNT-1;case DISTANCE->DISTANCE_MAX;case MOVE_MODE->MOVE_MODE_COUNT-1;case IMPACT_DIRECTION->IMPACT_DIRECTION_COUNT-1;case SIPHON_RESOURCE->SIPHON_RESOURCE_COUNT-1;case SIPHON_MODE->SIPHON_MODE_COUNT-1;case DURATION_SECONDS->DURATION_MAX;case GRAVITY_MODE->RELATIVE_DIRECTION_COUNT-1;case SPHERE_MODE->SPHERE_MODE_COUNT-1;default->0;};}
++ public static int settingDefault(SpellPropertyKey key){return switch(key){case RADIUS->RADIUS_DEFAULT;case DAMAGE_KIND->DAMAGE_KIND_DEFAULT;case POTENCE->POTENCE_DEFAULT;case WIDTH,HEIGHT,DEPTH->BOX_SIZE_DEFAULT;case TARGET_TYPE->TARGET_TYPE_DEFAULT;case DISTANCE->DISTANCE_DEFAULT;case MOVE_MODE->MOVE_MODE_DEFAULT;case IMPACT_DIRECTION->IMPACT_DIRECTION_DEFAULT;case SIPHON_RESOURCE->SIPHON_RESOURCE_DEFAULT;case SIPHON_MODE->SIPHON_MODE_DEFAULT;case DURATION_SECONDS->DURATION_DEFAULT;case GRAVITY_MODE->GRAVITY_MODE_DEFAULT;case SPHERE_MODE->SPHERE_MODE_DEFAULT;case PROTECTION_KIND->PROTECTION_KIND_DEFAULT;default->0;};}
++ public static int settingMin(SpellPropertyKey key){return switch(key){case RADIUS->RADIUS_MIN;case DAMAGE_KIND->0;case POTENCE->POTENCE_MIN;case WIDTH,HEIGHT,DEPTH->BOX_SIZE_MIN;case TARGET_TYPE->0;case DISTANCE->DISTANCE_MIN;case MOVE_MODE->0;case IMPACT_DIRECTION,SIPHON_RESOURCE,SIPHON_MODE,GRAVITY_MODE,SPHERE_MODE,PROTECTION_KIND->0;case DURATION_SECONDS->DURATION_MIN;default->0;};}
++ public static int settingMax(SpellPropertyKey key){return switch(key){case RADIUS->RADIUS_MAX;case DAMAGE_KIND->DAMAGE_KIND_COUNT-1;case POTENCE->POTENCE_MAX;case WIDTH,HEIGHT,DEPTH->BOX_SIZE_MAX;case TARGET_TYPE->TARGET_TYPE_COUNT-1;case DISTANCE->DISTANCE_MAX;case MOVE_MODE->MOVE_MODE_COUNT-1;case IMPACT_DIRECTION->IMPACT_DIRECTION_COUNT-1;case SIPHON_RESOURCE->SIPHON_RESOURCE_COUNT-1;case SIPHON_MODE->SIPHON_MODE_COUNT-1;case DURATION_SECONDS->DURATION_MAX;case GRAVITY_MODE->RELATIVE_DIRECTION_COUNT-1;case SPHERE_MODE->SPHERE_MODE_COUNT-1;case PROTECTION_KIND->PROTECTION_KIND_COUNT-1;default->0;};}
+  public static int clampSetting(SpellPropertyKey key,int value){return Mth.clamp(value,settingMin(key),settingMax(key));}
+  public static int radiusAt(int[] settings,int cell){return settingAt(settings,cell,SpellPropertyKey.RADIUS);}
+  public static int sphereHeightAt(int[] settings,int cell){return settingAt(settings,cell,SpellPropertyKey.HEIGHT);}
+@@ -70,6 +72,7 @@
+  public static int siphonModeAt(int[] settings,int cell){return settingAt(settings,cell,SpellPropertyKey.SIPHON_MODE);}
+  public static int durationSecondsAt(int[] settings,int cell){return settingAt(settings,cell,SpellPropertyKey.DURATION_SECONDS);}
+  public static int gravityModeAt(int[] settings,int cell){return settingAt(settings,cell,SpellPropertyKey.GRAVITY_MODE);}
++ public static int protectionKindAt(int[] settings,int cell){return settingAt(settings,cell,SpellPropertyKey.PROTECTION_KIND);}
+  public static void setCell(int[] plan,int cell,int type,int style,int visual){if(!valid(plan,cell))return;int o=off(cell);plan[o]=type;plan[o+1]=Mth.clamp(style,0,STYLE_COUNT-1);plan[o+2]=Mth.clamp(visual,0,VISUAL_COUNT-1);}
+  private static boolean valid(int[] plan,int cell){return plan!=null&&plan.length>=PLAN_DATA_SIZE&&cell>=0&&cell<CELLS;}
+  public static boolean rowHasComponents(int[] plan,int row){if(row<0||row>=ROWS)return false;for(int c=0;c<COLS;c++)if(typeAt(plan,row*COLS+c)!=TYPE_EMPTY)return true;return false;}
+@@ -80,6 +83,8 @@
+  public static String styleName(int id){return switch(Mth.clamp(id,0,STYLE_COUNT-1)){case STYLE_ARC->"Arc";case STYLE_SPIRAL->"Spiral";case STYLE_INNER->"Inner";case STYLE_OUTER->"Outer";default->"Default";};}
+  public static String visualName(int id){return switch(Mth.clamp(id,0,VISUAL_COUNT-1)){case VISUAL_LARGE_CHUNK->"Large Chunk";case VISUAL_SWORD->"Sword";case VISUAL_AXE->"Axe";case VISUAL_TRIDENT->"Trident";case VISUAL_FLAMES->"Flames";default->"Default";};}
+  public static String damageKindName(int id){return switch(Mth.clamp(id,0,DAMAGE_KIND_COUNT-1)){case DAMAGE_FIRE->"Fire";case DAMAGE_FROST->"Frost";case DAMAGE_FORCE->"Force";case DAMAGE_PHYSICAL->"Physical";case DAMAGE_ENTROPIC->"Entropic";case DAMAGE_HOLY->"Holy";default->"Arcane";};}
++ public static String protectionKindName(int id){int value=Mth.clamp(id,0,PROTECTION_KIND_COUNT-1);return value==PROTECTION_ALL?"All":damageKindName(value-1);}
++ public static int protectionDamageKind(int protectionKind){int value=Mth.clamp(protectionKind,0,PROTECTION_KIND_COUNT-1);return value==PROTECTION_ALL?-1:value-1;}
+  public static String targetTypeName(int id){return switch(Mth.clamp(id,0,TARGET_TYPE_COUNT-1)){case TARGET_BLOCKS->"Blocks";case TARGET_ENTITIES->"Entities";default->"All";};}
+  public static String moveModeName(int id){return Mth.clamp(id,0,MOVE_MODE_COUNT-1)==MOVE_PULL?"Pull":"Push";}
+  public static String impactDirectionName(int id){return Mth.clamp(id,0,IMPACT_DIRECTION_COUNT-1)==IMPACT_INWARD?"Inward":"Outward";}
+@@ -152,6 +157,8 @@
+     copySettingStride(source,PREVIOUS_SETTING_COUNT_4,values);
+    }else if(source.length==CELLS*PREVIOUS_SETTING_COUNT_5){
+     copySettingStride(source,PREVIOUS_SETTING_COUNT_5,values);
++   }else if(source.length==CELLS*PREVIOUS_SETTING_COUNT_6){
++    copySettingStride(source,PREVIOUS_SETTING_COUNT_6,values);
+    }else if(source.length==SETTINGS_DATA_SIZE){
+     System.arraycopy(source,0,values,0,values.length);
+    }else{
+--- a/src/main/java/com/proxpero/syntacticwizardry/SpellExecutionContext.java
++++ b/src/main/java/com/proxpero/syntacticwizardry/SpellExecutionContext.java
+@@ -23,6 +23,7 @@
+  public int siphonMode(){return setting(SpellPropertyKey.SIPHON_MODE);}
+  public int durationSeconds(){return setting(SpellPropertyKey.DURATION_SECONDS);}
+  public int gravityMode(){return setting(SpellPropertyKey.GRAVITY_MODE);}
++ public int protectionKind(){return setting(SpellPropertyKey.PROTECTION_KIND);}
+  public int relativeDirection(){return setting(SpellPropertyKey.GRAVITY_MODE);}
+  public boolean hasSurfaceFrame(){return parent.surfaceNormal()!=null;}
+  public Vec3 shapeDirection(){
