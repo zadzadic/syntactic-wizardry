@@ -14,7 +14,14 @@ public record SpellExecutionContext(ServerLevel level,Entity owner,int[] plan,in
  public int depth(){return setting(SpellPropertyKey.DEPTH);}
  public int targetType(){return setting(SpellPropertyKey.TARGET_TYPE);}
  public int distance(){return setting(SpellPropertyKey.DISTANCE);}
- public Vec3 shapeDirection(){return rootCast?parent.direction():SpellExecutor.normalizeYaw(castYaw);}
+ public boolean hasSurfaceFrame(){return parent.surfaceNormal()!=null;}
+ public Vec3 shapeDirection(){
+  if(hasSurfaceFrame())return parent.surfaceNormal();
+  return rootCast?parent.direction():SpellExecutor.normalizeYaw(castYaw);
+ }
+ public Vec3 shapeUp(){return hasSurfaceFrame()?parent.up():new Vec3(0.0,1.0,0.0);}
+ public Vec3 boxDirection(){return hasSurfaceFrame()?parent.surfaceNormal():SpellExecutor.normalizeYaw(castYaw);}
+ public Vec3 inheritedSurfaceNormal(){return parent.surfaceNormal();}
  public Vec3 areaOrigin(){
   if(!rootCast)return parent.origin();
   Vec3 yaw=SpellExecutor.normalizeYaw(castYaw);

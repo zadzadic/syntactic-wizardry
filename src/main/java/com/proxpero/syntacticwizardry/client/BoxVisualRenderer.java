@@ -28,9 +28,10 @@ public final class BoxVisualRenderer extends EntityRenderer<BoxVisualEntity> {
   int height=SpellPresentation.readBoxVisualHeight(stack);
   int depth=SpellPresentation.readBoxVisualDepth(stack);
   Vec3 direction=SpellPresentation.readBoxVisualDirection(stack);
+  Vec3 up=SpellPresentation.readBoxVisualUp(stack);
   Vec3 origin=new Vec3(entity.getX(),entity.getY(),entity.getZ());
   int seed=entity.getId()*31;
-  for(BlockPos block:BoxShape.voxels(origin,direction,width,height,depth)){
+  for(BlockPos block:BoxShape.voxels(origin,direction,up,width,height,depth)){
    pose.pushPose();
    pose.translate(block.getX()+0.5-entity.getX(),block.getY()+0.5-entity.getY(),block.getZ()+0.5-entity.getZ());
    itemRenderer.renderStatic(stack,ItemDisplayContext.GROUND,packedLight,OverlayTexture.NO_OVERLAY,pose,buffers,entity.level(),seed++);
