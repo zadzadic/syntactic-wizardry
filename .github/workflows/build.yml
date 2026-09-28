@@ -1,4 +1,4 @@
-name: Build Syntactic Wizardry v0.1.85 snapshot settlement
+name: Build Syntactic Wizardry v0.1.86 landing restoration
 on:
   pull_request:
     branches: [ main ]
@@ -12,13 +12,14 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-      - name: Inject v0.1.85 source
+      - name: Inject v0.1.86 source
         run: |
           rm -rf src/main/java src/main/templates
           rm -f build.gradle settings.gradle gradle.properties
           cat build_payload_part_*.b64 | base64 -d | tar -xzf -
           patch -p1 < build_v0_1_85_snapshot.patch
-          test "$(grep '^mod_version=' gradle.properties | cut -d= -f2)" = "0.1.85"
+          patch -p1 < build_v0_1_86_landing.patch
+          test "$(grep '^mod_version=' gradle.properties | cut -d= -f2)" = "0.1.86"
       - name: Read mod version
         run: echo "MOD_VERSION=$(grep '^mod_version=' gradle.properties | cut -d= -f2)" >> "$GITHUB_ENV"
       - name: Install Gradle 9.2.1
@@ -30,6 +31,6 @@ jobs:
         run: gradle build --stacktrace
       - uses: actions/upload-artifact@v4
         with:
-          name: syntactic-wizardry-${{ env.MOD_VERSION }}-snapshot
+          name: syntactic-wizardry-${{ env.MOD_VERSION }}
           path: build/libs/*.jar
           if-no-files-found: error
