@@ -1,0 +1,52 @@
+diff --git a/sw187_base/src/main/java/com/proxpero/syntacticwizardry/SpellComponents.java b/sw187/src/main/java/com/proxpero/syntacticwizardry/SpellComponents.java
+index de47ae5..7d9bcfc 100644
+--- a/sw187_base/src/main/java/com/proxpero/syntacticwizardry/SpellComponents.java
++++ b/sw187/src/main/java/com/proxpero/syntacticwizardry/SpellComponents.java
+@@ -19,6 +19,7 @@ public final class SpellComponents {
+  public static final int TYPE_BLOCK_INTERACTION=18;
+  public static final int TYPE_RUNE=19;
+  public static final int TYPE_RELATIVE=20;
++ public static final int TYPE_CHAIN=21;
+  private static final SpellPropertyDefinition RADIUS_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.RADIUS,"Radius",SpellPropertyKind.STEPPER,SpellPresentation.RADIUS_MIN,SpellPresentation.RADIUS_MAX,SpellPresentation.RADIUS_DEFAULT,Integer::toString);
+  private static final SpellPropertyDefinition SPHERE_MODE_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.SPHERE_MODE,"Shape",SpellPropertyKind.OPTIONS,0,SpellPresentation.SPHERE_MODE_COUNT-1,SpellPresentation.SPHERE_MODE_DEFAULT,SpellPresentation::sphereModeName);
+  private static final SpellPropertyDefinition POTENCE_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.POTENCE,"Potence",SpellPropertyKind.STEPPER,SpellPresentation.POTENCE_MIN,SpellPresentation.POTENCE_MAX,SpellPresentation.POTENCE_DEFAULT,Integer::toString);
+@@ -38,7 +39,7 @@ public final class SpellComponents {
+  private static final SpellPropertyDefinition GRAVITY_MODE_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.GRAVITY_MODE,"Mode",SpellPropertyKind.OPTIONS,0,SpellPresentation.GRAVITY_MODE_COUNT-1,SpellPresentation.GRAVITY_MODE_DEFAULT,SpellPresentation::gravityModeName);
+  private static final SpellPropertyDefinition RELATIVE_DIRECTION_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.GRAVITY_MODE,"Direction",SpellPropertyKind.OPTIONS,0,SpellPresentation.RELATIVE_DIRECTION_COUNT-1,SpellPresentation.RELATIVE_DIRECTION_DEFAULT,SpellPresentation::relativeDirectionName);
+  private static final SpellPropertyDefinition TARGET_DIRECTION_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.IMPACT_DIRECTION,"Direction",SpellPropertyKind.OPTIONS,0,SpellPresentation.IMPACT_DIRECTION_COUNT-1,SpellPresentation.IMPACT_DIRECTION_DEFAULT,SpellPresentation::impactDirectionName);
+- private static final List<SpellComponentDefinition> ALL=List.of(new MissileDefinition(),new SphereDefinition(),new BoxDefinition(),new ConeDefinition(),new FloatingDefinition(),new TouchDefinition(),new TargetDefinition(),new DamageDefinition(),new DigDefinition(),new RestoreDefinition(),new MoveDefinition(),new SiphonDefinition(),new GravityDefinition(),new SelfDefinition(),new RelativeDefinition(),new RuneDefinition(),new ChannelDefinition(),new StreamDefinition(),new DurationDefinition(),new BlockInteractionDefinition());
++ private static final List<SpellComponentDefinition> ALL=List.of(new MissileDefinition(),new ChainDefinition(),new SphereDefinition(),new BoxDefinition(),new ConeDefinition(),new FloatingDefinition(),new TouchDefinition(),new TargetDefinition(),new DamageDefinition(),new DigDefinition(),new RestoreDefinition(),new MoveDefinition(),new SiphonDefinition(),new GravityDefinition(),new SelfDefinition(),new RelativeDefinition(),new RuneDefinition(),new ChannelDefinition(),new StreamDefinition(),new DurationDefinition(),new BlockInteractionDefinition());
+  private static final Map<Integer,SpellComponentDefinition> BY_TYPE=ALL.stream().collect(Collectors.toUnmodifiableMap(SpellComponentDefinition::typeId,Function.identity()));
+  private static final List<SpellComponentDefinition> SHAPES=ALL.stream().filter(SpellComponentDefinition::isShape).toList();
+  private static final List<SpellComponentDefinition> EFFECTS=ALL.stream().filter(SpellComponents::isEffect).toList();
+@@ -56,6 +57,18 @@ public final class SpellComponents {
+  public static boolean hasAttachedModifier(int[] plan,int row,int ownerCol,int modifierType){for(int col=ownerCol+1;col<SpellPresentation.COLS;col++){int type=SpellPresentation.typeAt(plan,row*SpellPresentation.COLS+col);if(type==SpellPresentation.TYPE_EMPTY)continue;SpellComponentDefinition definition=byType(type);if(definition==null)continue;if(isModifier(definition)){if(type==modifierType)return true;continue;}return false;}return false;}
+  public static int attachedDurationTicks(int[] plan,int[] settings,int row,int ownerCol){for(int col=ownerCol+1;col<SpellPresentation.COLS;col++){int cell=row*SpellPresentation.COLS+col;int type=SpellPresentation.typeAt(plan,cell);if(type==SpellPresentation.TYPE_EMPTY)continue;SpellComponentDefinition definition=byType(type);if(definition==null)continue;if(isModifier(definition)){if(type==TYPE_DURATION)return SpellPresentation.durationSecondsAt(settings,cell)*20;continue;}return 0;}return 0;}
+  public static boolean requiresHeldUse(int[] plan){return hasChannel(plan)||hasStream(plan);}
++ public static boolean acceptsContinuationTarget(int[] plan,int resolvedRow,Entity entity){
++  if(entity==null||entity.isRemoved()||!entity.isPickable()||entity.isSpectator())return false;
++  int nextRow=resolvedRow+1;boolean hasEffect=false;
++  if(nextRow<SpellPresentation.ROWS){for(int col=0;col<SpellPresentation.COLS;col++){SpellComponentDefinition definition=byType(SpellPresentation.typeAt(plan,nextRow*SpellPresentation.COLS+col));if(!isEffect(definition))continue;hasEffect=true;if(definition.acceptsDirectEntity(entity))return true;}}
++  return !hasEffect;
++ }
++ public static int[] reducedChainSettings(int[] plan,int[] settings,int resolvedRow){
++  int[] reduced=settings==null?SpellPresentation.emptySettings():java.util.Arrays.copyOf(settings,settings.length);
++  for(int row=Math.max(0,resolvedRow+1);row<SpellPresentation.ROWS;row++)for(int col=0;col<SpellPresentation.COLS;col++){int cell=row*SpellPresentation.COLS+col;SpellComponentDefinition definition=byType(SpellPresentation.typeAt(plan,cell));if(!isEffect(definition)||!usesPotence(definition))continue;int current=SpellPresentation.potenceAt(reduced,cell);if(current<=1)return null;SpellPresentation.setSetting(reduced,cell,SpellPropertyKey.POTENCE,current-1);}
++  return reduced;
++ }
++ private static boolean usesPotence(SpellComponentDefinition definition){for(SpellPropertyDefinition property:definition.settings())if(property.key()==SpellPropertyKey.POTENCE)return true;return false;}
+  private abstract static class BaseDefinition implements SpellComponentDefinition {
+   private final int typeId;private final String name;private final boolean shape;private final int defaultStyle;private final int defaultVisual;private final List<Integer> styleOptions;private final boolean supportsVisuals;private final List<SpellPropertyDefinition> settings;
+   BaseDefinition(int typeId,String name,boolean shape,int defaultStyle,int defaultVisual,List<Integer> styleOptions,boolean supportsVisuals,List<SpellPropertyDefinition> settings){this.typeId=typeId;this.name=name;this.shape=shape;this.defaultStyle=defaultStyle;this.defaultVisual=defaultVisual;this.styleOptions=List.copyOf(styleOptions);this.supportsVisuals=supportsVisuals;this.settings=List.copyOf(settings);}
+@@ -66,6 +79,11 @@ public final class SpellComponents {
+   @Override public ItemStack createEditorIcon(){return SyntacticWizardry.MISSILE_SHAPE.get().getDefaultInstance();}
+   @Override public ComponentExecutionResult execute(SpellExecutionContext context){SpellMissile missile=new SpellMissile(SyntacticWizardry.SPELL_MISSILE.get(),context.level());missile.prepare(context.owner(),context.parent().origin(),context.shapeDirection(),context.castYaw(),context.plan(),context.settings(),context.row(),context.cell(),context.activeDurationTicks(),context.blockInteraction());boolean spawned=context.level().addFreshEntity(missile);return ComponentExecutionResult.spawned();}
+  }
++ private static final class ChainDefinition extends BaseDefinition {
++  ChainDefinition(){super(TYPE_CHAIN,"Chain",true,SpellPresentation.STYLE_DEFAULT,SpellPresentation.VISUAL_DEFAULT,List.of(SpellPresentation.STYLE_DEFAULT,SpellPresentation.STYLE_ARC,SpellPresentation.STYLE_SPIRAL),true,List.of(IMPACT_DIRECTION_PROPERTY));}
++  @Override public ItemStack createEditorIcon(){return Items.CHAIN.getDefaultInstance();}
++  @Override public ComponentExecutionResult execute(SpellExecutionContext context){SpellMissile missile=new SpellMissile(SyntacticWizardry.SPELL_MISSILE.get(),context.level());missile.prepare(context.owner(),context.parent().origin(),context.shapeDirection(),context.castYaw(),context.plan(),context.settings(),context.row(),context.cell(),context.activeDurationTicks(),context.blockInteraction());boolean spawned=context.level().addFreshEntity(missile);return ComponentExecutionResult.spawned();}
++ }
+  private static final class SphereDefinition extends BaseDefinition {
+   SphereDefinition(){super(SpellPresentation.TYPE_SPHERE,"Sphere",true,SpellPresentation.STYLE_DEFAULT,SpellPresentation.VISUAL_DEFAULT,List.of(SpellPresentation.STYLE_DEFAULT,SpellPresentation.STYLE_INNER,SpellPresentation.STYLE_OUTER),true,List.of(RADIUS_PROPERTY,HEIGHT_PROPERTY,SPHERE_MODE_PROPERTY));}
+   @Override public ItemStack createEditorIcon(){return SyntacticWizardry.SPHERE_SHAPE.get().getDefaultInstance();}
