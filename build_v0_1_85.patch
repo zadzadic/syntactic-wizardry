@@ -1,0 +1,97 @@
+--- a/src/main/java/com/proxpero/syntacticwizardry/MovedBlockEntity.java
++++ b/src/main/java/com/proxpero/syntacticwizardry/MovedBlockEntity.java
+@@ -424,16 +424,17 @@
+             Vec3 start = group.translation.add(alreadyMoved).add(axisVector(axis, moved));
+             Vec3 candidate = start.add(axisVector(axis, step));
+ 
++            List<MovedBlockEntity> movingMarkers = movingCollisionMarkers(level, group, start, candidate);
+             List<RigidMember> blocked = null;
+             for (RigidMember member : group.members) {
+-                if (canOccupy(level, member, candidate)) continue;
++                if (canOccupy(level, member, candidate, group.id, movingMarkers)) continue;
+                 if (blocked == null) blocked = new ArrayList<>();
+                 blocked.add(member);
+             }
+ 
+             if (blocked != null) {
+                 for (RigidMember member : blocked) {
+-                    double contact = memberContactDistance(level, member, start, step, axis);
++                    double contact = memberContactDistance(level, member, start, step, axis, group.id, movingMarkers);
+                     Vec3 contactTranslation = start.add(axisVector(axis, contact));
+                     detachMember(member, contactTranslation);
+                 }
+@@ -458,15 +459,46 @@
+     }
+ 
+     private static boolean canOccupy(ServerLevel level, RigidMember member, Vec3 translation) {
++        return canOccupy(level, member, translation, null, List.of());
++    }
++
++    private static boolean canOccupy(ServerLevel level, RigidMember member, Vec3 translation,
++                                     UUID ignoredGroupId, List<MovedBlockEntity> movingMarkers) {
++        AABB box = memberCollisionBox(member, translation);
++        if (!level.noBlockCollision(null, box)) return false;
++        for (MovedBlockEntity marker : movingMarkers) {
++            if (marker == null || marker.isRemoved()) continue;
++            if (ignoredGroupId != null && ignoredGroupId.equals(marker.rigidGroupId)) continue;
++            if (movingBlockCollisionBox(marker).intersects(box)) return false;
++        }
++        return true;
++    }
++
++    private static AABB memberCollisionBox(RigidMember member, Vec3 translation) {
+         BlockPos p = member.originalPos;
+-        AABB box = new AABB(
++        return new AABB(
+                 p.getX() + translation.x + COLLISION_BOX_EPSILON,
+                 p.getY() + translation.y + COLLISION_BOX_EPSILON,
+                 p.getZ() + translation.z + COLLISION_BOX_EPSILON,
+                 p.getX() + 1.0D + translation.x - COLLISION_BOX_EPSILON,
+                 p.getY() + 1.0D + translation.y - COLLISION_BOX_EPSILON,
+                 p.getZ() + 1.0D + translation.z - COLLISION_BOX_EPSILON);
+-        return level.noBlockCollision(null, box);
++    }
++
++    private static AABB movingBlockCollisionBox(MovedBlockEntity entity) {
++        return new AABB(
++                entity.getX() - 0.5D + COLLISION_BOX_EPSILON,
++                entity.getY() + COLLISION_BOX_EPSILON,
++                entity.getZ() - 0.5D + COLLISION_BOX_EPSILON,
++                entity.getX() + 0.5D - COLLISION_BOX_EPSILON,
++                entity.getY() + 1.0D - COLLISION_BOX_EPSILON,
++                entity.getZ() + 0.5D - COLLISION_BOX_EPSILON);
++    }
++
++    private static List<MovedBlockEntity> movingCollisionMarkers(ServerLevel level, RigidGroup group,
++                                                                  Vec3 start, Vec3 candidate) {
++        AABB bounds = groupBounds(group.members, start).minmax(groupBounds(group.members, candidate)).inflate(1.0D);
++        return level.getEntitiesOfClass(MovedBlockEntity.class, bounds, entity -> !entity.isRemoved());
+     }
+ 
+     private static boolean canOccupy(ServerLevel level, List<RigidMember> members, Vec3 translation) {
+@@ -478,13 +510,14 @@
+ 
+     /** Find the last safe point for one member along the current axis step. */
+     private static double memberContactDistance(ServerLevel level, RigidMember member, Vec3 start,
+-                                                double step, int axis) {
++                                                double step, int axis, UUID ignoredGroupId,
++                                                List<MovedBlockEntity> movingMarkers) {
+         double lo = 0.0D;
+         double hi = step;
+         for (int i = 0; i < 10; i++) {
+             double mid = (lo + hi) * 0.5D;
+             Vec3 test = start.add(axisVector(axis, mid));
+-            if (canOccupy(level, member, test)) lo = mid;
++            if (canOccupy(level, member, test, ignoredGroupId, movingMarkers)) lo = mid;
+             else hi = mid;
+         }
+         return lo;
+--- a/gradle.properties
++++ b/gradle.properties
+@@ -11,5 +11,5 @@
+ mod_id=syntacticwizardry
+ mod_name=Syntactic Wizardry
+ mod_license=All Rights Reserved
+-mod_version=0.1.84
++mod_version=0.1.85
+ mod_group_id=com.proxpero.syntacticwizardry
