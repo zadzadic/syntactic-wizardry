@@ -1,0 +1,26 @@
+--- a/src/main/java/com/proxpero/syntacticwizardry/DamageEffect.java
++++ b/src/main/java/com/proxpero/syntacticwizardry/DamageEffect.java
+@@ -14,7 +14,7 @@
+   float amount=Mth.clamp(potence,SpellPresentation.POTENCE_MIN,SpellPresentation.POTENCE_MAX);
+   Entity direct=resolution.directEntity();
+   if(direct instanceof LivingEntity living&&living.isAlive()){
+-   living.hurt(level.damageSources().generic(),amount);
++   hurtProtected(level,living,damageKind,amount);
+    return;
+   }
+   List<BlockPos> voxels=resolution.voxels();
+@@ -29,9 +29,13 @@
+   }
+   AABB bounds=new AABB(minX,minY,minZ,maxX+1.0,maxY+1.0,maxZ+1.0);
+   for(LivingEntity living:level.getEntitiesOfClass(LivingEntity.class,bounds,LivingEntity::isAlive)){
+-   if(intersectsVoxel(living.getBoundingBox(),occupied))living.hurt(level.damageSources().generic(),amount);
++   if(intersectsVoxel(living.getBoundingBox(),occupied))hurtProtected(level,living,damageKind,amount);
+   }
+  }
++ private static void hurtProtected(ServerLevel level,LivingEntity living,int damageKind,float amount){
++  float reduced=SpellProtectionService.reduceDamage(level,living,damageKind,amount);
++  if(reduced>0.0F)living.hurt(level.damageSources().generic(),reduced);
++ }
+  private static boolean intersectsVoxel(AABB box,Set<Long> occupied){
+   int minX=Mth.floor(box.minX+1.0E-7),minY=Mth.floor(box.minY+1.0E-7),minZ=Mth.floor(box.minZ+1.0E-7);
+   int maxX=Mth.floor(box.maxX-1.0E-7),maxY=Mth.floor(box.maxY-1.0E-7),maxZ=Mth.floor(box.maxZ-1.0E-7);
