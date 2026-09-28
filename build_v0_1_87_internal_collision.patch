@@ -1,0 +1,228 @@
+diff -ruN sw184/gradle.properties sw187/gradle.properties
+--- sw184/gradle.properties
++++ sw187/gradle.properties
+@@ -11,5 +11,5 @@
+ mod_id=syntacticwizardry
+ mod_name=Syntactic Wizardry
+ mod_license=All Rights Reserved
+-mod_version=0.1.84
++mod_version=0.1.87
+ mod_group_id=com.proxpero.syntacticwizardry
+diff -ruN sw184/src/main/java/com/proxpero/syntacticwizardry/MovedBlockEntity.java sw187/src/main/java/com/proxpero/syntacticwizardry/MovedBlockEntity.java
+--- sw184/src/main/java/com/proxpero/syntacticwizardry/MovedBlockEntity.java
++++ sw187/src/main/java/com/proxpero/syntacticwizardry/MovedBlockEntity.java
+@@ -27,9 +27,9 @@
+  *
+  * A single moved block can still use the legacy independent physics path.
+  * Area Move uses a RigidGroup: active member blocks share one translation and
+- * one velocity, but terrain collision is resolved per member.  A member that
+- * hits terrain detaches at its own contact point and becomes an ordinary
+- * falling block while the unobstructed members keep the shared trajectory.
++ * one velocity, while terrain collision is resolved per member. Members that
++ * stop remain owned by the group as fixed internal collision markers until
++ * final settlement, so following layers cannot move through them.
+  */
+@@ -299,10 +299,21 @@
+         }
+     }
+ 
++    private static final class StoppedRigidMember {
++        final RigidMember member;
++        final Vec3 translation;
++
++        StoppedRigidMember(RigidMember member, Vec3 translation) {
++            this.member = member;
++            this.translation = translation;
++        }
++    }
++
+     /** Server-side rigid-body controller for one moved Shape occupancy. */
+     private static final class RigidGroup {
+         final UUID id;
+         final List<RigidMember> members;
++        final List<StoppedRigidMember> stoppedMembers = new ArrayList<>();
+@@ -341,7 +352,7 @@
+                 members.remove(i);
+             }
+             if (members.isEmpty()) {
+-                RIGID_GROUPS.remove(id);
++                finish(level);
+                 return;
+             }
+@@ -351,10 +362,10 @@
+             translation = translation.add(actual);
+             travelledDistance += Math.sqrt(actual.lengthSqr());
+ 
+-            // Every member may have collided and detached while resolving this
+-            // tick.  Detached entities now own their own vanilla falling logic.
++            // Every active member may have stopped while resolving this tick.
++            // Stopped members remain owned by this group until settlement.
+             if (members.isEmpty()) {
+-                RIGID_GROUPS.remove(id);
++                finish(level);
+                 return;
+             }
+@@ -389,19 +400,42 @@
+ 
+         void finish(ServerLevel level) {
+             RIGID_GROUPS.remove(id);
+-            if (members.isEmpty()) return;
+-            BlockPos preferred = nearestOffset(translation);
+-            BlockPos offset = canPlaceAtOffset(level, members, preferred) ? preferred : lastSafeOffset;
+-            if (!canPlaceAtOffset(level, members, offset)) offset = BlockPos.ZERO;
+-
+-            boolean placed = placeAtOffset(level, members, offset);
++
++            Map<BlockPos, List<RigidMember>> clusters = new HashMap<>();
++            BlockPos activeOffset = nearestOffset(translation);
++            if (!members.isEmpty()) {
++                clusters.computeIfAbsent(activeOffset, ignored -> new ArrayList<>()).addAll(members);
++            }
++            for (StoppedRigidMember stopped : stoppedMembers) {
++                BlockPos offset = nearestOffset(stopped.translation);
++                clusters.computeIfAbsent(offset, ignored -> new ArrayList<>()).add(stopped.member);
++            }
++            if (clusters.isEmpty()) return;
++
++            Map.Entry<BlockPos, List<RigidMember>> main = null;
++            for (Map.Entry<BlockPos, List<RigidMember>> entry : clusters.entrySet()) {
++                if (main == null
++                        || entry.getValue().size() > main.getValue().size()
++                        || (entry.getValue().size() == main.getValue().size() && entry.getKey().equals(activeOffset))) {
++                    main = entry;
++                }
++            }
++
++            BlockPos mainOffset = main.getKey();
++            List<RigidMember> mainMembers = main.getValue();
++            boolean placed = placeAtOffset(level, mainMembers, mainOffset);
+             if (!placed) {
+-                clearPlacedAtOffset(level, members, offset);
+-                restoreMembers(level, members);
++                clearPlacedAtOffset(level, mainMembers, mainOffset);
++                restoreMembers(level, mainMembers);
+             }
+-            for (RigidMember member : members) {
++            for (RigidMember member : mainMembers) {
+                 if (member.entity != null && !member.entity.isRemoved()) member.entity.discard();
+             }
++
++            for (Map.Entry<BlockPos, List<RigidMember>> entry : clusters.entrySet()) {
++                if (entry.getKey().equals(mainOffset)) continue;
++                for (RigidMember member : entry.getValue()) releaseStoppedMember(member);
++            }
+         }
+     }
+@@ -426,23 +460,27 @@
+ 
+             List<RigidMember> blocked = null;
+             for (RigidMember member : group.members) {
+-                if (canOccupy(level, member, candidate)) continue;
++                if (canOccupy(level, group, member, candidate)) continue;
+                 if (blocked == null) blocked = new ArrayList<>();
+                 blocked.add(member);
+             }
+ 
+             if (blocked != null) {
+                 for (RigidMember member : blocked) {
+-                    double contact = memberContactDistance(level, member, start, step, axis);
++                    double contact = memberContactDistance(level, group, member, start, step, axis);
+                     Vec3 contactTranslation = start.add(axisVector(axis, contact));
+-                    detachMember(member, contactTranslation);
++                    stopRigidMember(group, member, contactTranslation);
+                 }
+                 group.members.removeAll(blocked);
+                 if (group.members.isEmpty()) break;
++
++                // Re-evaluate this exact movement step. Newly stopped members
++                // are immediate internal collision markers for the members
++                // still moving in the rigid group.
++                continue;
+             }
+ 
+-            // Blocked members have detached.  Every remaining member can take
+-            // the complete step, preserving their relative configuration.
+             moved += step;
+             remaining -= step;
+         }
+@@ -457,16 +495,28 @@
+         };
+     }
+ 
+-    private static boolean canOccupy(ServerLevel level, RigidMember member, Vec3 translation) {
++    private static AABB memberCollisionBox(RigidMember member, Vec3 translation) {
+         BlockPos p = member.originalPos;
+-        AABB box = new AABB(
++        return new AABB(
+                 p.getX() + translation.x + COLLISION_BOX_EPSILON,
+                 p.getY() + translation.y + COLLISION_BOX_EPSILON,
+                 p.getZ() + translation.z + COLLISION_BOX_EPSILON,
+                 p.getX() + 1.0D + translation.x - COLLISION_BOX_EPSILON,
+                 p.getY() + 1.0D + translation.y - COLLISION_BOX_EPSILON,
+                 p.getZ() + 1.0D + translation.z - COLLISION_BOX_EPSILON);
+-        return level.noBlockCollision(null, box);
++    }
++
++    private static boolean canOccupy(ServerLevel level, RigidMember member, Vec3 translation) {
++        return level.noBlockCollision(null, memberCollisionBox(member, translation));
++    }
++
++    private static boolean canOccupy(ServerLevel level, RigidGroup group, RigidMember member, Vec3 translation) {
++        AABB box = memberCollisionBox(member, translation);
++        if (!level.noBlockCollision(null, box)) return false;
++        for (StoppedRigidMember stopped : group.stoppedMembers) {
++            if (memberCollisionBox(stopped.member, stopped.translation).intersects(box)) return false;
++        }
++        return true;
+     }
+@@ -477,32 +527,37 @@
+     }
+ 
+     /** Find the last safe point for one member along the current axis step. */
+-    private static double memberContactDistance(ServerLevel level, RigidMember member, Vec3 start,
++    private static double memberContactDistance(ServerLevel level, RigidGroup group, RigidMember member, Vec3 start,
+                                                 double step, int axis) {
+         double lo = 0.0D;
+         double hi = step;
+         for (int i = 0; i < 10; i++) {
+             double mid = (lo + hi) * 0.5D;
+             Vec3 test = start.add(axisVector(axis, mid));
+-            if (canOccupy(level, member, test)) lo = mid;
++            if (canOccupy(level, group, member, test)) lo = mid;
+             else hi = mid;
+         }
+         return lo;
+     }
+ 
+-    /**
+-     * Release one member from rigid motion at its terrain contact point.
+-     * Horizontal/forward momentum is deliberately discarded: the block has
+-     * been stopped by the obstruction and from this point simply falls under
+-     * ordinary FallingBlockEntity gravity and collision.
+-     */
+-    private static void detachMember(RigidMember member, Vec3 translation) {
++    private static void stopRigidMember(RigidGroup group, RigidMember member, Vec3 translation) {
++        MovedBlockEntity entity = member.entity;
++        if (entity != null && !entity.isRemoved()) {
++            BlockPos p = member.originalPos;
++            entity.setPos(p.getX() + 0.5D + translation.x,
++                    p.getY() + translation.y,
++                    p.getZ() + 0.5D + translation.z);
++            entity.setDeltaMovement(Vec3.ZERO);
++            entity.noPhysics = true;
++            entity.setNoGravity(true);
++            entity.hurtMarked = true;
++        }
++        group.stoppedMembers.add(new StoppedRigidMember(member, translation));
++    }
++
++    private static void releaseStoppedMember(RigidMember member) {
+         MovedBlockEntity entity = member.entity;
+         if (entity == null || entity.isRemoved()) return;
+-        BlockPos p = member.originalPos;
+-        entity.setPos(p.getX() + 0.5D + translation.x,
+-                p.getY() + translation.y,
+-                p.getZ() + 0.5D + translation.z);
+         entity.rigidGroupId = null;
+         entity.customPhysics = false;
+         entity.noPhysics = false;
