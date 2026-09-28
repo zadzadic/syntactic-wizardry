@@ -1,4 +1,4 @@
-name: Build Syntactic Wizardry v0.1.84
+name: Build Syntactic Wizardry v0.1.85
 on:
   pull_request:
     branches: [ main ]
@@ -12,12 +12,13 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-      - name: Inject v0.1.84 source
+      - name: Inject v0.1.85 source
         run: |
           rm -rf src/main/java src/main/templates
           rm -f build.gradle settings.gradle gradle.properties
           cat build_payload_part_*.b64 | base64 -d | tar -xzf -
-          test "$(grep '^mod_version=' gradle.properties | cut -d= -f2)" = "0.1.84"
+          patch -p1 < build_v0_1_85.patch
+          test "$(grep '^mod_version=' gradle.properties | cut -d= -f2)" = "0.1.85"
       - name: Read mod version
         run: echo "MOD_VERSION=$(grep '^mod_version=' gradle.properties | cut -d= -f2)" >> "$GITHUB_ENV"
       - name: Install Gradle 9.2.1
