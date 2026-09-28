@@ -1,0 +1,129 @@
+--- a/src/main/java/com/proxpero/syntacticwizardry/MovedBlockEntity.java
++++ b/src/main/java/com/proxpero/syntacticwizardry/MovedBlockEntity.java
+@@ -17,9 +17,11 @@
+ import java.util.ArrayList;
+ import java.util.Comparator;
+ import java.util.HashMap;
++import java.util.HashSet;
+ import java.util.LinkedHashSet;
+ import java.util.List;
+ import java.util.Map;
++import java.util.Set;
+ import java.util.UUID;
+ 
+ /**
+@@ -302,7 +304,9 @@
+     /** Server-side rigid-body controller for one moved Shape occupancy. */
+     private static final class RigidGroup {
+         final UUID id;
++        final List<RigidMember> snapshot;
+         final List<RigidMember> members;
++        final Set<BlockPos> lostOriginalPositions = new HashSet<>();
+         final double requiredDistance;
+         final int maxAssistedTicks;
+         final int maxLifetimeTicks;
+@@ -317,6 +321,7 @@
+ 
+         RigidGroup(UUID id, List<RigidMember> members, Vec3 direction, int potence, float maxHardness) {
+             this.id = id;
++            this.snapshot = List.copyOf(members);
+             this.members = new ArrayList<>(members);
+             this.requiredDistance = MoveTravelRuntime.BLOCKS_PER_POTENCE * potence;
+             this.maxAssistedTicks = TICKS_PER_POTENCE * potence;
+@@ -325,6 +330,18 @@
+             this.velocity = direction.scale(MoveTravelRuntime.blockImpulseForPotence(potence));
+         }
+ 
++        void markLost(RigidMember member) {
++            if (member != null) lostOriginalPositions.add(member.originalPos);
++        }
++
++        List<RigidMember> survivingSnapshot() {
++            ArrayList<RigidMember> surviving = new ArrayList<>(snapshot.size());
++            for (RigidMember member : snapshot) {
++                if (!lostOriginalPositions.contains(member.originalPos)) surviving.add(member);
++            }
++            return surviving;
++        }
++
+         void tick(ServerLevel level) {
+             long gameTick = level.getGameTime();
+             if (lastGameTick == gameTick) return;
+@@ -338,6 +355,7 @@
+                 RigidMember member = members.get(i);
+                 if (member.entity != null && !member.entity.isRemoved()) continue;
+                 restore(level, member.originalPos, member.state, member.blockData);
++                markLost(member);
+                 members.remove(i);
+             }
+             if (members.isEmpty()) {
+@@ -389,17 +407,18 @@
+ 
+         void finish(ServerLevel level) {
+             RIGID_GROUPS.remove(id);
+-            if (members.isEmpty()) return;
++            List<RigidMember> settling = survivingSnapshot();
++            if (settling.isEmpty()) return;
+             BlockPos preferred = nearestOffset(translation);
+-            BlockPos offset = canPlaceAtOffset(level, members, preferred) ? preferred : lastSafeOffset;
+-            if (!canPlaceAtOffset(level, members, offset)) offset = BlockPos.ZERO;
++            BlockPos offset = canPlaceAtOffset(level, settling, preferred) ? preferred : lastSafeOffset;
++            if (!canPlaceAtOffset(level, settling, offset)) offset = BlockPos.ZERO;
+ 
+-            boolean placed = placeAtOffset(level, members, offset);
++            boolean placed = pasteSnapshotAtOffset(level, settling, offset);
+             if (!placed) {
+-                clearPlacedAtOffset(level, members, offset);
+-                restoreMembers(level, members);
++                clearPlacedAtOffset(level, settling, offset);
++                pasteSnapshotAtOffset(level, settling, BlockPos.ZERO);
+             }
+-            for (RigidMember member : members) {
++            for (RigidMember member : settling) {
+                 if (member.entity != null && !member.entity.isRemoved()) member.entity.discard();
+             }
+         }
+@@ -435,6 +454,7 @@
+                 for (RigidMember member : blocked) {
+                     double contact = memberContactDistance(level, member, start, step, axis);
+                     Vec3 contactTranslation = start.add(axisVector(axis, contact));
++                    group.markLost(member);
+                     detachMember(member, contactTranslation);
+                 }
+                 group.members.removeAll(blocked);
+@@ -585,13 +605,24 @@
+ 
+     private static boolean placeAtOffset(ServerLevel level, List<RigidMember> members, BlockPos offset) {
+         if (!canPlaceAtOffset(level, members, offset)) return false;
++        return pasteSnapshotAtOffset(level, members, offset);
++    }
++
++    /**
++     * Reconstruct the surviving rigid structure from its saved block snapshot.
++     * Unlike FallingBlockEntity landing, this does not depend on each moving
++     * entity successfully placing itself. A false return from setBlock is only
++     * a failure if the requested saved state is still absent afterward.
++     */
++    private static boolean pasteSnapshotAtOffset(ServerLevel level, List<RigidMember> members, BlockPos offset) {
+         List<RigidMember> ordered = new ArrayList<>(members);
+         ordered.sort(Comparator.comparingInt(m -> m.originalPos.getY()));
+ 
+-        // First place the complete rigid structure without neighbor cascades.
++        // First paste the complete saved structure without neighbor cascades.
+         for (RigidMember member : ordered) {
+             BlockPos target = member.originalPos.offset(offset.getX(), offset.getY(), offset.getZ());
+-            if (!level.setBlock(target, member.state, 2)) return false;
++            level.setBlock(target, member.state, 2);
++            if (!level.getBlockState(target).equals(member.state)) return false;
+         }
+         // Restore block-entity data only after every supporting block exists.
+         for (RigidMember member : ordered) {
+--- a/gradle.properties
++++ b/gradle.properties
+@@ -11,5 +11,5 @@
+ mod_id=syntacticwizardry
+ mod_name=Syntactic Wizardry
+ mod_license=All Rights Reserved
+-mod_version=0.1.84
++mod_version=0.1.85
+ mod_group_id=com.proxpero.syntacticwizardry
