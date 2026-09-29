@@ -1,7 +1,12 @@
 package com.proxpero.syntacticwizardry;
 
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /** Deterministic seed-based High Mana chunk property, analogous to slime chunks. */
 public final class HighManaZones {
@@ -23,7 +28,16 @@ public final class HighManaZones {
         return Long.remainderUnsigned(mix64(value), RARITY_DENOMINATOR) == 0L;
     }
 
-    public static Target nearest(ServerLevel level, Player player) {
+    public static Target nearestUnclaimed(ServerLevel level, Player player, List<HighManaClaimSavedData.Claim> claimed) {
+        ResourceLocation dimension = level.dimension().location();
+        Set<Long> excluded = new HashSet<>();
+        for (HighManaClaimSavedData.Claim claim : claimed) {
+            if (claim.dimension().equals(dimension)) excluded.add(chunkKey(claim.chunkX(), claim.chunkZ()));
+        }
+        return nearest(level, player, excluded);
+    }
+
+    private static Target nearest(ServerLevel level, Player player, Set<Long> excluded) {
         int originX = player.chunkPosition().x;
         int originZ = player.chunkPosition().z;
         double px = player.getX();
@@ -38,6 +52,7 @@ public final class HighManaZones {
                     if (Math.max(Math.abs(dx), Math.abs(dz)) != radius) continue;
                     int chunkX = originX + dx;
                     int chunkZ = originZ + dz;
+                    if (excluded.contains(chunkKey(chunkX, chunkZ))) continue;
                     if (!isHighMana(level, chunkX, chunkZ)) continue;
                     double tx = (chunkX << 4) + 8.0D;
                     double tz = (chunkZ << 4) + 8.0D;
@@ -52,6 +67,10 @@ public final class HighManaZones {
             if (firstFoundRing >= 0 && radius >= firstFoundRing + 2) break;
         }
         return best;
+    }
+
+    private static long chunkKey(int x, int z) {
+        return ((long) x << 32) ^ (z & 0xffffffffL);
     }
 
     private static long mix64(long value) {
