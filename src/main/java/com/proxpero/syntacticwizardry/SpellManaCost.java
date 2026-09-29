@@ -94,6 +94,7 @@ public final class SpellManaCost {
             case SpellComponents.TYPE_GRAVITY -> 1.0F * potence;
             case SpellComponents.TYPE_ALTER -> 0.0F; // Alter pricing has not been defined yet.
             case SpellComponents.TYPE_FLIGHT -> 10.0F * potence;
+            case SpellComponents.TYPE_DIMENSIONAL_STORAGE -> 20.0F * potence;
             case SpellComponents.TYPE_PROTECTION -> 5.0F * potence;
             case SpellComponents.TYPE_TEMPORARY_BLOCK -> temporaryBlockCost(plan, settings, cell);
             case SpellComponents.TYPE_DURATION -> durationCost(plan, settings, cell);
