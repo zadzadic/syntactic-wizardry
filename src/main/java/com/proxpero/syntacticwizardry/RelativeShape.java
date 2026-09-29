@@ -24,6 +24,7 @@ public final class RelativeShape {
         Vec3 yaw = SpellExecutor.normalizeYaw(context.castYaw());
         Vec3 inheritedFacing = normalize(parent.direction(), yaw);
         Vec3 inheritedUp = normalize(parent.up(), WORLD_UP);
+        Vec3 outputFacing = normalize(yaw, inheritedFacing);
         Vec3 right = new Vec3(yaw.z, 0.0D, -yaw.x).normalize();
         int directionId = context.relativeDirection();
         Vec3 offsetDirection = switch (directionId) {
@@ -51,9 +52,9 @@ public final class RelativeShape {
         if (entityHit != null && (!hasBlock || entityHit.distanceSqr() < blockDistanceSqr)) {
             return new ShapeResolution(
                     entityHit.location(),
-                    inheritedFacing,
-                    inheritedUp,
-                    parent.surfaceNormal(),
+                    outputFacing,
+                    WORLD_UP,
+                    null,
                     List.of(),
                     entityHit.entity(),
                     VectorPolicy.FORWARD
@@ -63,9 +64,9 @@ public final class RelativeShape {
         if (hasBlock) {
             return new ShapeResolution(
                     blockHit.getLocation(),
-                    inheritedFacing,
-                    inheritedUp,
-                    parent.surfaceNormal(),
+                    outputFacing,
+                    WORLD_UP,
+                    null,
                     List.of(blockHit.getBlockPos().immutable()),
                     null,
                     VectorPolicy.FORWARD
@@ -84,9 +85,9 @@ public final class RelativeShape {
         );
         return new ShapeResolution(
                 targetOrigin,
-                inheritedFacing,
-                inheritedUp,
-                parent.surfaceNormal(),
+                outputFacing,
+                WORLD_UP,
+                null,
                 List.of(targetBlock.immutable()),
                 null,
                 VectorPolicy.FORWARD
