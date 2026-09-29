@@ -107,7 +107,7 @@ public final class SpellComponents {
  private static final class ChainDefinition extends BaseDefinition {
   ChainDefinition(){super(TYPE_CHAIN,"Chain",true,SpellPresentation.STYLE_DEFAULT,SpellPresentation.VISUAL_DEFAULT,List.of(SpellPresentation.STYLE_DEFAULT,SpellPresentation.STYLE_ARC,SpellPresentation.STYLE_SPIRAL),true,List.of(IMPACT_DIRECTION_PROPERTY));}
   @Override public ItemStack createEditorIcon(){return Items.CHAIN.getDefaultInstance();}
-  @Override public ComponentExecutionResult execute(SpellExecutionContext context){SpellMissile missile=new SpellMissile(SyntacticWizardry.SPELL_MISSILE.get(),context.level());missile.prepare(context.owner(),context.parent().origin(),context.shapeDirection(),context.castYaw(),context.plan(),context.settings(),context.row(),context.cell(),context.activeDurationTicks(),context.blockInteraction());boolean spawned=context.level().addFreshEntity(missile);return ComponentExecutionResult.spawned();}
+  @Override public ComponentExecutionResult execute(SpellExecutionContext context){SpellMissile.spawnGroup(context);return ComponentExecutionResult.spawned();}
  }
  private static final class SphereDefinition extends BaseDefinition {
   SphereDefinition(){super(SpellPresentation.TYPE_SPHERE,"Sphere",true,SpellPresentation.STYLE_DEFAULT,SpellPresentation.VISUAL_DEFAULT,List.of(SpellPresentation.STYLE_DEFAULT,SpellPresentation.STYLE_INNER,SpellPresentation.STYLE_OUTER),true,List.of(RADIUS_PROPERTY,HEIGHT_PROPERTY,SPHERE_MODE_PROPERTY));}
