@@ -1,4 +1,4 @@
-name: Build Syntactic Wizardry v0.1.91 Relative
+name: Build Syntactic Wizardry v0.1.92 Duration visuals
 on:
   pull_request:
     branches: [ main ]
@@ -12,7 +12,7 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-      - name: Inject v0.1.91 source
+      - name: Inject v0.1.92 source
         run: |
           rm -rf src/main/java src/main/templates
           rm -f build.gradle settings.gradle gradle.properties
@@ -33,7 +33,8 @@ jobs:
           cp ProtectionDamageEvents_v0_1_90.java src/main/java/com/proxpero/syntacticwizardry/ProtectionDamageEvents.java
           patch -p1 < v0_1_91_version.patch
           cp RelativeShape_v0_1_91.java src/main/java/com/proxpero/syntacticwizardry/RelativeShape.java
-          test "$(grep '^mod_version=' gradle.properties | cut -d= -f2)" = "0.1.91"
+          base64 -d v0_1_92_overlay.b64 | tar -xzf -
+          test "$(grep '^mod_version=' gradle.properties | cut -d= -f2)" = "0.1.92"
       - name: Read mod version
         run: echo "MOD_VERSION=$(grep '^mod_version=' gradle.properties | cut -d= -f2)" >> "$GITHUB_ENV"
       - name: Install Gradle 9.2.1
