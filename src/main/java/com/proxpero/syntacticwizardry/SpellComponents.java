@@ -23,10 +23,12 @@ public final class SpellComponents {
  public static final int TYPE_PROTECTION=22;
  public static final int TYPE_TEMPORARY_BLOCK=23;
  public static final int TYPE_ALTER=24;
+ public static final int TYPE_FLIGHT=25;
  private static final SpellPropertyDefinition RADIUS_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.RADIUS,"Radius",SpellPropertyKind.STEPPER,SpellPresentation.RADIUS_MIN,SpellPresentation.RADIUS_MAX,SpellPresentation.RADIUS_DEFAULT,Integer::toString);
  private static final SpellPropertyDefinition SPHERE_MODE_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.SPHERE_MODE,"Shape",SpellPropertyKind.OPTIONS,0,SpellPresentation.SPHERE_MODE_COUNT-1,SpellPresentation.SPHERE_MODE_DEFAULT,SpellPresentation::sphereModeName);
  private static final SpellPropertyDefinition POTENCE_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.POTENCE,"Potence",SpellPropertyKind.STEPPER,SpellPresentation.POTENCE_MIN,SpellPresentation.POTENCE_MAX,SpellPresentation.POTENCE_DEFAULT,Integer::toString);
  private static final SpellPropertyDefinition DIG_POTENCE_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.POTENCE,"Potence",SpellPropertyKind.STEPPER,1,5,1,Integer::toString);
+ private static final SpellPropertyDefinition FLIGHT_POTENCE_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.POTENCE,"Potence",SpellPropertyKind.STEPPER,1,8,1,Integer::toString);
  private static final SpellPropertyDefinition PROTECTION_KIND_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.PROTECTION_KIND,"Damage Type",SpellPropertyKind.OPTIONS,0,SpellPresentation.PROTECTION_KIND_COUNT-1,SpellPresentation.PROTECTION_KIND_DEFAULT,SpellPresentation::protectionKindName);
  private static final SpellPropertyDefinition DAMAGE_KIND_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.DAMAGE_KIND,"Damage Type",SpellPropertyKind.OPTIONS,0,SpellPresentation.DAMAGE_KIND_COUNT-1,SpellPresentation.DAMAGE_KIND_DEFAULT,SpellPresentation::damageKindName);
  private static final SpellPropertyDefinition WIDTH_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.WIDTH,"Width",SpellPropertyKind.STEPPER,SpellPresentation.BOX_SIZE_MIN,SpellPresentation.BOX_SIZE_MAX,SpellPresentation.BOX_SIZE_DEFAULT,Integer::toString);
@@ -46,7 +48,7 @@ public final class SpellComponents {
  private static final SpellPropertyDefinition ALTER_STRENGTH_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.ALTER_STRENGTH,"Strength",SpellPropertyKind.STEPPER,SpellPresentation.ALTER_SETTING_MIN,SpellPresentation.ALTER_SETTING_MAX,SpellPresentation.ALTER_SETTING_DEFAULT,SpellComponents::alterSettingLabel);
  private static final SpellPropertyDefinition ALTER_SPEED_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.ALTER_SPEED,"Speed",SpellPropertyKind.STEPPER,SpellPresentation.ALTER_SETTING_MIN,SpellPresentation.ALTER_SETTING_MAX,SpellPresentation.ALTER_SETTING_DEFAULT,SpellComponents::alterSettingLabel);
  private static final SpellPropertyDefinition ALTER_TOUGHNESS_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.ALTER_TOUGHNESS,"Toughness",SpellPropertyKind.STEPPER,SpellPresentation.ALTER_SETTING_MIN,SpellPresentation.ALTER_SETTING_MAX,SpellPresentation.ALTER_SETTING_DEFAULT,SpellComponents::alterSettingLabel);
- private static final List<SpellComponentDefinition> ALL=List.of(new MissileDefinition(),new ChainDefinition(),new SphereDefinition(),new BoxDefinition(),new ConeDefinition(),new FloatingDefinition(),new TouchDefinition(),new TargetDefinition(),new DamageDefinition(),new DigDefinition(),new RestoreDefinition(),new MoveDefinition(),new SiphonDefinition(),new GravityDefinition(),new AlterDefinition(),new ProtectionDefinition(),new TemporaryBlockDefinition(),new SelfDefinition(),new RelativeDefinition(),new RuneDefinition(),new ChannelDefinition(),new StreamDefinition(),new DurationDefinition(),new BlockInteractionDefinition());
+ private static final List<SpellComponentDefinition> ALL=List.of(new MissileDefinition(),new ChainDefinition(),new SphereDefinition(),new BoxDefinition(),new ConeDefinition(),new FloatingDefinition(),new TouchDefinition(),new TargetDefinition(),new DamageDefinition(),new DigDefinition(),new RestoreDefinition(),new MoveDefinition(),new SiphonDefinition(),new GravityDefinition(),new AlterDefinition(),new FlightDefinition(),new ProtectionDefinition(),new TemporaryBlockDefinition(),new SelfDefinition(),new RelativeDefinition(),new RuneDefinition(),new ChannelDefinition(),new StreamDefinition(),new DurationDefinition(),new BlockInteractionDefinition());
  private static final Map<Integer,SpellComponentDefinition> BY_TYPE=ALL.stream().collect(Collectors.toUnmodifiableMap(SpellComponentDefinition::typeId,Function.identity()));
  private static final List<SpellComponentDefinition> SHAPES=ALL.stream().filter(SpellComponentDefinition::isShape).toList();
  private static final List<SpellComponentDefinition> EFFECTS=ALL.stream().filter(SpellComponents::isEffect).toList();
@@ -165,6 +167,13 @@ public final class SpellComponents {
   @Override public boolean acceptsDirectEntity(Entity entity){return entity instanceof LivingEntity living&&living.isAlive();}
   @Override public EffectReplayPolicy replayPolicy(){return EffectReplayPolicy.CREATE_ONCE;}
   @Override public ComponentExecutionResult execute(SpellExecutionContext context){AlterEffect.apply(context.level(),context.parent(),context.alterStrength(),context.alterSpeed(),context.alterToughness(),context.activeDurationTicks());return ComponentExecutionResult.NONE;}
+ }
+ private static final class FlightDefinition extends BaseDefinition {
+  FlightDefinition(){super(TYPE_FLIGHT,"Flight",false,0,0,List.of(),false,List.of(FLIGHT_POTENCE_PROPERTY));}
+  @Override public ItemStack createEditorIcon(){return Items.ELYTRA.getDefaultInstance();}
+  @Override public boolean acceptsDirectEntity(Entity entity){return entity instanceof net.minecraft.world.entity.player.Player player&&player.isAlive();}
+  @Override public EffectReplayPolicy replayPolicy(){return EffectReplayPolicy.STATEFUL;}
+  @Override public ComponentExecutionResult execute(SpellExecutionContext context){FlightEffect.apply(context.level(),context.parent(),context.potence(),context.activeDurationTicks());return ComponentExecutionResult.NONE;}
  }
  private static final class ProtectionDefinition extends BaseDefinition {
   ProtectionDefinition(){super(TYPE_PROTECTION,"Protection",false,0,0,List.of(),false,List.of(POTENCE_PROPERTY,PROTECTION_KIND_PROPERTY));}

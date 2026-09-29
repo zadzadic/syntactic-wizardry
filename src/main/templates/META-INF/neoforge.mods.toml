@@ -6,6 +6,8 @@ modId="${mod_id}"
 version="${mod_version}"
 displayName="${mod_name}"
 description='''Syntactic Wizardry.'''
+[[mixins]]
+config="syntacticwizardry.mixins.json"
 [[dependencies.${mod_id}]]
 modId="neoforge"
 type="required"

@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "package": "com.proxpero.syntacticwizardry.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "PlayerFlightMixin",
+    "LivingEntityFlightMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
