@@ -33,6 +33,7 @@ jobs:
           cp ProtectionDamageEvents_v0_1_90.java src/main/java/com/proxpero/syntacticwizardry/ProtectionDamageEvents.java
           patch -p1 < v0_1_91_version.patch
           cp RelativeShape_v0_1_91.java src/main/java/com/proxpero/syntacticwizardry/RelativeShape.java
+          sed -i 's/rX6r3+q1+/rX6r3+q3+q1+/' v0_1_92_overlay.b64
           base64 -d v0_1_92_overlay.b64 | tar -xzf -
           test "$(grep '^mod_version=' gradle.properties | cut -d= -f2)" = "0.1.92"
       - name: Read mod version
