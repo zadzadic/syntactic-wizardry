@@ -21,8 +21,10 @@ public enum SpellPropertyKey {
  ALTER_STRENGTH(18,16),
  ALTER_SPEED(19,17),
  ALTER_TOUGHNESS(20,18),
- TELEPORT_MODE(21,19);
- public static final int SETTING_COUNT=20;
+ TELEPORT_MODE(21,19),
+ RANGE_VALUE(22,20),
+ SPLIT_PATTERN(23,21);
+ public static final int SETTING_COUNT=22;
  private final int id;
  private final int settingIndex;
  SpellPropertyKey(int id,int settingIndex){this.id=id;this.settingIndex=settingIndex;}
