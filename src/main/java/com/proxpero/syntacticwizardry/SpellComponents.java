@@ -25,6 +25,8 @@ public final class SpellComponents {
  public static final int TYPE_ALTER=24;
  public static final int TYPE_FLIGHT=25;
  public static final int TYPE_DIMENSIONAL_STORAGE=26;
+ public static final int TYPE_TELEPORTATION=27;
+ public static final int TYPE_MARK=28;
  private static final SpellPropertyDefinition RADIUS_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.RADIUS,"Radius",SpellPropertyKind.STEPPER,SpellPresentation.RADIUS_MIN,SpellPresentation.RADIUS_MAX,SpellPresentation.RADIUS_DEFAULT,Integer::toString);
  private static final SpellPropertyDefinition SPHERE_MODE_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.SPHERE_MODE,"Shape",SpellPropertyKind.OPTIONS,0,SpellPresentation.SPHERE_MODE_COUNT-1,SpellPresentation.SPHERE_MODE_DEFAULT,SpellPresentation::sphereModeName);
  private static final SpellPropertyDefinition POTENCE_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.POTENCE,"Potence",SpellPropertyKind.STEPPER,SpellPresentation.POTENCE_MIN,SpellPresentation.POTENCE_MAX,SpellPresentation.POTENCE_DEFAULT,Integer::toString);
@@ -49,7 +51,8 @@ public final class SpellComponents {
  private static final SpellPropertyDefinition ALTER_STRENGTH_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.ALTER_STRENGTH,"Strength",SpellPropertyKind.STEPPER,SpellPresentation.ALTER_SETTING_MIN,SpellPresentation.ALTER_SETTING_MAX,SpellPresentation.ALTER_SETTING_DEFAULT,SpellComponents::alterSettingLabel);
  private static final SpellPropertyDefinition ALTER_SPEED_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.ALTER_SPEED,"Speed",SpellPropertyKind.STEPPER,SpellPresentation.ALTER_SETTING_MIN,SpellPresentation.ALTER_SETTING_MAX,SpellPresentation.ALTER_SETTING_DEFAULT,SpellComponents::alterSettingLabel);
  private static final SpellPropertyDefinition ALTER_TOUGHNESS_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.ALTER_TOUGHNESS,"Toughness",SpellPropertyKind.STEPPER,SpellPresentation.ALTER_SETTING_MIN,SpellPresentation.ALTER_SETTING_MAX,SpellPresentation.ALTER_SETTING_DEFAULT,SpellComponents::alterSettingLabel);
- private static final List<SpellComponentDefinition> ALL=List.of(new MissileDefinition(),new ChainDefinition(),new SphereDefinition(),new BoxDefinition(),new ConeDefinition(),new FloatingDefinition(),new TouchDefinition(),new TargetDefinition(),new DamageDefinition(),new DigDefinition(),new RestoreDefinition(),new MoveDefinition(),new SiphonDefinition(),new GravityDefinition(),new AlterDefinition(),new FlightDefinition(),new DimensionalStorageDefinition(),new ProtectionDefinition(),new TemporaryBlockDefinition(),new SelfDefinition(),new RelativeDefinition(),new RuneDefinition(),new ChannelDefinition(),new StreamDefinition(),new DurationDefinition(),new BlockInteractionDefinition());
+ private static final SpellPropertyDefinition TELEPORT_MODE_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.TELEPORT_MODE,"Mode",SpellPropertyKind.OPTIONS,0,SpellPresentation.TELEPORT_MODE_COUNT-1,SpellPresentation.TELEPORT_MODE_DEFAULT,SpellPresentation::teleportModeName);
+ private static final List<SpellComponentDefinition> ALL=List.of(new MissileDefinition(),new ChainDefinition(),new SphereDefinition(),new BoxDefinition(),new ConeDefinition(),new FloatingDefinition(),new TouchDefinition(),new TargetDefinition(),new DamageDefinition(),new DigDefinition(),new RestoreDefinition(),new MoveDefinition(),new SiphonDefinition(),new GravityDefinition(),new AlterDefinition(),new FlightDefinition(),new DimensionalStorageDefinition(),new TeleportationDefinition(),new MarkDefinition(),new ProtectionDefinition(),new TemporaryBlockDefinition(),new SelfDefinition(),new RelativeDefinition(),new RuneDefinition(),new ChannelDefinition(),new StreamDefinition(),new DurationDefinition(),new BlockInteractionDefinition());
  private static final Map<Integer,SpellComponentDefinition> BY_TYPE=ALL.stream().collect(Collectors.toUnmodifiableMap(SpellComponentDefinition::typeId,Function.identity()));
  private static final List<SpellComponentDefinition> SHAPES=ALL.stream().filter(SpellComponentDefinition::isShape).toList();
  private static final List<SpellComponentDefinition> EFFECTS=ALL.stream().filter(SpellComponents::isEffect).toList();
@@ -182,6 +185,19 @@ public final class SpellComponents {
   @Override public boolean acceptsDirectEntity(Entity entity){return entity instanceof net.minecraft.server.level.ServerPlayer player&&player.isAlive();}
   @Override public EffectReplayPolicy replayPolicy(){return EffectReplayPolicy.CREATE_ONCE;}
   @Override public ComponentExecutionResult execute(SpellExecutionContext context){DimensionalStorageEffect.apply(context);return ComponentExecutionResult.NONE;}
+ }
+ private static final class TeleportationDefinition extends BaseDefinition {
+  TeleportationDefinition(){super(TYPE_TELEPORTATION,"Teleportation",false,0,0,List.of(),false,List.of(POTENCE_PROPERTY,TELEPORT_MODE_PROPERTY));}
+  @Override public ItemStack createEditorIcon(){return Items.ENDER_PEARL.getDefaultInstance();}
+  @Override public boolean acceptsDirectEntity(Entity entity){return entity!=null&&!entity.isRemoved();}
+  @Override public EffectReplayPolicy replayPolicy(){return EffectReplayPolicy.CREATE_ONCE;}
+  @Override public ComponentExecutionResult execute(SpellExecutionContext context){TeleportationEffect.apply(context);return ComponentExecutionResult.NONE;}
+ }
+ private static final class MarkDefinition extends BaseDefinition {
+  MarkDefinition(){super(TYPE_MARK,"Mark",false,0,0,List.of(),false,List.of());}
+  @Override public ItemStack createEditorIcon(){return Items.RECOVERY_COMPASS.getDefaultInstance();}
+  @Override public EffectReplayPolicy replayPolicy(){return EffectReplayPolicy.CREATE_ONCE;}
+  @Override public ComponentExecutionResult execute(SpellExecutionContext context){MarkEffect.apply(context);return ComponentExecutionResult.NONE;}
  }
  private static final class ProtectionDefinition extends BaseDefinition {
   ProtectionDefinition(){super(TYPE_PROTECTION,"Protection",false,0,0,List.of(),false,List.of(POTENCE_PROPERTY,PROTECTION_KIND_PROPERTY));}
