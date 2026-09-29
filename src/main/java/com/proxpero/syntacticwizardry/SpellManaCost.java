@@ -94,7 +94,7 @@ public final class SpellManaCost {
             case SpellComponents.TYPE_GRAVITY -> 1.0F * potence;
             case SpellComponents.TYPE_PROTECTION -> 5.0F * potence;
             case SpellComponents.TYPE_TEMPORARY_BLOCK -> temporaryBlockCost(plan, settings, cell);
-            case SpellComponents.TYPE_DURATION -> 1.0F * SpellPresentation.durationSecondsAt(settings, cell);
+            case SpellComponents.TYPE_DURATION -> durationCost(plan, settings, cell);
             case SpellComponents.TYPE_BLOCK_INTERACTION -> 0.0F;
             case SpellComponents.TYPE_SELF -> 0.0F;
             case SpellComponents.TYPE_CHANNEL -> CHANNEL_SURCHARGE;
@@ -102,6 +102,20 @@ public final class SpellManaCost {
             default -> 0.0F;
         };
     }
+    private static float durationCost(int[] plan, int[] settings, int cell) {
+        int row = cell / SpellPresentation.COLS;
+        int col = cell % SpellPresentation.COLS;
+        for (int ownerCol = col - 1; ownerCol >= 0; ownerCol--) {
+            int ownerType = SpellPresentation.typeAt(plan, row * SpellPresentation.COLS + ownerCol);
+            if (ownerType == SpellPresentation.TYPE_EMPTY) continue;
+            SpellComponentDefinition owner = SpellComponents.byType(ownerType);
+            if (owner == null || SpellComponents.isModifier(owner)) continue;
+            if (ownerType == SpellComponents.TYPE_TEMPORARY_BLOCK) return 0.0F;
+            break;
+        }
+        return 1.0F * SpellPresentation.durationSecondsAt(settings, cell);
+    }
+
     private static float temporaryBlockCost(int[] plan, int[] settings, int cell) {
         int row = cell / SpellPresentation.COLS;
         int col = cell % SpellPresentation.COLS;
