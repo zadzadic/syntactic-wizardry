@@ -30,16 +30,6 @@ public final class SpellMissile extends Snowball {
     private final Set<UUID> chainHitTargets = new HashSet<>();
     private final Set<UUID> piercedHitTargets = new HashSet<>();
 
-    /*
-     * Minecraft continues the vanilla projectile tick after onHit() returns.
-     * Any position or velocity written directly inside onHit() can therefore be
-     * overwritten later in that same tick. Ricochet and Piercing queue their
-     * continuation here and apply it after super.tick() has finished.
-     */
-    private Vec3 pendingImpactPosition;
-    private Vec3 pendingPosition;
-    private Vec3 pendingVelocity;
-
     public SpellMissile(EntityType<? extends SpellMissile> type, Level level) {
         super(type, level);
     }
@@ -125,41 +115,31 @@ public final class SpellMissile extends Snowball {
         return !isChainProjectile() || !chainHitTargets.contains(id);
     }
 
+    private Vec3 tickStartPosition = Vec3.ZERO;
+    private Vec3 continuationStartPosition;
+    private double travelBeforeContinuation;
+
     @Override
     public void tick() {
         Vec3 before = position();
-
-        pendingImpactPosition = null;
-        pendingPosition = null;
-        pendingVelocity = null;
+        tickStartPosition = before;
+        continuationStartPosition = null;
+        travelBeforeContinuation = 0.0D;
 
         super.tick();
-        if (isRemoved()) return;
 
-        if (pendingPosition != null && pendingVelocity != null) {
-            if (!level().isClientSide && pendingImpactPosition != null) {
-                remainingRange -= before.distanceTo(pendingImpactPosition);
-            }
+        if (level().isClientSide || isRemoved()) return;
 
-            setPos(pendingPosition.x, pendingPosition.y, pendingPosition.z);
-            setDeltaMovement(pendingVelocity);
-            hasImpulse = true;
-            previousPosition = pendingPosition;
-
-            if (!level().isClientSide && remainingRange <= 0.0D) discard();
-            return;
+        double travelled;
+        if (continuationStartPosition != null) {
+            travelled = travelBeforeContinuation + continuationStartPosition.distanceTo(position());
+        } else {
+            travelled = before.distanceTo(position());
         }
 
-        Vec3 after = position();
-        if (!level().isClientSide) {
-            double travelled = before.distanceTo(after);
-            if (travelled > 0.0D) remainingRange -= travelled;
-            if (remainingRange <= 0.0D) {
-                discard();
-                return;
-            }
-        }
-        previousPosition = after;
+        if (travelled > 0.0D) remainingRange -= travelled;
+        previousPosition = position();
+        if (remainingRange <= 0.0D) discard();
     }
 
     @Override
@@ -172,23 +152,27 @@ public final class SpellMissile extends Snowball {
         boolean ricochet = SpellComponents.hasAttachedModifier(plan, row, ownerCol, SpellComponents.TYPE_RICOCHET);
         boolean piercing = SpellComponents.hasAttachedModifier(plan, row, ownerCol, SpellComponents.TYPE_PIERCING);
         Entity hit = result instanceof EntityHitResult entityHit ? entityHit.getEntity() : null;
+        Vec3 incomingVelocity = getDeltaMovement();
 
         /*
-         * Do not discard the client-side entity on a local collision.
-         * The server owns spell resolution and lifetime. For continuation
-         * modifiers, mirror only the local motion so the projectile remains
-         * visually continuous until the next server synchronization.
+         * Traversal modifiers are resolved before the Missile is handed off.
+         * This matches the old Arcane Missile order:
+         * impact -> traversal decision -> resolution -> continuation.
          */
-        if (level().isClientSide) {
-            if (result instanceof BlockHitResult blockHit && ricochet) {
-                queueBounce(blockHit);
-            } else if (hit != null && piercing) {
-                piercedHitTargets.add(hit.getUUID());
-                queuePierce(result.getLocation());
-            }
-            return;
+        boolean continues = false;
+        if (result instanceof BlockHitResult blockHit && ricochet && remainingRange > 0.0D) {
+            continues = applyRicochet(blockHit, incomingVelocity);
+        } else if (hit != null && piercing && remainingRange > 0.0D) {
+            piercedHitTargets.add(hit.getUUID());
+            continues = applyPiercing(result.getLocation(), incomingVelocity);
         }
 
+        /*
+         * Client collision is visual only. The server owns spell resolution.
+         * The client still applies traversal immediately so the projectile does
+         * not visually disappear or travel through the wall before correction.
+         */
+        if (level().isClientSide) return;
         if (!(level() instanceof ServerLevel server)) return;
 
         Vec3 castYaw = SpellPresentation.readCastYaw(getItem());
@@ -199,12 +183,12 @@ public final class SpellMissile extends Snowball {
             int impactDirection = SpellPresentation.impactDirectionAt(settings, cell);
             resolved = ShapeResolution.projectileBlock(blockHit.getBlockPos(), blockHit.getDirection(), impactDirection);
         } else {
-            resolved = ShapeResolution.impact(result.getLocation(), getDeltaMovement(), hit);
+            resolved = ShapeResolution.impact(result.getLocation(), incomingVelocity, hit);
         }
 
         int visualDuration = VisualDurationSupport.durationTicksForShape(plan, settings, row);
         if (visualDuration > 0) {
-            Vec3 facing = getDeltaMovement().lengthSqr() > 1.0E-8D ? getDeltaMovement().normalize() : resolved.direction();
+            Vec3 facing = incomingVelocity.lengthSqr() > 1.0E-8D ? incomingVelocity.normalize() : resolved.direction();
             PointVisualEntity visualEntity = new PointVisualEntity(server, resolved.origin(), facing,
                     presentationStyle(), presentationVisual(), visualDuration);
             server.addFreshEntity(visualEntity);
@@ -226,41 +210,43 @@ public final class SpellMissile extends Snowball {
             }
         }
 
-        if (result instanceof BlockHitResult blockHit && ricochet && remainingRange > 0.0D) {
-            if (queueBounce(blockHit)) return;
-        }
-
-        if (hit != null && piercing && remainingRange > 0.0D) {
-            piercedHitTargets.add(hit.getUUID());
-            if (queuePierce(result.getLocation())) return;
-        }
-
+        if (continues) return;
         discard();
     }
 
-    private boolean queueBounce(BlockHitResult hit) {
-        Vec3 velocity = getDeltaMovement();
-        if (velocity.lengthSqr() <= 1.0E-8D) return false;
+    private boolean applyRicochet(BlockHitResult hit, Vec3 incomingVelocity) {
+        if (incomingVelocity == null || incomingVelocity.lengthSqr() <= 1.0E-8D) return false;
 
         Direction face = hit.getDirection();
         Vec3 normal = new Vec3(face.getStepX(), face.getStepY(), face.getStepZ());
-        Vec3 reflected = velocity.subtract(normal.scale(2.0D * velocity.dot(normal)));
+        Vec3 reflected = incomingVelocity.subtract(normal.scale(2.0D * incomingVelocity.dot(normal)));
         if (reflected.lengthSqr() <= 1.0E-8D) return false;
 
-        pendingImpactPosition = hit.getLocation();
-        pendingPosition = hit.getLocation().add(normal.scale(0.08D));
-        pendingVelocity = reflected;
+        double separation = Math.max(0.16D, getBbWidth() * 0.5D + 0.02D);
+        Vec3 escaped = hit.getLocation().add(normal.scale(separation));
+
+        travelBeforeContinuation = tickStartPosition.distanceTo(hit.getLocation());
+        continuationStartPosition = escaped;
+
+        setPos(escaped.x, escaped.y, escaped.z);
+        setDeltaMovement(reflected);
+        hasImpulse = true;
         return true;
     }
 
-    private boolean queuePierce(Vec3 impact) {
-        Vec3 velocity = getDeltaMovement();
-        if (velocity.lengthSqr() <= 1.0E-8D) return false;
-        Vec3 direction = velocity.normalize();
+    private boolean applyPiercing(Vec3 impact, Vec3 incomingVelocity) {
+        if (incomingVelocity == null || incomingVelocity.lengthSqr() <= 1.0E-8D) return false;
 
-        pendingImpactPosition = impact;
-        pendingPosition = impact.add(direction.scale(0.08D));
-        pendingVelocity = velocity;
+        Vec3 direction = incomingVelocity.normalize();
+        double separation = Math.max(0.16D, getBbWidth() * 0.5D + 0.02D);
+        Vec3 escaped = impact.add(direction.scale(separation));
+
+        travelBeforeContinuation = tickStartPosition.distanceTo(impact);
+        continuationStartPosition = escaped;
+
+        setPos(escaped.x, escaped.y, escaped.z);
+        setDeltaMovement(incomingVelocity);
+        hasImpulse = true;
         return true;
     }
 
