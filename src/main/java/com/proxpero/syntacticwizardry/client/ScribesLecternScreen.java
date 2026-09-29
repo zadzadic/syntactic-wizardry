@@ -21,10 +21,15 @@ import java.util.List;
 import java.util.Arrays;
 public final class ScribesLecternScreen extends AbstractContainerScreen<ScribesLecternMenu> {
  private enum PropertyTab{STYLE,VISUAL,SETTINGS}
- private static final int SELECTOR_START_X=175,SHAPE_Y=43,EFFECT_Y=82,MODIFIER_Y=109;
+ private enum SelectorTab{SHAPES,EFFECTS,MODIFIERS}
+ private static final int SELECTOR_START_X=175,SELECTOR_GRID_Y=52,SELECTOR_COLS=5,SELECTOR_COL_STEP=24,SELECTOR_ROW_STEP=20;
+ private static final int SELECTOR_VISIBLE_ROWS=3,SELECTOR_SCROLL_X=302,SELECTOR_SCROLL_Y=52,SELECTOR_SCROLL_W=5,SELECTOR_SCROLL_H=56;
  private static final int GRID_X=20,GRID_Y=47,CELL=16,STEP=18;
  private static final int NO_CELL=-1;
  private PropertyTab propertyTab=PropertyTab.SETTINGS;
+ private SelectorTab selectorTab=SelectorTab.SHAPES;
+ private final int[] selectorScrollRows=new int[SelectorTab.values().length];
+ private boolean selectorScrollbarDragging=false;
  private int selectedCell=NO_CELL,dragSource=NO_CELL,dragNewType=SpellPresentation.TYPE_EMPTY;
  private SpellPropertyKey openOptionsProperty=null;
  private Button writeButton;
@@ -95,30 +100,56 @@ public final class ScribesLecternScreen extends AbstractContainerScreen<ScribesL
   else renderSettingsTab(g,x,y);
  }
  private void renderComponentSelector(GuiGraphics g,int x,int y){
-  g.drawString(font,"Shapes",x+173,y+29,0xCFE5FF,false);
-  int index=0;
-  for(SpellComponentDefinition definition:SpellComponents.shapes()){
-   int col=index%5,row=index/5,ox=x+SELECTOR_START_X+col*20,oy=y+SHAPE_Y+row*18;
+  tabBox(g,x+170,y+30,40,16,"Shapes",selectorTab==SelectorTab.SHAPES);
+  tabBox(g,x+212,y+30,40,16,"Effects",selectorTab==SelectorTab.EFFECTS);
+  tabBox(g,x+254,y+30,51,16,"Modifiers",selectorTab==SelectorTab.MODIFIERS);
+  List<SpellComponentDefinition> definitions=selectorDefinitions();
+  int scroll=selectorScroll();
+  g.enableScissor(x+170,y+49,x+300,y+121);
+  for(int index=0;index<definitions.size();index++){
+   int col=index%SELECTOR_COLS,row=index/SELECTOR_COLS;
+   int visibleRow=row-scroll;
+   int ox=x+SELECTOR_START_X+col*SELECTOR_COL_STEP,oy=y+SELECTOR_GRID_Y+visibleRow*SELECTOR_ROW_STEP;
+   if(oy+CELL<y+49||oy>y+121)continue;
    g.fill(ox,oy,ox+CELL,oy+CELL,0xFF2A3B55);
-   g.renderItem(definition.createEditorIcon(),ox,oy);
-   index++;
+   g.renderItem(definitions.get(index).createEditorIcon(),ox,oy);
   }
-  g.drawString(font,"Effects",x+173,y+68,0xCFE5FF,false);
-  index=0;
-  for(SpellComponentDefinition definition:SpellComponents.effects()){
-   int ox=x+SELECTOR_START_X+index*20;
-   g.fill(ox,y+EFFECT_Y,ox+CELL,y+EFFECT_Y+CELL,0xFF2A3B55);
-   g.renderItem(definition.createEditorIcon(),ox,y+EFFECT_Y);
-   index++;
-  }
-  g.drawString(font,"Modifiers",x+173,y+99,0xCFE5FF,false);
-  index=0;
-  for(SpellComponentDefinition definition:SpellComponents.modifiers()){
-   int ox=x+SELECTOR_START_X+index*20;
-   g.fill(ox,y+MODIFIER_Y,ox+CELL,y+MODIFIER_Y+CELL,0xFF2A3B55);
-   g.renderItem(definition.createEditorIcon(),ox,y+MODIFIER_Y);
-   index++;
-  }
+  g.disableScissor();
+  renderSelectorScrollbar(g,x,y,definitions.size());
+ }
+ private List<SpellComponentDefinition> selectorDefinitions(){
+  return switch(selectorTab){
+   case SHAPES->SpellComponents.shapes();
+   case EFFECTS->SpellComponents.effects();
+   case MODIFIERS->SpellComponents.modifiers();
+  };
+ }
+ private int selectorTotalRows(int count){return (count+SELECTOR_COLS-1)/SELECTOR_COLS;}
+ private int selectorMaxScroll(int count){return Math.max(0,selectorTotalRows(count)-SELECTOR_VISIBLE_ROWS);}
+ private int selectorScroll(){return selectorScrollRows[selectorTab.ordinal()];}
+ private void setSelectorScroll(int value){
+  int max=selectorMaxScroll(selectorDefinitions().size());
+  selectorScrollRows[selectorTab.ordinal()]=Math.max(0,Math.min(max,value));
+ }
+ private void renderSelectorScrollbar(GuiGraphics g,int x,int y,int count){
+  int max=selectorMaxScroll(count);
+  if(max<=0)return;
+  g.fill(x+SELECTOR_SCROLL_X,y+SELECTOR_SCROLL_Y,x+SELECTOR_SCROLL_X+SELECTOR_SCROLL_W,y+SELECTOR_SCROLL_Y+SELECTOR_SCROLL_H,0xFF1C293A);
+  int totalRows=selectorTotalRows(count);
+  int thumbH=Math.max(10,SELECTOR_SCROLL_H*SELECTOR_VISIBLE_ROWS/Math.max(1,totalRows));
+  int travel=SELECTOR_SCROLL_H-thumbH;
+  int thumbY=y+SELECTOR_SCROLL_Y+(max==0?0:travel*selectorScroll()/max);
+  g.fill(x+SELECTOR_SCROLL_X,thumbY,x+SELECTOR_SCROLL_X+SELECTOR_SCROLL_W,thumbY+thumbH,0xFF5B86B8);
+ }
+ private void setSelectorScrollFromMouse(double my){
+  int count=selectorDefinitions().size(),max=selectorMaxScroll(count);
+  if(max<=0){setSelectorScroll(0);return;}
+  int totalRows=selectorTotalRows(count);
+  int thumbH=Math.max(10,SELECTOR_SCROLL_H*SELECTOR_VISIBLE_ROWS/Math.max(1,totalRows));
+  int travel=Math.max(1,SELECTOR_SCROLL_H-thumbH);
+  double local=my-(topPos+SELECTOR_SCROLL_Y)-thumbH/2.0;
+  int row=(int)Math.round(Math.max(0.0,Math.min(travel,local))*max/travel);
+  setSelectorScroll(row);
  }
  private void renderStyleTab(GuiGraphics g,int x,int y){
   SpellComponentDefinition definition=selectedDefinition();
@@ -277,21 +308,13 @@ public final class ScribesLecternScreen extends AbstractContainerScreen<ScribesL
   return NO_CELL;
  }
  private SpellComponentDefinition selectorComponentAt(double mx,double my){
-  int index=0;
-  for(SpellComponentDefinition definition:SpellComponents.shapes()){
-   int col=index%5,row=index/5;
-   if(inside(mx,my,SELECTOR_START_X+col*20,SHAPE_Y+row*18,CELL,CELL))return definition;
-   index++;
-  }
-  index=0;
-  for(SpellComponentDefinition definition:SpellComponents.effects()){
-   if(inside(mx,my,SELECTOR_START_X+index*20,EFFECT_Y,CELL,CELL))return definition;
-   index++;
-  }
-  index=0;
-  for(SpellComponentDefinition definition:SpellComponents.modifiers()){
-   if(inside(mx,my,SELECTOR_START_X+index*20,MODIFIER_Y,CELL,CELL))return definition;
-   index++;
+  if(!inside(mx,my,170,49,130,72))return null;
+  List<SpellComponentDefinition> definitions=selectorDefinitions();
+  int scroll=selectorScroll();
+  for(int index=0;index<definitions.size();index++){
+   int col=index%SELECTOR_COLS,row=index/SELECTOR_COLS;
+   int oy=SELECTOR_GRID_Y+(row-scroll)*SELECTOR_ROW_STEP;
+   if(inside(mx,my,SELECTOR_START_X+col*SELECTOR_COL_STEP,oy,CELL,CELL))return definitions.get(index);
   }
   return null;
  }
@@ -345,6 +368,12 @@ public final class ScribesLecternScreen extends AbstractContainerScreen<ScribesL
       }
     }
    }else{
+    if(inside(mx,my,170,30,40,16)){selectorTab=SelectorTab.SHAPES;selectorScrollbarDragging=false;return true;}
+    if(inside(mx,my,212,30,40,16)){selectorTab=SelectorTab.EFFECTS;selectorScrollbarDragging=false;return true;}
+    if(inside(mx,my,254,30,51,16)){selectorTab=SelectorTab.MODIFIERS;selectorScrollbarDragging=false;return true;}
+    if(selectorMaxScroll(selectorDefinitions().size())>0&&inside(mx,my,SELECTOR_SCROLL_X,SELECTOR_SCROLL_Y,SELECTOR_SCROLL_W,SELECTOR_SCROLL_H)){
+     selectorScrollbarDragging=true;setSelectorScrollFromMouse(my);return true;
+    }
     SpellComponentDefinition selector=selectorComponentAt(mx,my);
     if(selector!=null){beginNewDrag(selector.typeId());return true;}
    }
@@ -355,6 +384,7 @@ public final class ScribesLecternScreen extends AbstractContainerScreen<ScribesL
   return super.mouseClicked(mx,my,button);
  }
  @Override public boolean mouseReleased(double mx,double my,int button){
+  if(button==0&&selectorScrollbarDragging){selectorScrollbarDragging=false;return true;}
   if(button==0&&(dragSource>=0||dragNewType!=SpellPresentation.TYPE_EMPTY)){
    int target=workspaceCellAt(mx,my);
    if(target>=0){
@@ -366,6 +396,19 @@ public final class ScribesLecternScreen extends AbstractContainerScreen<ScribesL
    return true;
   }
   return super.mouseReleased(mx,my,button);
+ }
+ @Override public boolean mouseDragged(double mx,double my,int button,double dragX,double dragY){
+  if(button==0&&selectorScrollbarDragging&&!hasSelection()){setSelectorScrollFromMouse(my);return true;}
+  return super.mouseDragged(mx,my,button,dragX,dragY);
+ }
+ @Override public boolean mouseScrolled(double mx,double my,double scrollX,double scrollY){
+  if(!hasSelection()&&inside(mx,my,170,49,137,72)){
+   int before=selectorScroll();
+   if(scrollY>0.0)setSelectorScroll(before-1);
+   else if(scrollY<0.0)setSelectorScroll(before+1);
+   return selectorScroll()!=before||selectorMaxScroll(selectorDefinitions().size())>0;
+  }
+  return super.mouseScrolled(mx,my,scrollX,scrollY);
  }
  @Override public void render(GuiGraphics g,int mx,int my,float partial){
   if(writeButton!=null)writeButton.active=menu.hasAny();
