@@ -20,12 +20,17 @@ public final class HighManaZones {
 
     private HighManaZones() {}
 
-    public static boolean isHighMana(ServerLevel level, int chunkX, int chunkZ) {
+    public static boolean isNaturallyHighMana(ServerLevel level, int chunkX, int chunkZ) {
         long dimensionSalt = mix64(level.dimension().location().toString().hashCode() * 0x9E3779B97F4A7C15L);
         long value = level.getSeed() ^ dimensionSalt;
         value ^= mix64((long) chunkX * 0xC2B2AE3D27D4EB4FL);
         value ^= mix64((long) chunkZ * 0x165667B19E3779F9L);
         return Long.remainderUnsigned(mix64(value), RARITY_DENOMINATOR) == 0L;
+    }
+
+    public static boolean isHighMana(ServerLevel level, int chunkX, int chunkZ) {
+        return isNaturallyHighMana(level, chunkX, chunkZ)
+                && !PylonNetworkData.get(level).isSuppressed(level, chunkX, chunkZ);
     }
 
     public static Target nearestUnclaimed(ServerLevel level, Player player, List<HighManaClaimSavedData.Claim> claimed) {
