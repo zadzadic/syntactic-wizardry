@@ -27,11 +27,21 @@ public final class HighManaCompassService {
     }
 
     public static void openMenu(ServerPlayer player) {
-        List<HighManaClaimSavedData.Claim> claims = claims(player);
+        HighManaClaimSavedData saved = data(player);
+        List<HighManaClaimSavedData.Claim> claims = saved.claims(player.getUUID());
+        boolean searchMode = saved.isSearchMode(player.getUUID());
+        HighManaClaimSavedData.Claim selected = saved.selectedTarget(player.getUUID());
         player.openMenu(new SimpleMenuProvider(
-                (containerId, inventory, ignored) -> new HighManaCompassMenu(containerId, inventory, claims),
-                Component.literal("Claimed High Mana Zones")
+                (containerId, inventory, ignored) -> new HighManaCompassMenu(containerId, inventory, claims, searchMode, selected),
+                Component.literal("High Mana Compass")
         ), buffer -> {
+            buffer.writeBoolean(searchMode);
+            buffer.writeBoolean(selected != null);
+            if (selected != null) {
+                buffer.writeUtf(selected.dimension().toString());
+                buffer.writeInt(selected.chunkX());
+                buffer.writeInt(selected.chunkZ());
+            }
             buffer.writeVarInt(claims.size());
             for (HighManaClaimSavedData.Claim claim : claims) {
                 buffer.writeUtf(claim.dimension().toString());
@@ -41,10 +51,34 @@ public final class HighManaCompassService {
         });
     }
 
+    public static void setSearchMode(ServerPlayer player) {
+        data(player).setSearchMode(player.getUUID());
+        player.displayClientMessage(Component.literal("High Mana Compass: Search Mode"), true);
+        syncTarget(player);
+    }
+
+    public static boolean selectClaim(ServerPlayer player, HighManaClaimSavedData.Claim claim) {
+        boolean selected = data(player).selectTarget(player.getUUID(), claim);
+        if (selected) {
+            player.displayClientMessage(Component.literal("High Mana Compass target: " + claim.blockX() + ", " + claim.blockZ()), true);
+            syncTarget(player);
+        }
+        return selected;
+    }
+
     public static void syncTarget(ServerPlayer player) {
         if (!holdsCompass(player)) return;
+        HighManaClaimSavedData saved = data(player);
+        HighManaClaimSavedData.Claim selected = saved.selectedTarget(player.getUUID());
+
+        if (selected != null) {
+            PacketDistributor.sendToPlayer(player, new HighManaCompassStatePayload(true, selected.dimension().toString(), selected.chunkX(), selected.chunkZ()));
+            return;
+        }
+
+        if (!saved.isSearchMode(player.getUUID())) saved.setSearchMode(player.getUUID());
         ServerLevel level = player.serverLevel();
-        HighManaZones.Target target = HighManaZones.nearest(level, player);
+        HighManaZones.Target target = HighManaZones.nearestUnclaimed(level, player, saved.claims(player.getUUID()));
         if (target == null) {
             PacketDistributor.sendToPlayer(player, new HighManaCompassStatePayload(false, level.dimension().location().toString(), 0, 0));
         } else {
