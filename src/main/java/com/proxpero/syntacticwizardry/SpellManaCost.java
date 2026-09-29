@@ -108,6 +108,7 @@ public final class SpellManaCost {
             case SpellComponents.TYPE_SPLIT -> 0.0F;
             case SpellComponents.TYPE_RICOCHET -> 0.0F;
             case SpellComponents.TYPE_PIERCING -> 0.0F;
+            case SpellComponents.TYPE_HOMING -> 0.0F;
             default -> 0.0F;
         };
     }
