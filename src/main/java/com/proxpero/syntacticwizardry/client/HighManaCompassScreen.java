@@ -11,7 +11,7 @@ import net.minecraft.world.entity.player.Inventory;
 import java.util.List;
 
 public final class HighManaCompassScreen extends AbstractContainerScreen<HighManaCompassMenu> {
-    private static final int ENTRIES_PER_PAGE = 7;
+    private static final int ENTRIES_PER_PAGE = 6;
     private int page;
 
     public HighManaCompassScreen(HighManaCompassMenu menu, Inventory inventory, Component title) {
@@ -28,15 +28,19 @@ public final class HighManaCompassScreen extends AbstractContainerScreen<HighMan
 
     private void rebuildButtons() {
         clearWidgets();
+        addRenderableWidget(Button.builder(Component.literal("Search Mode"), button -> sendAction(HighManaCompassMenu.ACTION_SEARCH_MODE))
+                .bounds(leftPos + 20, topPos + 32, imageWidth - 40, 20).build());
+
         List<HighManaClaimSavedData.Claim> claims = menu.claims();
         int start = page * ENTRIES_PER_PAGE;
         int end = Math.min(claims.size(), start + ENTRIES_PER_PAGE);
-        int y = topPos + 38;
+        int y = topPos + 58;
         for (int index = start; index < end; index++) {
             HighManaClaimSavedData.Claim claim = claims.get(index);
             String dimension = claim.dimension().getPath();
-            String label = dimension + "  •  " + claim.blockX() + ", " + claim.blockZ();
-            int action = HighManaCompassMenu.ACTION_TELEPORT_BASE + index;
+            boolean selected = claim.equals(menu.selectedTarget()) && !menu.searchMode();
+            String label = (selected ? "> " : "") + dimension + "  •  " + claim.blockX() + ", " + claim.blockZ();
+            int action = HighManaCompassMenu.ACTION_SELECT_BASE + index;
             addRenderableWidget(Button.builder(Component.literal(label), button -> sendAction(action))
                     .bounds(leftPos + 20, y, imageWidth - 40, 20).build());
             y += 23;
@@ -61,9 +65,10 @@ public final class HighManaCompassScreen extends AbstractContainerScreen<HighMan
     @Override
     protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
         graphics.drawCenteredString(font, title, imageWidth / 2, 12, 0xF5E3AF);
+        graphics.drawCenteredString(font, menu.searchMode() ? "Searching for unclaimed High Mana Zones" : "Direct Mode", imageWidth / 2, 22, 0xC8D8E8);
         int pageCount = Math.max(1, (menu.claims().size() + ENTRIES_PER_PAGE - 1) / ENTRIES_PER_PAGE);
         graphics.drawCenteredString(font, "Page " + (page + 1) + "/" + pageCount, imageWidth / 2, imageHeight - 24, 0xC8D8E8);
-        if (menu.claims().isEmpty()) graphics.drawCenteredString(font, "No High Mana Zones claimed.", imageWidth / 2, 70, 0xC8D8E8);
+        if (menu.claims().isEmpty()) graphics.drawCenteredString(font, "No High Mana Zones claimed.", imageWidth / 2, 92, 0xC8D8E8);
     }
 
     @Override
