@@ -13,6 +13,8 @@ public final class ManaNetwork {
     private static final IPayloadHandler<FlightSyncPayload> FLIGHT_SYNC_HANDLER = new FlightSyncHandler();
     private static final IPayloadHandler<HighManaCompassStatePayload> HIGH_MANA_COMPASS_STATE_HANDLER = new HighManaCompassStateHandler();
     private static final IPayloadHandler<HighManaCompassMenuRequestPayload> HIGH_MANA_COMPASS_MENU_HANDLER = new HighManaCompassMenuHandler();
+    private static final IPayloadHandler<FocusSlotCyclePayload> FOCUS_SLOT_CYCLE_HANDLER = new FocusSlotCycleHandler();
+    private static final IPayloadHandler<WandClearBindingPayload> WAND_CLEAR_BINDING_HANDLER = new WandClearBindingHandler();
 
     private ManaNetwork() {}
 
@@ -23,6 +25,8 @@ public final class ManaNetwork {
         registrar.playToClient(FlightSyncPayload.TYPE, FlightSyncPayload.STREAM_CODEC, FLIGHT_SYNC_HANDLER);
         registrar.playToClient(HighManaCompassStatePayload.TYPE, HighManaCompassStatePayload.STREAM_CODEC, HIGH_MANA_COMPASS_STATE_HANDLER);
         registrar.playToServer(HighManaCompassMenuRequestPayload.TYPE, HighManaCompassMenuRequestPayload.STREAM_CODEC, HIGH_MANA_COMPASS_MENU_HANDLER);
+        registrar.playToServer(FocusSlotCyclePayload.TYPE, FocusSlotCyclePayload.STREAM_CODEC, FOCUS_SLOT_CYCLE_HANDLER);
+        registrar.playToServer(WandClearBindingPayload.TYPE, WandClearBindingPayload.STREAM_CODEC, WAND_CLEAR_BINDING_HANDLER);
     }
 
     private static final class ManaSyncHandler implements IPayloadHandler<ManaSyncPayload> {
@@ -39,6 +43,23 @@ public final class ManaNetwork {
     private static final class HighManaCompassMenuHandler implements IPayloadHandler<HighManaCompassMenuRequestPayload> {
         @Override public void handle(HighManaCompassMenuRequestPayload payload, IPayloadContext context) {
             if (context.player() instanceof net.minecraft.server.level.ServerPlayer player && HighManaCompassService.holdsCompass(player)) HighManaCompassService.openMenu(player);
+        }
+    }
+
+    private static final class FocusSlotCycleHandler implements IPayloadHandler<FocusSlotCyclePayload> {
+        @Override public void handle(FocusSlotCyclePayload payload, IPayloadContext context) {
+            if (context.player() instanceof net.minecraft.server.level.ServerPlayer player) FocusSpellStorage.cycleHeldFocus(player, payload.delta());
+        }
+    }
+
+    private static final class WandClearBindingHandler implements IPayloadHandler<WandClearBindingPayload> {
+        @Override public void handle(WandClearBindingPayload payload, IPayloadContext context) {
+            if (!(context.player() instanceof net.minecraft.server.level.ServerPlayer player)) return;
+            net.minecraft.world.item.ItemStack stack = payload.mainHand() ? player.getMainHandItem() : player.getOffhandItem();
+            if (!stack.is(SyntacticWizardry.WAND.get())) return;
+            boolean cleared = WandBindingService.clear(stack);
+            player.getInventory().setChanged();
+            player.displayClientMessage(net.minecraft.network.chat.Component.literal(cleared ? "Wand binding cleared." : "Wand has no binding."), true);
         }
     }
 
