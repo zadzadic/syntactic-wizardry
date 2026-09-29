@@ -1,4 +1,4 @@
-name: Build Syntactic Wizardry v0.1.89 Protection
+name: Build Syntactic Wizardry v0.1.90 Protection
 on:
   pull_request:
     branches: [ main ]
@@ -12,7 +12,7 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-      - name: Inject v0.1.89 source
+      - name: Inject v0.1.90 source
         run: |
           rm -rf src/main/java src/main/templates
           rm -f build.gradle settings.gradle gradle.properties
@@ -27,7 +27,11 @@ jobs:
           patch -p1 < v0_1_89_damage.patch
           cp ProtectionEffect_v0_1_89.java src/main/java/com/proxpero/syntacticwizardry/ProtectionEffect.java
           cp SpellProtectionService_v0_1_89.java src/main/java/com/proxpero/syntacticwizardry/SpellProtectionService.java
-          test "$(grep '^mod_version=' gradle.properties | cut -d= -f2)" = "0.1.89"
+          patch -p1 < v0_1_90_version.patch
+          cp DamageEffect_v0_1_90.java src/main/java/com/proxpero/syntacticwizardry/DamageEffect.java
+          cp SpellProtectionService_v0_1_90.java src/main/java/com/proxpero/syntacticwizardry/SpellProtectionService.java
+          cp ProtectionDamageEvents_v0_1_90.java src/main/java/com/proxpero/syntacticwizardry/ProtectionDamageEvents.java
+          test "$(grep '^mod_version=' gradle.properties | cut -d= -f2)" = "0.1.90"
       - name: Read mod version
         run: echo "MOD_VERSION=$(grep '^mod_version=' gradle.properties | cut -d= -f2)" >> "$GITHUB_ENV"
       - name: Install Gradle 9.2.1
