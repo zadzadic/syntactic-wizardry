@@ -13,5 +13,6 @@ public final class ClientEvents {
   e.registerEntityRenderer(SyntacticWizardry.SPHERE_VISUAL.get(),SphereVisualRenderer::new);
   e.registerEntityRenderer(SyntacticWizardry.BOX_VISUAL.get(),BoxVisualRenderer::new);
   e.registerEntityRenderer(SyntacticWizardry.CONE_VISUAL.get(),ConeVisualRenderer::new);
+  e.registerEntityRenderer(SyntacticWizardry.POINT_VISUAL.get(),PointVisualRenderer::new);
  }
 }

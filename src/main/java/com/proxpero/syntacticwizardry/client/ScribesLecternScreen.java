@@ -3,30 +3,51 @@ import com.proxpero.syntacticwizardry.ScribesLecternMenu;
 import com.proxpero.syntacticwizardry.SpellComponentDefinition;
 import com.proxpero.syntacticwizardry.SpellComponents;
 import com.proxpero.syntacticwizardry.SpellPresentation;
+import com.proxpero.syntacticwizardry.SpellManaCost;
 import com.proxpero.syntacticwizardry.SpellPropertyDefinition;
 import com.proxpero.syntacticwizardry.SpellPropertyKey;
 import com.proxpero.syntacticwizardry.SpellPropertyKind;
 import com.proxpero.syntacticwizardry.SyntacticWizardry;
+import com.proxpero.syntacticwizardry.SphereShape;
 import net.minecraft.Util;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import java.util.List;
+import java.util.Arrays;
 public final class ScribesLecternScreen extends AbstractContainerScreen<ScribesLecternMenu> {
  private enum PropertyTab{STYLE,VISUAL,SETTINGS}
- private static final int SELECTOR_START_X=175,SHAPE_Y=43,EFFECT_Y=82;
+ private static final int SELECTOR_START_X=175,SHAPE_Y=43,EFFECT_Y=82,MODIFIER_Y=109;
  private static final int GRID_X=20,GRID_Y=47,CELL=16,STEP=18;
  private static final int NO_CELL=-1;
  private PropertyTab propertyTab=PropertyTab.SETTINGS;
  private int selectedCell=NO_CELL,dragSource=NO_CELL,dragNewType=SpellPresentation.TYPE_EMPTY;
  private SpellPropertyKey openOptionsProperty=null;
  private Button writeButton;
+ private EditBox spellNameBox;
+ private boolean costCacheValid=false;
+ private int cachedPlanHash=0,cachedSettingsHash=0;
+ private float cachedSpellCost=0.0F;
  public ScribesLecternScreen(ScribesLecternMenu menu,Inventory inv,Component title){super(menu,inv,title);imageWidth=ScribesLecternMenu.WIDTH;imageHeight=ScribesLecternMenu.HEIGHT;}
- @Override protected void init(){super.init();writeButton=addRenderableWidget(Button.builder(Component.literal("Write Spell"),b->sendAction(ScribesLecternMenu.ACTION_WRITE)).bounds(leftPos+20,topPos+174,120,15).build());}
+ @Override protected void init(){
+  super.init();
+  spellNameBox=new EditBox(font,leftPos+43,topPos+25,97,16,Component.literal("Spell Name"));
+  spellNameBox.setMaxLength(ScribesLecternMenu.MAX_SPELL_NAME_LENGTH);
+  spellNameBox.setHint(Component.literal("Spell Name"));
+  addRenderableWidget(spellNameBox);
+  writeButton=addRenderableWidget(Button.builder(Component.literal("Write Spell"),b->{syncSpellName();sendAction(ScribesLecternMenu.ACTION_WRITE);}).bounds(leftPos+20,topPos+174,120,15).build());
+ }
  private void sendAction(int id){if(minecraft!=null&&minecraft.gameMode!=null)minecraft.gameMode.handleInventoryButtonClick(menu.containerId,id);}
+ private void syncSpellName(){
+  sendAction(ScribesLecternMenu.ACTION_NAME_RESET);
+  if(spellNameBox==null)return;
+  String value=spellNameBox.getValue();
+  for(int i=0;i<value.length();i++)sendAction(ScribesLecternMenu.actionNameChar(value.charAt(i)));
+ }
  private ItemStack componentStack(int type){SpellComponentDefinition definition=SpellComponents.byType(type);return definition!=null?definition.createEditorIcon():ItemStack.EMPTY;}
  private boolean hasSelection(){return selectedCell>=0&&menu.typeAt(selectedCell)!=SpellPresentation.TYPE_EMPTY;}
  private SpellComponentDefinition selectedDefinition(){return hasSelection()?menu.definitionAt(selectedCell):null;}
@@ -49,6 +70,19 @@ public final class ScribesLecternScreen extends AbstractContainerScreen<ScribesL
    int type=menu.typeAt(cell);
    if(type!=SpellPresentation.TYPE_EMPTY)g.renderItem(componentStack(type),sx,sy);
   }
+  g.drawString(font,"Cost: "+formatCost(currentSpellCost()),x+20,y+148,0xFFE8F2FF,false);
+ }
+ private float currentSpellCost(){
+  int[] plan=menu.snapshotPlan(),settings=menu.snapshotSettings();
+  int planHash=Arrays.hashCode(plan),settingsHash=Arrays.hashCode(settings);
+  if(!costCacheValid||planHash!=cachedPlanHash||settingsHash!=cachedSettingsHash){
+   cachedPlanHash=planHash;cachedSettingsHash=settingsHash;cachedSpellCost=SpellManaCost.calculate(plan,settings).spellCost();costCacheValid=true;
+  }
+  return cachedSpellCost;
+ }
+ private static String formatCost(float value){
+  int rounded=Math.round(value);
+  return Math.abs(value-rounded)<0.001F?Integer.toString(rounded):Float.toString(value);
  }
  private void renderRightPanel(GuiGraphics g,int x,int y){
   if(!hasSelection()){renderComponentSelector(g,x,y);return;}
@@ -64,9 +98,9 @@ public final class ScribesLecternScreen extends AbstractContainerScreen<ScribesL
   g.drawString(font,"Shapes",x+173,y+29,0xCFE5FF,false);
   int index=0;
   for(SpellComponentDefinition definition:SpellComponents.shapes()){
-   int ox=x+SELECTOR_START_X+index*20;
-   g.fill(ox,y+SHAPE_Y,ox+CELL,y+SHAPE_Y+CELL,0xFF2A3B55);
-   g.renderItem(definition.createEditorIcon(),ox,y+SHAPE_Y);
+   int col=index%5,row=index/5,ox=x+SELECTOR_START_X+col*20,oy=y+SHAPE_Y+row*18;
+   g.fill(ox,oy,ox+CELL,oy+CELL,0xFF2A3B55);
+   g.renderItem(definition.createEditorIcon(),ox,oy);
    index++;
   }
   g.drawString(font,"Effects",x+173,y+68,0xCFE5FF,false);
@@ -75,6 +109,14 @@ public final class ScribesLecternScreen extends AbstractContainerScreen<ScribesL
    int ox=x+SELECTOR_START_X+index*20;
    g.fill(ox,y+EFFECT_Y,ox+CELL,y+EFFECT_Y+CELL,0xFF2A3B55);
    g.renderItem(definition.createEditorIcon(),ox,y+EFFECT_Y);
+   index++;
+  }
+  g.drawString(font,"Modifiers",x+173,y+99,0xCFE5FF,false);
+  index=0;
+  for(SpellComponentDefinition definition:SpellComponents.modifiers()){
+   int ox=x+SELECTOR_START_X+index*20;
+   g.fill(ox,y+MODIFIER_Y,ox+CELL,y+MODIFIER_Y+CELL,0xFF2A3B55);
+   g.renderItem(definition.createEditorIcon(),ox,y+MODIFIER_Y);
    index++;
   }
  }
@@ -156,7 +198,7 @@ public final class ScribesLecternScreen extends AbstractContainerScreen<ScribesL
     int py=previewY(top+h/2+laneOffset/3,t,SpellPresentation.styleAt(plan,cell))-8;
     g.renderItem(SpellPresentation.visualStack(SpellPresentation.visualAt(plan,cell)),px,py);
    }else if(type==SpellPresentation.TYPE_SPHERE){
-    drawBlockSpherePreview(g,left+28+laneOffset,top+h/2,menu.radiusAt(cell),menu.visualAt(cell));
+    drawBlockSpherePreview(g,left+28+laneOffset,top+h/2,menu.radiusAt(cell),menu.sphereHeightAt(cell),menu.sphereModeAt(cell),menu.visualAt(cell));
    }else if(type==SpellPresentation.TYPE_BOX){
     drawBlockBoxPreview(g,left+28+laneOffset,top+h/2,menu.boxWidthAt(cell),menu.boxHeightAt(cell),menu.boxDepthAt(cell),menu.visualAt(cell));
    }else if(type==SpellPresentation.TYPE_CONE){
@@ -169,16 +211,20 @@ public final class ScribesLecternScreen extends AbstractContainerScreen<ScribesL
     int px=left+52+laneOffset,py=top+h/2-8;
     g.renderItem(SyntacticWizardry.DIG_EFFECT.get().getDefaultInstance(),px,py);
     g.drawString(font,"Dig "+menu.potenceAt(cell),px-5,py+17,0xB8CCE0,false);
+   }else if(type==SpellComponents.TYPE_RUNE){
+    int px=left+52+laneOffset,py=top+h/2-8;
+    g.renderItem(SpellComponents.byType(type).createEditorIcon(),px,py);
+    g.drawString(font,"Rune",px-3,py+17,0xB8CCE0,false);
    }
   }
   g.drawString(font,"Row "+(activeRow+1),x+274,y+181,0x9EB7CF,false);
  }
- private void drawBlockSpherePreview(GuiGraphics g,int cx,int cy,int radius,int visual){
-  int r=Math.min(radius,4);
-  float scale=r<=2?0.25F:0.18F;
-  int spacing=r<=2?5:3;
+ private void drawBlockSpherePreview(GuiGraphics g,int cx,int cy,int radius,int height,int mode,int visual){
+  int r=Math.min(radius,4),h=Math.min(height,4);
+  float scale=Math.max(r,h)<=2?0.25F:0.18F;
+  int spacing=Math.max(r,h)<=2?5:3;
   ItemStack stack=SpellPresentation.visualStack(visual);
-  for(int dy=-r;dy<=r;dy++)for(int dx=-r;dx<=r;dx++)if(dx*dx+dy*dy<=r*r){
+  for(int dy=-h;dy<=h;dy++)for(int dx=-r;dx<=r;dx++)if(SphereShape.containsOffset(dx,dy,0,r,h,mode)){
    int px=cx+dx*spacing,py=cy+dy*spacing;
    g.pose().pushPose();
    g.pose().translate(px,py,0.0F);
@@ -233,12 +279,18 @@ public final class ScribesLecternScreen extends AbstractContainerScreen<ScribesL
  private SpellComponentDefinition selectorComponentAt(double mx,double my){
   int index=0;
   for(SpellComponentDefinition definition:SpellComponents.shapes()){
-   if(inside(mx,my,SELECTOR_START_X+index*20,SHAPE_Y,CELL,CELL))return definition;
+   int col=index%5,row=index/5;
+   if(inside(mx,my,SELECTOR_START_X+col*20,SHAPE_Y+row*18,CELL,CELL))return definition;
    index++;
   }
   index=0;
   for(SpellComponentDefinition definition:SpellComponents.effects()){
    if(inside(mx,my,SELECTOR_START_X+index*20,EFFECT_Y,CELL,CELL))return definition;
+   index++;
+  }
+  index=0;
+  for(SpellComponentDefinition definition:SpellComponents.modifiers()){
+   if(inside(mx,my,SELECTOR_START_X+index*20,MODIFIER_Y,CELL,CELL))return definition;
    index++;
   }
   return null;

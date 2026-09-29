@@ -12,16 +12,19 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 public final class ScribesLecternMenu extends AbstractContainerMenu {
  public static final int WIDTH=320,HEIGHT=232;
- private static final int COMPONENT_ACTION_STRIDE=64,PROPERTY_CELL_STRIDE=1024,PROPERTY_KEY_STRIDE=64;
- public static final int ACTION_ADD_COMPONENT_BASE=100,ACTION_MOVE_BASE=10000,ACTION_CLEAR_BASE=20000,ACTION_SET_PROPERTY_BASE=30000,ACTION_WRITE=70000;
+ private static final int COMPONENT_ACTION_STRIDE=64,PROPERTY_CELL_STRIDE=2048,PROPERTY_KEY_STRIDE=64;
+ public static final int ACTION_ADD_COMPONENT_BASE=100,ACTION_MOVE_BASE=10000,ACTION_CLEAR_BASE=20000,ACTION_SET_PROPERTY_BASE=30000,ACTION_WRITE=100000;
+ public static final int ACTION_NAME_RESET=101000,ACTION_NAME_CHAR_BASE=102000,ACTION_NAME_CHAR_LIMIT=ACTION_NAME_CHAR_BASE+65536,MAX_SPELL_NAME_LENGTH=32;
  private static final int SETTINGS_DATA_BASE=SpellPresentation.PLAN_DATA_SIZE;
  private final Container paper=new SimpleContainer(1);
  private final ContainerData spellData=new SimpleContainerData(SETTINGS_DATA_BASE+SpellPresentation.SETTINGS_DATA_SIZE);
+ private final StringBuilder spellName=new StringBuilder();
  public ScribesLecternMenu(int id,Inventory inv){super(SyntacticWizardry.SCRIBES_LECTERN_MENU.get(),id);addSlot(new Slot(paper,0,20,25){@Override public boolean mayPlace(ItemStack s){return s.is(Items.PAPER);}});int sx=80,sy=204;for(int c=0;c<9;c++)addSlot(new Slot(inv,c,sx+c*18,sy));clearAllDefaults();addDataSlots(spellData);}
  public static int actionAddComponent(int cell,int type){return ACTION_ADD_COMPONENT_BASE+cell*COMPONENT_ACTION_STRIDE+type;}
  public static int actionMove(int from,int to){return ACTION_MOVE_BASE+from*SpellPresentation.CELLS+to;}
  public static int actionClear(int cell){return ACTION_CLEAR_BASE+cell;}
  public static int actionSetProperty(int cell,SpellPropertyKey key,int value){return ACTION_SET_PROPERTY_BASE+cell*PROPERTY_CELL_STRIDE+key.id()*PROPERTY_KEY_STRIDE+value;}
+ public static int actionNameChar(char value){return ACTION_NAME_CHAR_BASE+(int)value;}
  private int off(int cell){return cell*SpellPresentation.STRIDE;}
  private int settingIndex(int cell,SpellPropertyKey key){return SETTINGS_DATA_BASE+cell*SpellPropertyKey.SETTING_COUNT+key.settingIndex();}
  public int typeAt(int cell){return valid(cell)?spellData.get(off(cell)):SpellPresentation.TYPE_EMPTY;}
@@ -29,6 +32,8 @@ public final class ScribesLecternMenu extends AbstractContainerMenu {
  public int visualAt(int cell){return valid(cell)?Mth.clamp(spellData.get(off(cell)+2),0,SpellPresentation.VISUAL_COUNT-1):SpellPresentation.VISUAL_DEFAULT;}
  public int propertyValue(int cell,SpellPropertyKey key){if(!valid(cell))return key.isSetting()?SpellPresentation.settingDefault(key):0;if(key==SpellPropertyKey.STYLE)return styleAt(cell);if(key==SpellPropertyKey.VISUAL)return visualAt(cell);return SpellPresentation.clampSetting(key,spellData.get(settingIndex(cell,key)));}
  public int radiusAt(int cell){return propertyValue(cell,SpellPropertyKey.RADIUS);}
+ public int sphereHeightAt(int cell){return propertyValue(cell,SpellPropertyKey.HEIGHT);}
+ public int sphereModeAt(int cell){return propertyValue(cell,SpellPropertyKey.SPHERE_MODE);}
  public int damageKindAt(int cell){return propertyValue(cell,SpellPropertyKey.DAMAGE_KIND);}
  public int potenceAt(int cell){return propertyValue(cell,SpellPropertyKey.POTENCE);}
  public int boxWidthAt(int cell){return propertyValue(cell,SpellPropertyKey.WIDTH);}
@@ -51,7 +56,9 @@ public final class ScribesLecternMenu extends AbstractContainerMenu {
   if(id>=ACTION_MOVE_BASE&&id<ACTION_CLEAR_BASE){int code=id-ACTION_MOVE_BASE,from=code/SpellPresentation.CELLS,to=code%SpellPresentation.CELLS;swap(from,to);return true;}
   if(id>=ACTION_CLEAR_BASE&&id<ACTION_SET_PROPERTY_BASE){setCellType(id-ACTION_CLEAR_BASE,SpellPresentation.TYPE_EMPTY);return true;}
   if(id>=ACTION_SET_PROPERTY_BASE&&id<ACTION_WRITE){int code=id-ACTION_SET_PROPERTY_BASE,cell=code/PROPERTY_CELL_STRIDE,rest=code%PROPERTY_CELL_STRIDE;SpellPropertyKey key=SpellPropertyKey.byId(rest/PROPERTY_KEY_STRIDE);int value=rest%PROPERTY_KEY_STRIDE;if(key!=null){setPropertyValue(cell,key,value);return true;}}
-  if(id==ACTION_WRITE){if(!hasAny())return false;if(!player.getAbilities().instabuild){ItemStack paperStack=paper.getItem(0);if(!paperStack.is(Items.PAPER)||paperStack.isEmpty())return false;paperStack.shrink(1);paper.setChanged();}ItemStack written=WrittenSpellItem.create(snapshotPlan(),snapshotSettings());if(!player.addItem(written))player.drop(written,false);return true;}
+  if(id==ACTION_WRITE){if(!hasAny())return false;if(!player.getAbilities().instabuild){ItemStack paperStack=paper.getItem(0);if(!paperStack.is(Items.PAPER)||paperStack.isEmpty())return false;paperStack.shrink(1);paper.setChanged();}ItemStack written=WrittenSpellItem.create(snapshotPlan(),snapshotSettings(),spellName.toString());if(!player.addItem(written))player.drop(written,false);return true;}
+  if(id==ACTION_NAME_RESET){spellName.setLength(0);return true;}
+  if(id>=ACTION_NAME_CHAR_BASE&&id<ACTION_NAME_CHAR_LIMIT){char value=(char)(id-ACTION_NAME_CHAR_BASE);if(spellName.length()<MAX_SPELL_NAME_LENGTH&&!Character.isISOControl(value))spellName.append(value);return true;}
   return false;
  }
  @Override public boolean stillValid(Player p){return true;}

@@ -14,16 +14,39 @@ public final class SpellExecutor {
   for(int col=0;col<SpellPresentation.COLS;col++){
    int cell=row*SpellPresentation.COLS+col;
    SpellComponentDefinition definition=SpellComponents.byType(SpellPresentation.typeAt(plan,cell));
-   if(definition==null)continue;
-   ComponentExecutionResult result=definition.execute(new SpellExecutionContext(level,owner,plan,settings,row,cell,parent,rootCast,castYaw));
+   if(definition==null||SpellComponents.isModifier(definition))continue;
+   int activeDuration=SpellComponents.attachedDurationTicks(plan,settings,row,col);
+   boolean activeBlockInteraction=SpellComponents.hasAttachedModifier(plan,row,col,SpellComponents.TYPE_BLOCK_INTERACTION);
+   SpellExecutionContext context=new SpellExecutionContext(level,owner,plan,settings,row,cell,parent,rootCast,castYaw,activeDuration,activeBlockInteraction);
+   ComponentExecutionResult result=definition.execute(context);
+   if(definition.isShape()&&SpellComponents.hasAttachedModifier(plan,row,col,SpellComponents.TYPE_STREAM))StreamRuntime.register(context,definition);
+   if(SpellComponents.isEffect(definition)){
+    boolean channeled=SpellComponents.hasAttachedModifier(plan,row,col,SpellComponents.TYPE_CHANNEL);
+    if(channeled)ChannelRuntime.register(context,definition);
+    else if(activeDuration>1)DurationRuntime.register(context,definition,activeDuration);
+   }
    if(result.spawnedShape())spawnedShape=true;
    for(ShapeResolution resolution:result.continuations())continueFrom(level,owner,plan,settings,row,resolution,castYaw);
   }
   if(!spawnedShape)continueFrom(level,owner,plan,settings,row,parent,castYaw);
  }
+ public static void recastStreamShape(ServerLevel level,Entity owner,int[] plan,int[] settings,int row,int cell,ShapeResolution parent,boolean rootCast,Vec3 castYaw,int ignoredDurationTicks,boolean ignoredBlockInteraction){
+  if(row<0||row>=SpellPresentation.ROWS||cell<0||cell>=SpellPresentation.CELLS)return;
+  SpellComponentDefinition definition=SpellComponents.byType(SpellPresentation.typeAt(plan,cell));
+  if(definition==null||!definition.isShape())return;
+  int col=cell%SpellPresentation.COLS;
+  int activeDuration=SpellComponents.attachedDurationTicks(plan,settings,row,col);
+  boolean activeBlockInteraction=SpellComponents.hasAttachedModifier(plan,row,col,SpellComponents.TYPE_BLOCK_INTERACTION);
+  SpellExecutionContext context=new SpellExecutionContext(level,owner,plan,settings,row,cell,parent,rootCast,normalizeYaw(castYaw),activeDuration,activeBlockInteraction);
+  ComponentExecutionResult result=definition.execute(context);
+  for(ShapeResolution resolution:result.continuations())continueFrom(level,owner,plan,settings,row,resolution,castYaw);
+ }
  public static void continueFrom(ServerLevel level,Entity owner,int[] plan,int[] settings,int resolvedRow,ShapeResolution resolution,Vec3 castYaw){
   int nextRow=resolvedRow+1;
   if(nextRow<SpellPresentation.ROWS&&SpellPresentation.rowHasComponents(plan,nextRow))castRow(level,owner,plan,settings,nextRow,resolution,false,normalizeYaw(castYaw));
+ }
+ public static void continueFrom(ServerLevel level,Entity owner,int[] plan,int[] settings,int resolvedRow,ShapeResolution resolution,Vec3 castYaw,int ignoredDurationTicks,boolean ignoredBlockInteraction){
+  continueFrom(level,owner,plan,settings,resolvedRow,resolution,castYaw);
  }
  public static Vec3 normalizeYaw(Vec3 direction){
   if(direction==null)return new Vec3(0.0,0.0,1.0);

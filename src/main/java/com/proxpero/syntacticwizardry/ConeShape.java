@@ -1,5 +1,6 @@
 package com.proxpero.syntacticwizardry;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Position;
 import net.minecraft.world.phys.Vec3;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -22,7 +23,7 @@ public final class ConeShape {
     for(int xi=0;xi<layerWidth;xi++){
      double xOffset=xi-(layerWidth-1)/2.0;
      Vec3 point=center.add(right.scale(xOffset)).add(up.scale(yOffset));
-     out.add(BlockPos.containing(point));
+     out.add(BlockPos.containing((Position) point));
     }
    }
   }

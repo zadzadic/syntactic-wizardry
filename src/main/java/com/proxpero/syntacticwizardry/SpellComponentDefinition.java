@@ -14,4 +14,6 @@ public interface SpellComponentDefinition {
  ItemStack createEditorIcon();
  ComponentExecutionResult execute(SpellExecutionContext context);
  default boolean acceptsDirectEntity(Entity entity){return false;}
+ default EffectReplayPolicy replayPolicy(){return EffectReplayPolicy.INSTANT;}
+ default boolean supportsBlockInteraction(){return false;}
 }

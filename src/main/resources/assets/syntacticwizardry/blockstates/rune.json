@@ -1,0 +1,142 @@
+{
+  "variants": {
+    "facing=north,glyph=0": {
+      "model": "syntacticwizardry:block/rune_symbol_0"
+    },
+    "facing=north,glyph=1": {
+      "model": "syntacticwizardry:block/rune_symbol_1"
+    },
+    "facing=north,glyph=2": {
+      "model": "syntacticwizardry:block/rune_symbol_2"
+    },
+    "facing=north,glyph=3": {
+      "model": "syntacticwizardry:block/rune_symbol_3"
+    },
+    "facing=north,glyph=4": {
+      "model": "syntacticwizardry:block/rune_symbol_4"
+    },
+    "facing=north,glyph=5": {
+      "model": "syntacticwizardry:block/rune_symbol_5"
+    },
+    "facing=south,glyph=0": {
+      "model": "syntacticwizardry:block/rune_symbol_0",
+      "y": 180
+    },
+    "facing=south,glyph=1": {
+      "model": "syntacticwizardry:block/rune_symbol_1",
+      "y": 180
+    },
+    "facing=south,glyph=2": {
+      "model": "syntacticwizardry:block/rune_symbol_2",
+      "y": 180
+    },
+    "facing=south,glyph=3": {
+      "model": "syntacticwizardry:block/rune_symbol_3",
+      "y": 180
+    },
+    "facing=south,glyph=4": {
+      "model": "syntacticwizardry:block/rune_symbol_4",
+      "y": 180
+    },
+    "facing=south,glyph=5": {
+      "model": "syntacticwizardry:block/rune_symbol_5",
+      "y": 180
+    },
+    "facing=east,glyph=0": {
+      "model": "syntacticwizardry:block/rune_symbol_0",
+      "y": 270
+    },
+    "facing=east,glyph=1": {
+      "model": "syntacticwizardry:block/rune_symbol_1",
+      "y": 270
+    },
+    "facing=east,glyph=2": {
+      "model": "syntacticwizardry:block/rune_symbol_2",
+      "y": 270
+    },
+    "facing=east,glyph=3": {
+      "model": "syntacticwizardry:block/rune_symbol_3",
+      "y": 270
+    },
+    "facing=east,glyph=4": {
+      "model": "syntacticwizardry:block/rune_symbol_4",
+      "y": 270
+    },
+    "facing=east,glyph=5": {
+      "model": "syntacticwizardry:block/rune_symbol_5",
+      "y": 270
+    },
+    "facing=west,glyph=0": {
+      "model": "syntacticwizardry:block/rune_symbol_0",
+      "y": 90
+    },
+    "facing=west,glyph=1": {
+      "model": "syntacticwizardry:block/rune_symbol_1",
+      "y": 90
+    },
+    "facing=west,glyph=2": {
+      "model": "syntacticwizardry:block/rune_symbol_2",
+      "y": 90
+    },
+    "facing=west,glyph=3": {
+      "model": "syntacticwizardry:block/rune_symbol_3",
+      "y": 90
+    },
+    "facing=west,glyph=4": {
+      "model": "syntacticwizardry:block/rune_symbol_4",
+      "y": 90
+    },
+    "facing=west,glyph=5": {
+      "model": "syntacticwizardry:block/rune_symbol_5",
+      "y": 90
+    },
+    "facing=up,glyph=0": {
+      "model": "syntacticwizardry:block/rune_symbol_0",
+      "x": 90
+    },
+    "facing=up,glyph=1": {
+      "model": "syntacticwizardry:block/rune_symbol_1",
+      "x": 90
+    },
+    "facing=up,glyph=2": {
+      "model": "syntacticwizardry:block/rune_symbol_2",
+      "x": 90
+    },
+    "facing=up,glyph=3": {
+      "model": "syntacticwizardry:block/rune_symbol_3",
+      "x": 90
+    },
+    "facing=up,glyph=4": {
+      "model": "syntacticwizardry:block/rune_symbol_4",
+      "x": 90
+    },
+    "facing=up,glyph=5": {
+      "model": "syntacticwizardry:block/rune_symbol_5",
+      "x": 90
+    },
+    "facing=down,glyph=0": {
+      "model": "syntacticwizardry:block/rune_symbol_0",
+      "x": 270
+    },
+    "facing=down,glyph=1": {
+      "model": "syntacticwizardry:block/rune_symbol_1",
+      "x": 270
+    },
+    "facing=down,glyph=2": {
+      "model": "syntacticwizardry:block/rune_symbol_2",
+      "x": 270
+    },
+    "facing=down,glyph=3": {
+      "model": "syntacticwizardry:block/rune_symbol_3",
+      "x": 270
+    },
+    "facing=down,glyph=4": {
+      "model": "syntacticwizardry:block/rune_symbol_4",
+      "x": 270
+    },
+    "facing=down,glyph=5": {
+      "model": "syntacticwizardry:block/rune_symbol_5",
+      "x": 270
+    }
+  }
+}

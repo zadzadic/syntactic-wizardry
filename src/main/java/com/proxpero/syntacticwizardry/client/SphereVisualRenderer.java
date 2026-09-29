@@ -3,6 +3,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import com.proxpero.syntacticwizardry.SphereVisualEntity;
 import com.proxpero.syntacticwizardry.SpellPresentation;
+import com.proxpero.syntacticwizardry.SphereShape;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
@@ -28,9 +29,10 @@ public final class SphereVisualRenderer extends EntityRenderer<SphereVisualEntit
  @Override public void render(SphereVisualEntity entity,float yaw,float partialTick,PoseStack pose,MultiBufferSource buffers,int packedLight){
   ItemStack stack=entity.getItem();
   int radius=SpellPresentation.readSphereVisualRadius(stack);
+  int height=SpellPresentation.readSphereVisualHeight(stack);
+  int mode=SpellPresentation.readSphereVisualMode(stack);
   int style=SpellPresentation.readStyle(stack);
   int visual=SpellPresentation.readVisual(stack);
-  int rr=radius*radius;
   int centerX=(int)Math.floor(entity.getX());
   int centerY=(int)Math.floor(entity.getY());
   int centerZ=(int)Math.floor(entity.getZ());
@@ -38,8 +40,8 @@ public final class SphereVisualRenderer extends EntityRenderer<SphereVisualEntit
   double by=centerY+0.5-entity.getY();
   double bz=centerZ+0.5-entity.getZ();
   int seed=entity.getId()*31;
-  for(int dy=-radius;dy<=radius;dy++)for(int dz=-radius;dz<=radius;dz++)for(int dx=-radius;dx<=radius;dx++){
-   if(dx*dx+dy*dy+dz*dz>rr)continue;
+  for(int dy=-height;dy<=height;dy++)for(int dz=-radius;dz<=radius;dz++)for(int dx=-radius;dx<=radius;dx++){
+   if(!SphereShape.containsOffset(dx,dy,dz,radius,height,mode))continue;
    pose.pushPose();
    pose.translate(bx+dx,by+dy,bz+dz);
    if(directional(visual)&&(style==SpellPresentation.STYLE_INNER||style==SpellPresentation.STYLE_OUTER)){

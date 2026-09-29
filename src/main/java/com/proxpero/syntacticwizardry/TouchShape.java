@@ -22,7 +22,7 @@ public final class TouchShape {
    EntitySelection entity=findEntity(context,start,end,maxDistance);
    return entity==null?null:ShapeResolution.impact(entity.location(),direction,entity.entity());
   }
-  return hasBlock?ShapeResolution.surfaceBlock(blockHit.getBlockPos(),blockHit.getDirection()):null;
+  return hasBlock?ShapeResolution.touchedBlock(blockHit.getLocation(),direction,blockHit.getBlockPos(),blockHit.getDirection()):null;
  }
  private static EntitySelection findEntity(SpellExecutionContext context,Vec3 start,Vec3 end,double maximumDistanceSqr){
   AABB search=new AABB(start,end).inflate(1.0);

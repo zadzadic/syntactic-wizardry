@@ -4,10 +4,8 @@ import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.tags.BlockTags;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -29,10 +27,9 @@ public final class AreaDigBulkRuntime {
    BlockPos pos=raw.immutable();
    if(!requested.add(pos.asLong()))continue;
    BlockState state=level.getBlockState(pos);
-   if(!canBreak(level,pos,state,tier))continue;
+   if(!MiningTierService.canAffect(level,pos,state,tier))continue;
    BlockEntity blockEntity=level.getBlockEntity(pos);
-   ItemStack tool=toolFor(state,tier);
-   for(ItemStack drop:Block.getDrops(state,level,pos,blockEntity,owner,tool))mergeDrop(drops,drop);
+   for(ItemStack drop:BlockBreakService.calculateDrops(level,owner,pos,state,blockEntity,tier))mergeDrop(drops,drop);
    entries.add(new BreakEntry(pos,state));
   }
   if(entries.isEmpty())return 0;
@@ -46,31 +43,9 @@ public final class AreaDigBulkRuntime {
    if(isBoundary(entry.pos(),broken))level.updateNeighborsAt(entry.pos(),entry.state().getBlock());
   }
   BlockPos dropPos=entries.get(0).pos();
-  for(ItemStack drop:drops)if(!drop.isEmpty())Block.popResource(level,dropPos,drop);
+  BlockBreakService.spawnDrops(level,dropPos,drops);
   level.playSound(null,dropPos,SoundEvents.STONE_BREAK,SoundSource.BLOCKS,1.0F,1.0F);
   return broken.size();
- }
- private static boolean canBreak(ServerLevel level,BlockPos pos,BlockState state,int tier){
-  if(state.isAir())return false;
-  if(!state.getFluidState().isEmpty()&&state.getCollisionShape(level,pos).isEmpty())return false;
-  if(state.getDestroySpeed(level,pos)<0.0F)return false;
-  if(tier==1)return state.is(BlockTags.MINEABLE_WITH_SHOVEL);
-  if(state.is(BlockTags.NEEDS_DIAMOND_TOOL))return tier>=5;
-  if(state.is(BlockTags.NEEDS_IRON_TOOL))return tier>=4;
-  if(state.is(BlockTags.NEEDS_STONE_TOOL))return tier>=3;
-  return true;
- }
- private static ItemStack toolFor(BlockState state,int tier){
-  if(tier<=1)return new ItemStack(Items.WOODEN_SHOVEL);
-  boolean shovel=state.is(BlockTags.MINEABLE_WITH_SHOVEL);
-  boolean axe=state.is(BlockTags.MINEABLE_WITH_AXE);
-  boolean hoe=state.is(BlockTags.MINEABLE_WITH_HOE);
-  return switch(tier){
-   case 2->new ItemStack(shovel?Items.WOODEN_SHOVEL:axe?Items.WOODEN_AXE:hoe?Items.WOODEN_HOE:Items.WOODEN_PICKAXE);
-   case 3->new ItemStack(shovel?Items.STONE_SHOVEL:axe?Items.STONE_AXE:hoe?Items.STONE_HOE:Items.STONE_PICKAXE);
-   case 4->new ItemStack(shovel?Items.IRON_SHOVEL:axe?Items.IRON_AXE:hoe?Items.IRON_HOE:Items.IRON_PICKAXE);
-   default->new ItemStack(shovel?Items.DIAMOND_SHOVEL:axe?Items.DIAMOND_AXE:hoe?Items.DIAMOND_HOE:Items.DIAMOND_PICKAXE);
-  };
  }
  private static boolean isBoundary(BlockPos pos,Set<Long> broken){
   for(Direction direction:Direction.values())if(!broken.contains(pos.relative(direction).asLong()))return true;

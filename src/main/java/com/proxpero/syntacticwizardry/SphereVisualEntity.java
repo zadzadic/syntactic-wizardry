@@ -9,16 +9,19 @@ public final class SphereVisualEntity extends ItemEntity {
   setNoGravity(true);
   setNeverPickUp();
   setInvulnerable(true);
-  lifespan=8;
+  lifespan=Integer.MAX_VALUE;
  }
- public SphereVisualEntity(Level level,Vec3 origin,int radius,int style,int visual){
+ public SphereVisualEntity(Level level,Vec3 origin,int radius,int height,int mode,int style,int visual,int lifetimeTicks){
   this(SyntacticWizardry.SPHERE_VISUAL.get(),level);
   setPos(origin.x,origin.y,origin.z);
-  setItem(SpellPresentation.sphereVisualStack(style,visual,radius));
+  setItem(SpellPresentation.sphereVisualStack(style,visual,radius,height,mode,lifetimeTicks));
   setDeltaMovement(Vec3.ZERO);
  }
+ public SphereVisualEntity(Level level,Vec3 origin,int radius,int height,int mode,int style,int visual){this(level,origin,radius,height,mode,style,visual,VisualDurationSupport.DEFAULT_VISUAL_TICKS);}
+ public SphereVisualEntity(Level level,Vec3 origin,int radius,int style,int visual){this(level,origin,radius,radius,SpellPresentation.SPHERE_FULL,style,visual,VisualDurationSupport.DEFAULT_VISUAL_TICKS);}
  @Override public void tick(){
   double x=getX(),y=getY(),z=getZ();
+  lifespan=getItem().isEmpty()?Integer.MAX_VALUE:SpellPresentation.readVisualLifetime(getItem());
   super.tick();
   setPos(x,y,z);
   setDeltaMovement(Vec3.ZERO);

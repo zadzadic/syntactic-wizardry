@@ -10,5 +10,6 @@
   "item.syntacticwizardry.target_shape": "Target",
   "item.syntacticwizardry.damage_effect": "Damage",
   "item.syntacticwizardry.dig_effect": "Dig",
-  "item.syntacticwizardry.written_spell": "Written Spell"
+  "item.syntacticwizardry.written_spell": "Written Spell",
+  "block.syntacticwizardry.temporary_block": "Temporary Block"
 }

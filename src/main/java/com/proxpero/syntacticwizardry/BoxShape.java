@@ -1,5 +1,6 @@
 package com.proxpero.syntacticwizardry;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Position;
 import net.minecraft.world.phys.Vec3;
 import java.util.ArrayList;
 import java.util.List;
@@ -12,7 +13,7 @@ public final class BoxShape {
   Vec3 up=orthogonalUp(forward,upHint);
   Vec3 right=up.cross(forward).normalize();
   up=forward.cross(right).normalize();
-  Vec3 base=Vec3.atCenterOf(BlockPos.containing(origin));
+  Vec3 base=Vec3.atCenterOf(BlockPos.containing((Position) origin));
   Vec3 center=base
    .add(right.scale((w&1)==0?0.5:0.0))
    .add(up.scale((h&1)==0?0.5:0.0))

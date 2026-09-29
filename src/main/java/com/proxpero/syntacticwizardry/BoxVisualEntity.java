@@ -9,16 +9,18 @@ public final class BoxVisualEntity extends ItemEntity {
   setNoGravity(true);
   setNeverPickUp();
   setInvulnerable(true);
-  lifespan=8;
+  lifespan=Integer.MAX_VALUE;
  }
- public BoxVisualEntity(Level level,Vec3 origin,Vec3 direction,Vec3 up,int width,int height,int depth,int style,int visual){
+ public BoxVisualEntity(Level level,Vec3 origin,Vec3 direction,Vec3 up,int width,int height,int depth,int style,int visual,int lifetimeTicks){
   this(SyntacticWizardry.BOX_VISUAL.get(),level);
   setPos(origin.x,origin.y,origin.z);
-  setItem(SpellPresentation.boxVisualStack(style,visual,width,height,depth,direction,up));
+  setItem(SpellPresentation.boxVisualStack(style,visual,width,height,depth,direction,up,lifetimeTicks));
   setDeltaMovement(Vec3.ZERO);
  }
+ public BoxVisualEntity(Level level,Vec3 origin,Vec3 direction,Vec3 up,int width,int height,int depth,int style,int visual){this(level,origin,direction,up,width,height,depth,style,visual,VisualDurationSupport.DEFAULT_VISUAL_TICKS);}
  @Override public void tick(){
   double x=getX(),y=getY(),z=getZ();
+  lifespan=getItem().isEmpty()?Integer.MAX_VALUE:SpellPresentation.readVisualLifetime(getItem());
   super.tick();
   setPos(x,y,z);
   setDeltaMovement(Vec3.ZERO);

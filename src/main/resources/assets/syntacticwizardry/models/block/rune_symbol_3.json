@@ -1,0 +1,42 @@
+{
+  "render_type": "minecraft:cutout",
+  "ambientocclusion": false,
+  "textures": {
+    "rune": "syntacticwizardry:block/rune_3"
+  },
+  "elements": [
+    {
+      "from": [
+        3.0,
+        3.0,
+        0.01
+      ],
+      "to": [
+        13.0,
+        13.0,
+        0.07
+      ],
+      "shade": false,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#rune"
+        },
+        "south": {
+          "uv": [
+            16,
+            0,
+            0,
+            16
+          ],
+          "texture": "#rune"
+        }
+      }
+    }
+  ]
+}

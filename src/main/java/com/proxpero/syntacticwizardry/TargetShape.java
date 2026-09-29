@@ -25,10 +25,10 @@ public final class TargetShape {
    return entitySelection==null?null:ShapeResolution.impact(entitySelection.location(),direction,entitySelection.entity());
   }
   if(targetType==SpellPresentation.TARGET_BLOCKS){
-   return hasBlock?ShapeResolution.block(blockHit.getLocation(),direction,blockHit.getBlockPos()):null;
+   return hasBlock?ShapeResolution.targetBlock(blockHit.getBlockPos(),blockHit.getDirection(),context.impactDirection()):null;
   }
   if(entitySelection!=null&&entitySelection.distanceSqr()<blockDistance)return ShapeResolution.impact(entitySelection.location(),direction,entitySelection.entity());
-  return hasBlock?ShapeResolution.block(blockHit.getLocation(),direction,blockHit.getBlockPos()):null;
+  return hasBlock?ShapeResolution.targetBlock(blockHit.getBlockPos(),blockHit.getDirection(),context.impactDirection()):null;
  }
  private static EntitySelection findEntity(SpellExecutionContext context,Vec3 start,Vec3 end,double maximumDistanceSqr){
   AABB search=new AABB(start,end).inflate(1.0);
