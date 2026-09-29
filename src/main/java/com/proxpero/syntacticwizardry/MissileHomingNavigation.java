@@ -119,14 +119,28 @@ public final class MissileHomingNavigation {
         }
         if (routeIndex >= route.size()) return hasTarget();
 
+        /*
+         * Homing has a deliberate launch commitment. The projectile first preserves its
+         * original heading, then progressively gains steering authority. This produces
+         * a visible curved pursuit path instead of an immediate turn toward the route.
+         */
+        Vec3 current = missile.getDeltaMovement();
+        if (distanceSinceAcquisition < FORWARD_COMMIT_DISTANCE) {
+            if (current.lengthSqr() > 1.0E-8D) missile.setDeltaMovement(current.normalize().scale(HOMING_SPEED));
+            return true;
+        }
+
         Vec3 aim = lookAheadPoint(position);
         Vec3 desired = aim.subtract(position);
         if (desired.lengthSqr() <= 1.0E-8D) return hasTarget();
         desired = desired.normalize();
 
-        Vec3 current = missile.getDeltaMovement();
         Vec3 currentDirection = current.lengthSqr() > 1.0E-8D ? current.normalize() : desired;
-        Vec3 steered = rotateToward(currentDirection, desired, MAX_TURN_RADIANS);
+        double rampDistance = distanceSinceAcquisition - FORWARD_COMMIT_DISTANCE;
+        double t = Math.max(0.0D, Math.min(1.0D, rampDistance / TURN_RAMP_DISTANCE));
+        double eased = t * t * (3.0D - 2.0D * t);
+        double turnLimit = MIN_TURN_RADIANS + (MAX_TURN_RADIANS - MIN_TURN_RADIANS) * eased;
+        Vec3 steered = rotateToward(currentDirection, desired, turnLimit);
         missile.setDeltaMovement(steered.scale(HOMING_SPEED));
         return true;
     }
