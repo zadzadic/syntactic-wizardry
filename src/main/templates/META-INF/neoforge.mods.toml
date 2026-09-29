@@ -8,6 +8,8 @@ displayName="${mod_name}"
 description='''Syntactic Wizardry.'''
 [[mixins]]
 config="syntacticwizardry.mixins.json"
+[[mixins]]
+config="syntacticwizardry-builder.mixins.json"
 [[dependencies.${mod_id}]]
 modId="neoforge"
 type="required"
