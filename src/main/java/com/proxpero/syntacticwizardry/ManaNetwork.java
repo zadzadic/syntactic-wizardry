@@ -11,6 +11,8 @@ import net.neoforged.neoforge.network.handling.IPayloadHandler;
 public final class ManaNetwork {
     private static final IPayloadHandler<ManaSyncPayload> MANA_SYNC_HANDLER = new ManaSyncHandler();
     private static final IPayloadHandler<FlightSyncPayload> FLIGHT_SYNC_HANDLER = new FlightSyncHandler();
+    private static final IPayloadHandler<HighManaCompassStatePayload> HIGH_MANA_COMPASS_STATE_HANDLER = new HighManaCompassStateHandler();
+    private static final IPayloadHandler<HighManaCompassMenuRequestPayload> HIGH_MANA_COMPASS_MENU_HANDLER = new HighManaCompassMenuHandler();
 
     private ManaNetwork() {}
 
@@ -19,12 +21,24 @@ public final class ManaNetwork {
         var registrar = event.registrar("1");
         registrar.playToClient(ManaSyncPayload.TYPE, ManaSyncPayload.STREAM_CODEC, MANA_SYNC_HANDLER);
         registrar.playToClient(FlightSyncPayload.TYPE, FlightSyncPayload.STREAM_CODEC, FLIGHT_SYNC_HANDLER);
+        registrar.playToClient(HighManaCompassStatePayload.TYPE, HighManaCompassStatePayload.STREAM_CODEC, HIGH_MANA_COMPASS_STATE_HANDLER);
+        registrar.playToServer(HighManaCompassMenuRequestPayload.TYPE, HighManaCompassMenuRequestPayload.STREAM_CODEC, HIGH_MANA_COMPASS_MENU_HANDLER);
     }
 
     private static final class ManaSyncHandler implements IPayloadHandler<ManaSyncPayload> {
         @Override
         public void handle(ManaSyncPayload payload, IPayloadContext context) {
             ManaService.setClientMana(context.player(), payload.mana());
+        }
+    }
+
+    private static final class HighManaCompassStateHandler implements IPayloadHandler<HighManaCompassStatePayload> {
+        @Override public void handle(HighManaCompassStatePayload payload, IPayloadContext context) { HighManaCompassClientState.set(payload); }
+    }
+
+    private static final class HighManaCompassMenuHandler implements IPayloadHandler<HighManaCompassMenuRequestPayload> {
+        @Override public void handle(HighManaCompassMenuRequestPayload payload, IPayloadContext context) {
+            if (context.player() instanceof net.minecraft.server.level.ServerPlayer player && HighManaCompassService.holdsCompass(player)) HighManaCompassService.openMenu(player);
         }
     }
 
