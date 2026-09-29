@@ -146,17 +146,17 @@ public final class ScribesLecternScreen extends AbstractContainerScreen<ScribesL
   int rowY=y+55;
   for(SpellPropertyDefinition property:definition.settings()){
    if(property.kind()==SpellPropertyKind.STEPPER){
-    renderStepper(g,x,rowY,property.label(),menu.propertyValue(selectedCell,property.key()));
+    renderStepper(g,x,rowY,property,menu.propertyValue(selectedCell,property.key()));
    }else{
     buttonBox(g,x+174,rowY,126,18,property.label()+": "+property.format(menu.propertyValue(selectedCell,property.key())));
    }
    rowY+=25;
   }
  }
- private void renderStepper(GuiGraphics g,int x,int y,String label,int value){
-  g.drawString(font,label+":",x+175,y+4,0xD9E9F7,false);
+ private void renderStepper(GuiGraphics g,int x,int y,SpellPropertyDefinition property,int value){
+  g.drawString(font,property.label()+":",x+175,y+4,0xD9E9F7,false);
   buttonBox(g,x+245,y,16,16,"<");
-  g.drawCenteredString(font,Integer.toString(value),x+272,y+4,0xE8F3FF);
+  g.drawCenteredString(font,property.format(value),x+272,y+4,0xE8F3FF);
   buttonBox(g,x+284,y,16,16,">");
  }
  private void renderOptionMenu(GuiGraphics g,int x,int y){

@@ -22,6 +22,7 @@ public final class SpellComponents {
  public static final int TYPE_CHAIN=21;
  public static final int TYPE_PROTECTION=22;
  public static final int TYPE_TEMPORARY_BLOCK=23;
+ public static final int TYPE_ALTER=24;
  private static final SpellPropertyDefinition RADIUS_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.RADIUS,"Radius",SpellPropertyKind.STEPPER,SpellPresentation.RADIUS_MIN,SpellPresentation.RADIUS_MAX,SpellPresentation.RADIUS_DEFAULT,Integer::toString);
  private static final SpellPropertyDefinition SPHERE_MODE_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.SPHERE_MODE,"Shape",SpellPropertyKind.OPTIONS,0,SpellPresentation.SPHERE_MODE_COUNT-1,SpellPresentation.SPHERE_MODE_DEFAULT,SpellPresentation::sphereModeName);
  private static final SpellPropertyDefinition POTENCE_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.POTENCE,"Potence",SpellPropertyKind.STEPPER,SpellPresentation.POTENCE_MIN,SpellPresentation.POTENCE_MAX,SpellPresentation.POTENCE_DEFAULT,Integer::toString);
@@ -42,12 +43,16 @@ public final class SpellComponents {
  private static final SpellPropertyDefinition GRAVITY_MODE_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.GRAVITY_MODE,"Mode",SpellPropertyKind.OPTIONS,0,SpellPresentation.GRAVITY_MODE_COUNT-1,SpellPresentation.GRAVITY_MODE_DEFAULT,SpellPresentation::gravityModeName);
  private static final SpellPropertyDefinition RELATIVE_DIRECTION_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.GRAVITY_MODE,"Direction",SpellPropertyKind.OPTIONS,0,SpellPresentation.RELATIVE_DIRECTION_COUNT-1,SpellPresentation.RELATIVE_DIRECTION_DEFAULT,SpellPresentation::relativeDirectionName);
  private static final SpellPropertyDefinition TARGET_DIRECTION_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.IMPACT_DIRECTION,"Direction",SpellPropertyKind.OPTIONS,0,SpellPresentation.IMPACT_DIRECTION_COUNT-1,SpellPresentation.IMPACT_DIRECTION_DEFAULT,SpellPresentation::impactDirectionName);
- private static final List<SpellComponentDefinition> ALL=List.of(new MissileDefinition(),new ChainDefinition(),new SphereDefinition(),new BoxDefinition(),new ConeDefinition(),new FloatingDefinition(),new TouchDefinition(),new TargetDefinition(),new DamageDefinition(),new DigDefinition(),new RestoreDefinition(),new MoveDefinition(),new SiphonDefinition(),new GravityDefinition(),new ProtectionDefinition(),new TemporaryBlockDefinition(),new SelfDefinition(),new RelativeDefinition(),new RuneDefinition(),new ChannelDefinition(),new StreamDefinition(),new DurationDefinition(),new BlockInteractionDefinition());
+ private static final SpellPropertyDefinition ALTER_STRENGTH_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.ALTER_STRENGTH,"Strength",SpellPropertyKind.STEPPER,SpellPresentation.ALTER_SETTING_MIN,SpellPresentation.ALTER_SETTING_MAX,SpellPresentation.ALTER_SETTING_DEFAULT,SpellComponents::alterSettingLabel);
+ private static final SpellPropertyDefinition ALTER_SPEED_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.ALTER_SPEED,"Speed",SpellPropertyKind.STEPPER,SpellPresentation.ALTER_SETTING_MIN,SpellPresentation.ALTER_SETTING_MAX,SpellPresentation.ALTER_SETTING_DEFAULT,SpellComponents::alterSettingLabel);
+ private static final SpellPropertyDefinition ALTER_TOUGHNESS_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.ALTER_TOUGHNESS,"Toughness",SpellPropertyKind.STEPPER,SpellPresentation.ALTER_SETTING_MIN,SpellPresentation.ALTER_SETTING_MAX,SpellPresentation.ALTER_SETTING_DEFAULT,SpellComponents::alterSettingLabel);
+ private static final List<SpellComponentDefinition> ALL=List.of(new MissileDefinition(),new ChainDefinition(),new SphereDefinition(),new BoxDefinition(),new ConeDefinition(),new FloatingDefinition(),new TouchDefinition(),new TargetDefinition(),new DamageDefinition(),new DigDefinition(),new RestoreDefinition(),new MoveDefinition(),new SiphonDefinition(),new GravityDefinition(),new AlterDefinition(),new ProtectionDefinition(),new TemporaryBlockDefinition(),new SelfDefinition(),new RelativeDefinition(),new RuneDefinition(),new ChannelDefinition(),new StreamDefinition(),new DurationDefinition(),new BlockInteractionDefinition());
  private static final Map<Integer,SpellComponentDefinition> BY_TYPE=ALL.stream().collect(Collectors.toUnmodifiableMap(SpellComponentDefinition::typeId,Function.identity()));
  private static final List<SpellComponentDefinition> SHAPES=ALL.stream().filter(SpellComponentDefinition::isShape).toList();
  private static final List<SpellComponentDefinition> EFFECTS=ALL.stream().filter(SpellComponents::isEffect).toList();
  private static final List<SpellComponentDefinition> MODIFIERS=ALL.stream().filter(SpellComponents::isModifier).toList();
  private SpellComponents(){}
+ private static String alterSettingLabel(int stored){int value=stored-SpellPresentation.ALTER_SETTING_DEFAULT;return value>0?"+"+value:Integer.toString(value);}
  public static SpellComponentDefinition byType(int type){return BY_TYPE.get(type);}
  public static List<SpellComponentDefinition> all(){return ALL;}
  public static List<SpellComponentDefinition> shapes(){return SHAPES;}
@@ -153,6 +158,13 @@ public final class SpellComponents {
   @Override public boolean acceptsDirectEntity(Entity entity){return entity!=null&&!entity.isRemoved();}
   @Override public EffectReplayPolicy replayPolicy(){return EffectReplayPolicy.TICK;}
   @Override public boolean supportsBlockInteraction(){return true;}
+ }
+ private static final class AlterDefinition extends BaseDefinition {
+  AlterDefinition(){super(TYPE_ALTER,"Alter",false,0,0,List.of(),false,List.of(ALTER_STRENGTH_PROPERTY,ALTER_SPEED_PROPERTY,ALTER_TOUGHNESS_PROPERTY));}
+  @Override public ItemStack createEditorIcon(){return Items.POTION.getDefaultInstance();}
+  @Override public boolean acceptsDirectEntity(Entity entity){return entity instanceof LivingEntity living&&living.isAlive();}
+  @Override public EffectReplayPolicy replayPolicy(){return EffectReplayPolicy.CREATE_ONCE;}
+  @Override public ComponentExecutionResult execute(SpellExecutionContext context){AlterEffect.apply(context.level(),context.parent(),context.alterStrength(),context.alterSpeed(),context.alterToughness(),context.activeDurationTicks());return ComponentExecutionResult.NONE;}
  }
  private static final class ProtectionDefinition extends BaseDefinition {
   ProtectionDefinition(){super(TYPE_PROTECTION,"Protection",false,0,0,List.of(),false,List.of(POTENCE_PROPERTY,PROTECTION_KIND_PROPERTY));}

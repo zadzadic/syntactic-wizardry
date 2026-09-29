@@ -27,6 +27,7 @@ public final class SpellPresentation {
  public static final int DURATION_MIN=1,DURATION_MAX=60,DURATION_DEFAULT=5;
  public static final int DISTANCE_MIN=1,DISTANCE_MAX=32,DISTANCE_DEFAULT=8;
  public static final int RELATIVE_FRONT=0,RELATIVE_BACK=1,RELATIVE_LEFT=2,RELATIVE_RIGHT=3,RELATIVE_UP=4,RELATIVE_DOWN=5,RELATIVE_DIRECTION_COUNT=6,RELATIVE_DIRECTION_DEFAULT=RELATIVE_FRONT;
+ public static final int ALTER_SETTING_MIN=0,ALTER_SETTING_MAX=4,ALTER_SETTING_DEFAULT=2;
  private static final int LEGACY_SETTING_COUNT=7;
  private static final int PREVIOUS_SETTING_COUNT=8;
  private static final int PREVIOUS_SETTING_COUNT_2=9;
@@ -34,6 +35,7 @@ public final class SpellPresentation {
  private static final int PREVIOUS_SETTING_COUNT_4=12;
  private static final int PREVIOUS_SETTING_COUNT_5=14;
  private static final int PREVIOUS_SETTING_COUNT_6=15;
+ private static final int PREVIOUS_SETTING_COUNT_7=16;
  public static final int SETTINGS_DATA_SIZE=CELLS*SpellPropertyKey.SETTING_COUNT;
  private SpellPresentation(){}
  private static int off(int cell){return cell*STRIDE;}
@@ -52,9 +54,9 @@ public final class SpellPresentation {
   return clampSetting(key,settings[settingOff(cell,key)]);
  }
  public static void setSetting(int[] settings,int cell,SpellPropertyKey key,int value){if(key.isSetting()&&settings!=null&&settings.length>=SETTINGS_DATA_SIZE&&cell>=0&&cell<CELLS)settings[settingOff(cell,key)]=clampSetting(key,value);}
- public static int settingDefault(SpellPropertyKey key){return switch(key){case RADIUS->RADIUS_DEFAULT;case DAMAGE_KIND->DAMAGE_KIND_DEFAULT;case POTENCE->POTENCE_DEFAULT;case WIDTH,HEIGHT,DEPTH->BOX_SIZE_DEFAULT;case TARGET_TYPE->TARGET_TYPE_DEFAULT;case DISTANCE->DISTANCE_DEFAULT;case MOVE_MODE->MOVE_MODE_DEFAULT;case IMPACT_DIRECTION->IMPACT_DIRECTION_DEFAULT;case SIPHON_RESOURCE->SIPHON_RESOURCE_DEFAULT;case SIPHON_MODE->SIPHON_MODE_DEFAULT;case DURATION_SECONDS->DURATION_DEFAULT;case GRAVITY_MODE->GRAVITY_MODE_DEFAULT;case SPHERE_MODE->SPHERE_MODE_DEFAULT;case PROTECTION_KIND->PROTECTION_KIND_DEFAULT;default->0;};}
- public static int settingMin(SpellPropertyKey key){return switch(key){case RADIUS->RADIUS_MIN;case DAMAGE_KIND->0;case POTENCE->POTENCE_MIN;case WIDTH,HEIGHT,DEPTH->BOX_SIZE_MIN;case TARGET_TYPE->0;case DISTANCE->DISTANCE_MIN;case MOVE_MODE->0;case IMPACT_DIRECTION,SIPHON_RESOURCE,SIPHON_MODE,GRAVITY_MODE,SPHERE_MODE,PROTECTION_KIND->0;case DURATION_SECONDS->DURATION_MIN;default->0;};}
- public static int settingMax(SpellPropertyKey key){return switch(key){case RADIUS->RADIUS_MAX;case DAMAGE_KIND->DAMAGE_KIND_COUNT-1;case POTENCE->POTENCE_MAX;case WIDTH,HEIGHT,DEPTH->BOX_SIZE_MAX;case TARGET_TYPE->TARGET_TYPE_COUNT-1;case DISTANCE->DISTANCE_MAX;case MOVE_MODE->MOVE_MODE_COUNT-1;case IMPACT_DIRECTION->IMPACT_DIRECTION_COUNT-1;case SIPHON_RESOURCE->SIPHON_RESOURCE_COUNT-1;case SIPHON_MODE->SIPHON_MODE_COUNT-1;case DURATION_SECONDS->DURATION_MAX;case GRAVITY_MODE->RELATIVE_DIRECTION_COUNT-1;case SPHERE_MODE->SPHERE_MODE_COUNT-1;case PROTECTION_KIND->PROTECTION_KIND_COUNT-1;default->0;};}
+ public static int settingDefault(SpellPropertyKey key){return switch(key){case RADIUS->RADIUS_DEFAULT;case DAMAGE_KIND->DAMAGE_KIND_DEFAULT;case POTENCE->POTENCE_DEFAULT;case WIDTH,HEIGHT,DEPTH->BOX_SIZE_DEFAULT;case TARGET_TYPE->TARGET_TYPE_DEFAULT;case DISTANCE->DISTANCE_DEFAULT;case MOVE_MODE->MOVE_MODE_DEFAULT;case IMPACT_DIRECTION->IMPACT_DIRECTION_DEFAULT;case SIPHON_RESOURCE->SIPHON_RESOURCE_DEFAULT;case SIPHON_MODE->SIPHON_MODE_DEFAULT;case DURATION_SECONDS->DURATION_DEFAULT;case GRAVITY_MODE->GRAVITY_MODE_DEFAULT;case SPHERE_MODE->SPHERE_MODE_DEFAULT;case PROTECTION_KIND->PROTECTION_KIND_DEFAULT;case ALTER_STRENGTH,ALTER_SPEED,ALTER_TOUGHNESS->ALTER_SETTING_DEFAULT;default->0;};}
+ public static int settingMin(SpellPropertyKey key){return switch(key){case RADIUS->RADIUS_MIN;case DAMAGE_KIND->0;case POTENCE->POTENCE_MIN;case WIDTH,HEIGHT,DEPTH->BOX_SIZE_MIN;case TARGET_TYPE->0;case DISTANCE->DISTANCE_MIN;case MOVE_MODE->0;case IMPACT_DIRECTION,SIPHON_RESOURCE,SIPHON_MODE,GRAVITY_MODE,SPHERE_MODE,PROTECTION_KIND->0;case DURATION_SECONDS->DURATION_MIN;case ALTER_STRENGTH,ALTER_SPEED,ALTER_TOUGHNESS->ALTER_SETTING_MIN;default->0;};}
+ public static int settingMax(SpellPropertyKey key){return switch(key){case RADIUS->RADIUS_MAX;case DAMAGE_KIND->DAMAGE_KIND_COUNT-1;case POTENCE->POTENCE_MAX;case WIDTH,HEIGHT,DEPTH->BOX_SIZE_MAX;case TARGET_TYPE->TARGET_TYPE_COUNT-1;case DISTANCE->DISTANCE_MAX;case MOVE_MODE->MOVE_MODE_COUNT-1;case IMPACT_DIRECTION->IMPACT_DIRECTION_COUNT-1;case SIPHON_RESOURCE->SIPHON_RESOURCE_COUNT-1;case SIPHON_MODE->SIPHON_MODE_COUNT-1;case DURATION_SECONDS->DURATION_MAX;case GRAVITY_MODE->RELATIVE_DIRECTION_COUNT-1;case SPHERE_MODE->SPHERE_MODE_COUNT-1;case PROTECTION_KIND->PROTECTION_KIND_COUNT-1;case ALTER_STRENGTH,ALTER_SPEED,ALTER_TOUGHNESS->ALTER_SETTING_MAX;default->0;};}
  public static int clampSetting(SpellPropertyKey key,int value){return Mth.clamp(value,settingMin(key),settingMax(key));}
  public static int radiusAt(int[] settings,int cell){return settingAt(settings,cell,SpellPropertyKey.RADIUS);}
  public static int sphereHeightAt(int[] settings,int cell){return settingAt(settings,cell,SpellPropertyKey.HEIGHT);}
@@ -73,6 +75,9 @@ public final class SpellPresentation {
  public static int durationSecondsAt(int[] settings,int cell){return settingAt(settings,cell,SpellPropertyKey.DURATION_SECONDS);}
  public static int gravityModeAt(int[] settings,int cell){return settingAt(settings,cell,SpellPropertyKey.GRAVITY_MODE);}
  public static int protectionKindAt(int[] settings,int cell){return settingAt(settings,cell,SpellPropertyKey.PROTECTION_KIND);}
+ public static int alterStrengthAt(int[] settings,int cell){return settingAt(settings,cell,SpellPropertyKey.ALTER_STRENGTH)-ALTER_SETTING_DEFAULT;}
+ public static int alterSpeedAt(int[] settings,int cell){return settingAt(settings,cell,SpellPropertyKey.ALTER_SPEED)-ALTER_SETTING_DEFAULT;}
+ public static int alterToughnessAt(int[] settings,int cell){return settingAt(settings,cell,SpellPropertyKey.ALTER_TOUGHNESS)-ALTER_SETTING_DEFAULT;}
  public static void setCell(int[] plan,int cell,int type,int style,int visual){if(!valid(plan,cell))return;int o=off(cell);plan[o]=type;plan[o+1]=Mth.clamp(style,0,STYLE_COUNT-1);plan[o+2]=Mth.clamp(visual,0,VISUAL_COUNT-1);}
  private static boolean valid(int[] plan,int cell){return plan!=null&&plan.length>=PLAN_DATA_SIZE&&cell>=0&&cell<CELLS;}
  public static boolean rowHasComponents(int[] plan,int row){if(row<0||row>=ROWS)return false;for(int c=0;c<COLS;c++)if(typeAt(plan,row*COLS+c)!=TYPE_EMPTY)return true;return false;}
@@ -133,7 +138,7 @@ public final class SpellPresentation {
   int[] raw=tag.getIntArray("sw_settings");
   if(raw.length>0){
    int[] normalized=normalizeSettings(raw);
-   if(raw.length!=SETTINGS_DATA_SIZE)migrateLegacySphereHeight(normalized,tag);
+   if(raw.length!=SETTINGS_DATA_SIZE&&raw.length!=CELLS*PREVIOUS_SETTING_COUNT_7)migrateLegacySphereHeight(normalized,tag);
    return normalized;
   }
   int[] settings=emptySettings();
@@ -166,6 +171,8 @@ public final class SpellPresentation {
     copySettingStride(source,PREVIOUS_SETTING_COUNT_5,values);
    }else if(source.length==CELLS*PREVIOUS_SETTING_COUNT_6){
     copySettingStride(source,PREVIOUS_SETTING_COUNT_6,values);
+   }else if(source.length==CELLS*PREVIOUS_SETTING_COUNT_7){
+    copySettingStride(source,PREVIOUS_SETTING_COUNT_7,values);
    }else if(source.length==SETTINGS_DATA_SIZE){
     System.arraycopy(source,0,values,0,values.length);
    }else{

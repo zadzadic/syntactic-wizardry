@@ -17,8 +17,11 @@ public enum SpellPropertyKey {
  DURATION_SECONDS(14,12),
  GRAVITY_MODE(15,13),
  SPHERE_MODE(16,14),
- PROTECTION_KIND(17,15);
- public static final int SETTING_COUNT=16;
+ PROTECTION_KIND(17,15),
+ ALTER_STRENGTH(18,16),
+ ALTER_SPEED(19,17),
+ ALTER_TOUGHNESS(20,18);
+ public static final int SETTING_COUNT=19;
  private final int id;
  private final int settingIndex;
  SpellPropertyKey(int id,int settingIndex){this.id=id;this.settingIndex=settingIndex;}
