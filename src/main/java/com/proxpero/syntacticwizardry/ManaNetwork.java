@@ -1,5 +1,8 @@
 package com.proxpero.syntacticwizardry;
 
+import com.arcane.magic.network.ManaCompassCommandPayload;
+import com.arcane.magic.network.ManaCompassStatePayload;
+
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -15,6 +18,8 @@ public final class ManaNetwork {
     private static final IPayloadHandler<HighManaCompassMenuRequestPayload> HIGH_MANA_COMPASS_MENU_HANDLER = new HighManaCompassMenuHandler();
     private static final IPayloadHandler<FocusSlotCyclePayload> FOCUS_SLOT_CYCLE_HANDLER = new FocusSlotCycleHandler();
     private static final IPayloadHandler<WandClearBindingPayload> WAND_CLEAR_BINDING_HANDLER = new WandClearBindingHandler();
+    private static final IPayloadHandler<ManaCompassCommandPayload> LEGACY_BUILDER_COMMAND_HANDLER = ManaCompassCommandPayload::handle;
+    private static final IPayloadHandler<ManaCompassStatePayload> LEGACY_BUILDER_STATE_HANDLER = ManaCompassStatePayload::handle;
 
     private ManaNetwork() {}
 
@@ -27,6 +32,8 @@ public final class ManaNetwork {
         registrar.playToServer(HighManaCompassMenuRequestPayload.TYPE, HighManaCompassMenuRequestPayload.STREAM_CODEC, HIGH_MANA_COMPASS_MENU_HANDLER);
         registrar.playToServer(FocusSlotCyclePayload.TYPE, FocusSlotCyclePayload.STREAM_CODEC, FOCUS_SLOT_CYCLE_HANDLER);
         registrar.playToServer(WandClearBindingPayload.TYPE, WandClearBindingPayload.STREAM_CODEC, WAND_CLEAR_BINDING_HANDLER);
+        registrar.playToServer(ManaCompassCommandPayload.TYPE, ManaCompassCommandPayload.STREAM_CODEC, LEGACY_BUILDER_COMMAND_HANDLER);
+        registrar.playToClient(ManaCompassStatePayload.TYPE, ManaCompassStatePayload.STREAM_CODEC, LEGACY_BUILDER_STATE_HANDLER);
     }
 
     private static final class ManaSyncHandler implements IPayloadHandler<ManaSyncPayload> {
