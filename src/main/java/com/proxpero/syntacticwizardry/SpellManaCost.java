@@ -104,6 +104,10 @@ public final class SpellManaCost {
             case SpellComponents.TYPE_SELF -> 0.0F;
             case SpellComponents.TYPE_CHANNEL -> CHANNEL_SURCHARGE;
             case SpellComponents.TYPE_STREAM -> STREAM_SURCHARGE;
+            case SpellComponents.TYPE_RANGE -> 0.0F;
+            case SpellComponents.TYPE_SPLIT -> 0.0F;
+            case SpellComponents.TYPE_RICOCHET -> 0.0F;
+            case SpellComponents.TYPE_PIERCING -> 0.0F;
             default -> 0.0F;
         };
     }
