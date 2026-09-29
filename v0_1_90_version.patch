@@ -1,0 +1,9 @@
+--- a/gradle.properties
++++ b/gradle.properties
+@@ -11,5 +11,5 @@
+ mod_id=syntacticwizardry
+ mod_name=Syntactic Wizardry
+ mod_license=All Rights Reserved
+-mod_version=0.1.89
++mod_version=0.1.90
+ mod_group_id=com.proxpero.syntacticwizardry
