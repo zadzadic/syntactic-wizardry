@@ -10,6 +10,8 @@ import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.SwordItem;
+import net.minecraft.world.item.Tiers;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.neoforged.bus.api.IEventBus;
@@ -50,10 +52,16 @@ public final class SyntacticWizardry {
  public static final DeferredItem<Item> DIG_EFFECT=ITEMS.register("dig_effect",()->new Item(new Item.Properties().stacksTo(1)));
  public static final DeferredItem<WrittenSpellItem> WRITTEN_SPELL=ITEMS.register("written_spell",()->new WrittenSpellItem(new Item.Properties().stacksTo(1)));
  public static final DeferredItem<HighManaCompassItem> HIGH_MANA_COMPASS=ITEMS.register("high_mana_compass",()->new HighManaCompassItem(new Item.Properties().stacksTo(1)));
+ public static final DeferredItem<WandItem> WAND=ITEMS.register("wand",()->new WandItem(new Item.Properties().stacksTo(1)));
+ public static final DeferredItem<MagicFocusItem> WOOD_STAFF=ITEMS.register("wood_staff",()->new MagicFocusItem(new Item.Properties().stacksTo(1).durability(59).attributes(SwordItem.createAttributes(Tiers.WOOD,1,-2.4F)),1,0.5F));
+ public static final DeferredItem<MagicFocusItem> IRON_STAFF=ITEMS.register("iron_staff",()->new MagicFocusItem(new Item.Properties().stacksTo(1).durability(250).attributes(SwordItem.createAttributes(Tiers.IRON,1,-2.4F)),1,0.5F));
+ public static final DeferredItem<MagicFocusItem> DIAMOND_STAFF=ITEMS.register("diamond_staff",()->new MagicFocusItem(new Item.Properties().stacksTo(1).durability(1561).attributes(SwordItem.createAttributes(Tiers.DIAMOND,1,-2.4F)),1,0.5F));
+ public static final DeferredItem<MagicFocusItem> NETHERITE_STAFF=ITEMS.register("netherite_staff",()->new MagicFocusItem(new Item.Properties().stacksTo(1).durability(2031).attributes(SwordItem.createAttributes(Tiers.NETHERITE,1,-2.4F)).fireResistant(),1,0.5F));
  public static final DeferredHolder<MenuType<?>,MenuType<ScribesLecternMenu>> SCRIBES_LECTERN_MENU=MENUS.register("scribes_lectern",()->IMenuTypeExtension.create(SyntacticWizardry::createScribesLecternMenu));
  public static final DeferredHolder<MenuType<?>,MenuType<DimensionalStorageMenu>> DIMENSIONAL_STORAGE_MENU=MENUS.register("dimensional_storage",()->IMenuTypeExtension.create(DimensionalStorageMenu::client));
  public static final DeferredHolder<MenuType<?>,MenuType<HighManaCompassMenu>> HIGH_MANA_COMPASS_MENU=MENUS.register("high_mana_compass",()->IMenuTypeExtension.create(HighManaCompassMenu::client));
- public static final DeferredHolder<CreativeModeTab,CreativeModeTab> SYNTACTIC_WIZARDRY_TAB=CREATIVE_TABS.register("syntactic_wizardry",()->CreativeModeTab.builder().title(Component.translatable("itemGroup.syntacticwizardry")).icon(()->SCRIBES_LECTERN_ITEM.get().getDefaultInstance()).displayItems((parameters,output)->{output.accept(SCRIBES_LECTERN_ITEM.get());output.accept(TEMPORARY_BLOCK_ITEM.get());output.accept(MISSILE_SHAPE.get());output.accept(SPHERE_SHAPE.get());output.accept(BOX_SHAPE.get());output.accept(CONE_SHAPE.get());output.accept(FLOATING_SHAPE.get());output.accept(TOUCH_SHAPE.get());output.accept(TARGET_SHAPE.get());output.accept(DAMAGE_EFFECT.get());output.accept(DIG_EFFECT.get());output.accept(HIGH_MANA_COMPASS.get());}).build());
+ public static final DeferredHolder<MenuType<?>,MenuType<FocusSpellMenu>> FOCUS_SPELL_MENU=MENUS.register("focus_spells",()->IMenuTypeExtension.create(FocusSpellMenu::client));
+ public static final DeferredHolder<CreativeModeTab,CreativeModeTab> SYNTACTIC_WIZARDRY_TAB=CREATIVE_TABS.register("syntactic_wizardry",()->CreativeModeTab.builder().title(Component.translatable("itemGroup.syntacticwizardry")).icon(()->SCRIBES_LECTERN_ITEM.get().getDefaultInstance()).displayItems((parameters,output)->{output.accept(SCRIBES_LECTERN_ITEM.get());output.accept(TEMPORARY_BLOCK_ITEM.get());output.accept(MISSILE_SHAPE.get());output.accept(SPHERE_SHAPE.get());output.accept(BOX_SHAPE.get());output.accept(CONE_SHAPE.get());output.accept(FLOATING_SHAPE.get());output.accept(TOUCH_SHAPE.get());output.accept(TARGET_SHAPE.get());output.accept(DAMAGE_EFFECT.get());output.accept(DIG_EFFECT.get());output.accept(HIGH_MANA_COMPASS.get());output.accept(WAND.get());output.accept(WOOD_STAFF.get());output.accept(IRON_STAFF.get());output.accept(DIAMOND_STAFF.get());output.accept(NETHERITE_STAFF.get());}).build());
  private static ScribesLecternMenu createScribesLecternMenu(int id,Inventory inv,RegistryFriendlyByteBuf data){return new ScribesLecternMenu(id,inv);}
  public SyntacticWizardry(IEventBus bus){BLOCKS.register(bus);ITEMS.register(bus);ENTITIES.register(bus);BLOCK_ENTITY_TYPES.register(bus);MENUS.register(bus);CREATIVE_TABS.register(bus);}
 }
