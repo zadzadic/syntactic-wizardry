@@ -30,7 +30,7 @@ public final class SyntacticWizardry {
  private static final DeferredRegister<CreativeModeTab> CREATIVE_TABS=DeferredRegister.create(Registries.CREATIVE_MODE_TAB,MOD_ID);
  public static final DeferredBlock<Block> SCRIBES_LECTERN=BLOCKS.register("scribes_lectern",()->new ScribesLecternBlock(Block.Properties.ofFullCopy(Blocks.LECTERN)));
  public static final DeferredBlock<RuneBlock> RUNE_BLOCK=BLOCKS.register("rune",()->new RuneBlock(Block.Properties.of().noCollission().noOcclusion().strength(0.0F)));
- public static final DeferredBlock<Block> TEMPORARY_BLOCK=BLOCKS.register("temporary_block",()->new Block(Block.Properties.of().strength(0.0F).noOcclusion().noLootTable().isSuffocating((state,level,pos)->false).isViewBlocking((state,level,pos)->false).isRedstoneConductor((state,level,pos)->false)));
+ public static final DeferredBlock<Block> TEMPORARY_BLOCK=BLOCKS.register("temporary_block",()->new Block(Block.Properties.of().instabreak().noOcclusion().noLootTable().isSuffocating((state,level,pos)->false).isViewBlocking((state,level,pos)->false).isRedstoneConductor((state,level,pos)->false)));
  public static final DeferredHolder<BlockEntityType<?>,BlockEntityType<RuneBlockEntity>> RUNE_BLOCK_ENTITY=BLOCK_ENTITY_TYPES.register("rune",()->BlockEntityType.Builder.of(RuneBlockEntity::new,RUNE_BLOCK.get()).build(null));
  public static final DeferredItem<BlockItem> SCRIBES_LECTERN_ITEM=ITEMS.register("scribes_lectern",()->new BlockItem(SCRIBES_LECTERN.get(),new Item.Properties()));
  public static final DeferredItem<BlockItem> TEMPORARY_BLOCK_ITEM=ITEMS.register("temporary_block",()->new BlockItem(TEMPORARY_BLOCK.get(),new Item.Properties()));
