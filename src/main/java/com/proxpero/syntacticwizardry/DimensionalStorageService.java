@@ -65,7 +65,7 @@ public final class DimensionalStorageService {
         @Override public ItemStack getItem(int slot) { return slot >= 0 && slot < items.size() ? items.get(slot) : ItemStack.EMPTY; }
         @Override public ItemStack removeItem(int slot, int amount) { ItemStack result = ContainerHelper.removeItem(items, slot, amount); if (!result.isEmpty()) setChanged(); return result; }
         @Override public ItemStack removeItemNoUpdate(int slot) { ItemStack result = ContainerHelper.takeItem(items, slot); if (!result.isEmpty()) setChanged(); return result; }
-        @Override public void setItem(int slot, ItemStack stack) { if (slot < 0 || slot >= items.size()) return; items.set(slot, stack); if (stack.getCount() > getMaxStackSize(stack)) stack.setCount(getMaxStackSize(stack)); setChanged(); }
+        @Override public void setItem(int slot, ItemStack stack) { if (slot < 0 || slot >= items.size()) return; items.set(slot, stack); if (stack.getCount() > getMaxStackSize()) stack.setCount(getMaxStackSize()); setChanged(); }
         @Override public void setChanged() { data.setDirty(); }
         @Override public boolean stillValid(Player player) { return true; }
         @Override public void clearContent() { items.clear(); setChanged(); }
