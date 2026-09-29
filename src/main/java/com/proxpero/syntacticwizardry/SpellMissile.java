@@ -29,6 +29,7 @@ public final class SpellMissile extends Snowball {
     private Vec3 previousPosition = Vec3.ZERO;
     private final Set<UUID> chainHitTargets = new HashSet<>();
     private final Set<UUID> piercedHitTargets = new HashSet<>();
+    private final MissileHomingNavigation homingNavigation = new MissileHomingNavigation();
 
     public SpellMissile(EntityType<? extends SpellMissile> type, Level level) {
         super(type, level);
@@ -44,10 +45,15 @@ public final class SpellMissile extends Snowball {
     public static void spawnGroup(SpellExecutionContext context) {
         Vec3 direction = normalizedDirection(context.shapeDirection());
         Vec3 origin = context.parent().origin();
-        spawnPrepared(context, origin, direction);
-
         int ownerCol = context.cell() % SpellPresentation.COLS;
         int extra = SpellComponents.attachedSplitPotence(context.plan(), context.settings(), context.row(), ownerCol);
+        boolean homing = SpellComponents.hasAttachedModifier(context.plan(), context.row(), ownerCol, SpellComponents.TYPE_HOMING);
+        double range = rangeBudget(context.plan(), context.settings(), context.row(), context.cell());
+        java.util.List<Entity> homingTargets = homing
+                ? MissileHomingNavigation.acquireTargets(context.level(), context.owner(), context.plan(), context.row(), range)
+                : java.util.List.of();
+
+        spawnPrepared(context, origin, direction, homingTargetForIndex(homingTargets, 0));
         if (extra <= 0) return;
 
         int pattern = SpellComponents.attachedSplitPattern(context.plan(), context.settings(), context.row(), ownerCol);
@@ -63,16 +69,22 @@ public final class SpellMissile extends Snowball {
                 offset = basis.right.scale(Math.cos(angle) * SPLIT_OFFSET)
                         .add(basis.up.scale(Math.sin(angle) * SPLIT_OFFSET));
             }
-            spawnPrepared(context, origin.add(offset), direction);
+            spawnPrepared(context, origin.add(offset), direction, homingTargetForIndex(homingTargets, i + 1));
         }
     }
 
-    private static void spawnPrepared(SpellExecutionContext context, Vec3 origin, Vec3 direction) {
+    private static Entity homingTargetForIndex(java.util.List<Entity> targets, int index) {
+        if (targets == null || targets.isEmpty()) return null;
+        return targets.get(index < targets.size() ? index : 0);
+    }
+
+    private static void spawnPrepared(SpellExecutionContext context, Vec3 origin, Vec3 direction, Entity homingTarget) {
         SpellMissile missile = new SpellMissile(SyntacticWizardry.SPELL_MISSILE.get(), context.level());
         missile.prepare(
                 context.owner(), origin, direction, context.castYaw(), context.plan(), context.settings(),
                 context.row(), context.cell(), context.activeDurationTicks(), context.blockInteraction()
         );
+        if (homingTarget != null) missile.homingNavigation.setTarget(homingTarget);
         context.level().addFreshEntity(missile);
     }
 
@@ -82,10 +94,14 @@ public final class SpellMissile extends Snowball {
         setPos(origin.x, origin.y, origin.z);
         setItem(SpellPresentation.projectileStack(plan, settings, row, cell, castYaw, activeDurationTicks, blockInteraction));
         previousPosition = position();
-        int rangeValue = SpellComponents.attachedRangeValue(plan, settings, row, cell % SpellPresentation.COLS);
-        remainingRange = Math.max(MIN_RANGE, BASE_RANGE + RANGE_BLOCKS_PER_VALUE * rangeValue);
+        remainingRange = rangeBudget(plan, settings, row, cell);
         Vec3 dir = normalizedDirection(direction);
         shoot(dir.x, dir.y, dir.z, 1.5F, 0.0F);
+    }
+
+    private static double rangeBudget(int[] plan, int[] settings, int row, int cell) {
+        int rangeValue = SpellComponents.attachedRangeValue(plan, settings, row, cell % SpellPresentation.COLS);
+        return Math.max(MIN_RANGE, BASE_RANGE + RANGE_BLOCKS_PER_VALUE * rangeValue);
     }
 
     public int presentationStyle() {
@@ -126,6 +142,10 @@ public final class SpellMissile extends Snowball {
         continuationStartPosition = null;
         travelBeforeContinuation = 0.0D;
 
+        if (!level().isClientSide && homingNavigation.hasTarget()) {
+            if (homingNavigation.tick(this, remainingRange)) hasImpulse = true;
+        }
+
         super.tick();
 
         if (level().isClientSide || isRemoved()) return;
@@ -152,6 +172,7 @@ public final class SpellMissile extends Snowball {
         boolean ricochet = SpellComponents.hasAttachedModifier(plan, row, ownerCol, SpellComponents.TYPE_RICOCHET);
         boolean piercing = SpellComponents.hasAttachedModifier(plan, row, ownerCol, SpellComponents.TYPE_PIERCING);
         Entity hit = result instanceof EntityHitResult entityHit ? entityHit.getEntity() : null;
+        boolean hitHomingTarget = homingNavigation.isTarget(hit);
         Vec3 incomingVelocity = getDeltaMovement();
 
         /*
@@ -164,6 +185,7 @@ public final class SpellMissile extends Snowball {
             continues = applyRicochet(blockHit, incomingVelocity);
         } else if (hit != null && piercing && remainingRange > 0.0D) {
             piercedHitTargets.add(hit.getUUID());
+            if (hitHomingTarget) homingNavigation.clearTarget();
             continues = applyPiercing(result.getLocation(), incomingVelocity);
         }
 
@@ -231,6 +253,7 @@ public final class SpellMissile extends Snowball {
         setPos(escaped.x, escaped.y, escaped.z);
         setDeltaMovement(reflected);
         hasImpulse = true;
+        homingNavigation.forceReplan();
         return true;
     }
 
@@ -247,6 +270,7 @@ public final class SpellMissile extends Snowball {
         setPos(escaped.x, escaped.y, escaped.z);
         setDeltaMovement(incomingVelocity);
         hasImpulse = true;
+        if (homingNavigation.hasTarget()) homingNavigation.forceReplan();
         return true;
     }
 
@@ -277,6 +301,9 @@ public final class SpellMissile extends Snowball {
         SpellMissile next = new SpellMissile(SyntacticWizardry.SPELL_MISSILE.get(), level);
         next.prepare(getOwner(), origin, direction, castYaw, plan, settings, row, cell,
                 SpellPresentation.readScopeDuration(getItem()), SpellPresentation.readScopeBlockInteraction(getItem()));
+        if (SpellComponents.hasAttachedModifier(plan, row, cell % SpellPresentation.COLS, SpellComponents.TYPE_HOMING)) {
+            next.homingNavigation.setTarget(target);
+        }
         next.chainHitTargets.addAll(chainHitTargets);
         next.piercedHitTargets.addAll(piercedHitTargets);
         return level.addFreshEntity(next);
