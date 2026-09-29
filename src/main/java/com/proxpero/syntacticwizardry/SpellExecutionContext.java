@@ -29,6 +29,8 @@ public record SpellExecutionContext(ServerLevel level,Entity owner,int[] plan,in
  public int alterSpeed(){return setting(SpellPropertyKey.ALTER_SPEED)-SpellPresentation.ALTER_SETTING_DEFAULT;}
  public int alterToughness(){return setting(SpellPropertyKey.ALTER_TOUGHNESS)-SpellPresentation.ALTER_SETTING_DEFAULT;}
  public int teleportMode(){return setting(SpellPropertyKey.TELEPORT_MODE);}
+ public int rangeValue(){return setting(SpellPropertyKey.RANGE_VALUE)-SpellPresentation.RANGE_VALUE_DEFAULT;}
+ public int splitPattern(){return setting(SpellPropertyKey.SPLIT_PATTERN);}
  public boolean hasSurfaceFrame(){return parent.surfaceNormal()!=null;}
  public Vec3 shapeDirection(){
   if(hasSurfaceFrame())return parent.surfaceNormal();
