@@ -24,10 +24,22 @@ public final class AlterEffect {
 
     private static void applyStrength(LivingEntity living, int value, int duration) {
         switch (value) {
-            case -2 -> add(living, MobEffects.WEAKNESS, duration, 2);
-            case -1 -> add(living, MobEffects.WEAKNESS, duration, 1);
-            case 1 -> add(living, MobEffects.DAMAGE_BOOST, duration, 1);
-            case 2 -> add(living, MobEffects.DAMAGE_BOOST, duration, 2);
+            case -2 -> {
+                add(living, MobEffects.WEAKNESS, duration, 2);
+                addSigned(living, MobEffects.JUMP, duration, -2);
+            }
+            case -1 -> {
+                add(living, MobEffects.WEAKNESS, duration, 1);
+                addSigned(living, MobEffects.JUMP, duration, -1);
+            }
+            case 1 -> {
+                add(living, MobEffects.DAMAGE_BOOST, duration, 1);
+                addSigned(living, MobEffects.JUMP, duration, 1);
+            }
+            case 2 -> {
+                add(living, MobEffects.DAMAGE_BOOST, duration, 2);
+                addSigned(living, MobEffects.JUMP, duration, 2);
+            }
             default -> {}
         }
     }
@@ -57,5 +69,9 @@ public final class AlterEffect {
 
     private static void add(LivingEntity living, Holder<MobEffect> effect, int duration, int level) {
         living.addEffect(new MobEffectInstance(effect, duration, Math.max(0, level - 1)));
+    }
+
+    private static void addSigned(LivingEntity living, Holder<MobEffect> effect, int duration, int level) {
+        living.addEffect(new MobEffectInstance(effect, duration, level - 1));
     }
 }
