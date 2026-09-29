@@ -20,6 +20,7 @@ import net.neoforged.neoforge.event.tick.LevelTickEvent;
 public final class ManaInfrastructureEvents {
     private ManaInfrastructureEvents(){}
     @SubscribeEvent public static void onRightClick(PlayerInteractEvent.RightClickBlock event){
+        if(LegacyBuilderBridge.invokeBoolean("com.arcane.magic.builder.BuilderLinkSupport", "onRightClick", event))return;
         Level level=event.getLevel();BlockPos pos=event.getPos();BlockState state=level.getBlockState(pos);ItemStack held=event.getItemStack();
         if(held.isEmpty()&&level instanceof ServerLevel server){
             BlockPos center=PowerCoreSupport.centerFromPart(level,pos,state);
@@ -66,6 +67,7 @@ public final class ManaInfrastructureEvents {
         if(core!=null){PylonNetworkData.get(level).unregisterCore(level,core);PowerCoreSupport.clear(level,core);}
     }
     @SubscribeEvent public static void onLevelTick(LevelTickEvent.Post event){
+        LegacyBuilderBridge.invoke("com.arcane.magic.builder.BuilderLinkSupport", "tick", event);
         if(!(event.getLevel() instanceof ServerLevel level))return;long time=level.getGameTime();if(time%5L!=0L)return;
         PylonNetworkData network=PylonNetworkData.get(level);
         for(BlockPos pylon:network.activePylons(level))glow(level,pylon,0.65D);
