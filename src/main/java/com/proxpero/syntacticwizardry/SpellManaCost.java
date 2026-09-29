@@ -93,7 +93,7 @@ public final class SpellManaCost {
             case SpellComponents.TYPE_SIPHON -> 3.0F * potence;
             case SpellComponents.TYPE_GRAVITY -> 1.0F * potence;
             case SpellComponents.TYPE_PROTECTION -> 5.0F * potence;
-            case SpellComponents.TYPE_TEMPORARY_BLOCK -> 0.0F; // Pricing not defined yet.
+            case SpellComponents.TYPE_TEMPORARY_BLOCK -> temporaryBlockCost(plan, settings, cell);
             case SpellComponents.TYPE_DURATION -> 1.0F * SpellPresentation.durationSecondsAt(settings, cell);
             case SpellComponents.TYPE_BLOCK_INTERACTION -> 0.0F;
             case SpellComponents.TYPE_SELF -> 0.0F;
@@ -102,4 +102,62 @@ public final class SpellManaCost {
             default -> 0.0F;
         };
     }
+    private static float temporaryBlockCost(int[] plan, int[] settings, int cell) {
+        int row = cell / SpellPresentation.COLS;
+        int col = cell % SpellPresentation.COLS;
+        if (SpellComponents.hasAttachedModifier(plan, row, col, SpellComponents.TYPE_DURATION)) return 0.0F;
+        return incomingVoxelCount(plan, settings, row);
+    }
+
+    /**
+     * Estimates the total voxel occupancy delivered to a row by the spell grammar.
+     * Temporary Block costs one Mana per incoming voxel unless Duration is attached.
+     */
+    private static float incomingVoxelCount(int[] plan, int[] settings, int targetRow) {
+        long incomingBranches = 1L;
+        long incomingVoxels = 0L;
+        for (int row = 0; row < targetRow; row++) {
+            long shapeVoxels = 0L;
+            int continuationShapes = 0;
+            for (int col = 0; col < SpellPresentation.COLS; col++) {
+                int shapeCell = row * SpellPresentation.COLS + col;
+                int type = SpellPresentation.typeAt(plan, shapeCell);
+                SpellComponentDefinition definition = SpellComponents.byType(type);
+                if (definition == null || !definition.isShape()) continue;
+                if (type == SpellComponents.TYPE_RUNE) continue;
+                continuationShapes++;
+                shapeVoxels += estimatedShapeVoxelCount(type, settings, shapeCell);
+            }
+            if (continuationShapes == 0) continue;
+            incomingVoxels = saturatedMultiply(incomingBranches, shapeVoxels);
+            incomingBranches = saturatedMultiply(incomingBranches, continuationShapes);
+        }
+        return Math.min((float) incomingVoxels, Float.MAX_VALUE);
+    }
+
+    private static long estimatedShapeVoxelCount(int type, int[] settings, int cell) {
+        return switch (type) {
+            case SpellPresentation.TYPE_SPHERE -> SphereShape.voxels(COST_ORIGIN,
+                    SpellPresentation.radiusAt(settings, cell),
+                    SpellPresentation.sphereHeightAt(settings, cell),
+                    SpellPresentation.sphereModeAt(settings, cell)).size();
+            case SpellPresentation.TYPE_BOX -> BoxShape.voxels(COST_ORIGIN, COST_FORWARD, COST_UP,
+                    SpellPresentation.boxWidthAt(settings, cell),
+                    SpellPresentation.boxHeightAt(settings, cell),
+                    SpellPresentation.boxDepthAt(settings, cell)).size();
+            case SpellPresentation.TYPE_CONE -> ConeShape.voxels(COST_ORIGIN, COST_FORWARD,
+                    SpellPresentation.boxWidthAt(settings, cell),
+                    SpellPresentation.boxHeightAt(settings, cell),
+                    SpellPresentation.boxDepthAt(settings, cell)).size();
+            case SpellComponents.TYPE_SELF -> 0L;
+            default -> 1L;
+        };
+    }
+
+    private static long saturatedMultiply(long left, long right) {
+        if (left <= 0L || right <= 0L) return 0L;
+        if (left > Long.MAX_VALUE / right) return Long.MAX_VALUE;
+        return left * right;
+    }
+
 }
