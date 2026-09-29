@@ -36,6 +36,9 @@ public final class MissileHomingNavigation {
     private static final double ROUTE_REACHED_DISTANCE_SQR = 0.55D * 0.55D;
     private static final double GOAL_CONNECTION_DISTANCE = 2.25D;
     private static final double LOOK_AHEAD_DISTANCE = 1.75D;
+    private static final double FORWARD_COMMIT_DISTANCE = 2.75D;
+    private static final double TURN_RAMP_DISTANCE = 7.0D;
+    private static final double MIN_TURN_RADIANS = Math.toRadians(2.0D);
     private static final double MAX_TURN_RADIANS = Math.toRadians(18.0D);
     private static final double HOMING_SPEED = 1.5D;
     private static final int MAX_FAILED_REPLANS = 3;
@@ -47,6 +50,8 @@ public final class MissileHomingNavigation {
     private Vec3 lastTargetPoint;
     private int replanCooldown;
     private int failedReplans;
+    private Vec3 flightSamplePosition;
+    private double distanceSinceAcquisition;
 
     public void setTarget(Entity target) {
         this.target = target;
@@ -56,6 +61,8 @@ public final class MissileHomingNavigation {
         this.lastTargetPoint = null;
         this.replanCooldown = 0;
         this.failedReplans = 0;
+        this.flightSamplePosition = null;
+        this.distanceSinceAcquisition = 0.0D;
     }
 
     public boolean hasTarget() {
@@ -88,6 +95,14 @@ public final class MissileHomingNavigation {
             return false;
         }
 
+        Vec3 position = missile.position();
+        if (flightSamplePosition == null) {
+            flightSamplePosition = position;
+        } else {
+            distanceSinceAcquisition += flightSamplePosition.distanceTo(position);
+            flightSamplePosition = position;
+        }
+
         Vec3 targetPoint = target.getBoundingBox().getCenter();
         boolean targetMoved = lastTargetPoint == null || lastTargetPoint.distanceToSqr(targetPoint) >= TARGET_REPLAN_DISTANCE_SQR;
         boolean routeInvalid = routeIndex >= route.size() || !routeStillUsable(level, missile);
@@ -113,7 +128,6 @@ public final class MissileHomingNavigation {
 
         if (route.isEmpty() || routeIndex >= route.size()) return hasTarget();
 
-        Vec3 position = missile.position();
         while (routeIndex < route.size() && position.distanceToSqr(route.get(routeIndex)) <= ROUTE_REACHED_DISTANCE_SQR) {
             routeIndex++;
         }
