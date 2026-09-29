@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/** Persistent per-player High Mana chunk claims. */
+/** Persistent per-player High Mana claims and compass targeting mode. */
 public final class HighManaClaimSavedData extends SavedData {
     public static final String DATA_NAME = "syntacticwizardry_high_mana_claims";
 
@@ -24,6 +24,8 @@ public final class HighManaClaimSavedData extends SavedData {
     }
 
     private final Map<UUID, List<Claim>> claims = new HashMap<>();
+    /** Missing entry means Search Mode. */
+    private final Map<UUID, Claim> selectedTargets = new HashMap<>();
 
     public static Factory<HighManaClaimSavedData> factory() {
         return new Factory<>(HighManaClaimSavedData::new, HighManaClaimSavedData::load, DataFixTypes.SAVED_DATA_COMMAND_STORAGE);
@@ -39,6 +41,27 @@ public final class HighManaClaimSavedData extends SavedData {
         List<Claim> stored = claims.computeIfAbsent(player, ignored -> new ArrayList<>());
         if (stored.contains(claim)) return false;
         stored.add(claim);
+        setDirty();
+        return true;
+    }
+
+    public boolean isSearchMode(UUID player) {
+        return !selectedTargets.containsKey(player);
+    }
+
+    public Claim selectedTarget(UUID player) {
+        Claim selected = selectedTargets.get(player);
+        if (selected == null) return null;
+        return claims(player).contains(selected) ? selected : null;
+    }
+
+    public void setSearchMode(UUID player) {
+        if (selectedTargets.remove(player) != null) setDirty();
+    }
+
+    public boolean selectTarget(UUID player, Claim claim) {
+        if (player == null || claim == null || !claims(player).contains(claim)) return false;
+        selectedTargets.put(player, claim);
         setDirty();
         return true;
     }
@@ -59,6 +82,15 @@ public final class HighManaClaimSavedData extends SavedData {
                 stored.add(new Claim(dimension, claimTag.getInt("ChunkX"), claimTag.getInt("ChunkZ")));
             }
             if (!stored.isEmpty()) data.claims.put(player, stored);
+
+            if (playerTag.contains("Selected", Tag.TAG_COMPOUND)) {
+                CompoundTag selectedTag = playerTag.getCompound("Selected");
+                ResourceLocation dimension = ResourceLocation.tryParse(selectedTag.getString("Dimension"));
+                if (dimension != null) {
+                    Claim selected = new Claim(dimension, selectedTag.getInt("ChunkX"), selectedTag.getInt("ChunkZ"));
+                    if (stored.contains(selected)) data.selectedTargets.put(player, selected);
+                }
+            }
         }
         return data;
     }
@@ -78,6 +110,15 @@ public final class HighManaClaimSavedData extends SavedData {
                 list.add(claimTag);
             }
             playerTag.put("Claims", list);
+
+            Claim selected = selectedTargets.get(entry.getKey());
+            if (selected != null && entry.getValue().contains(selected)) {
+                CompoundTag selectedTag = new CompoundTag();
+                selectedTag.putString("Dimension", selected.dimension().toString());
+                selectedTag.putInt("ChunkX", selected.chunkX());
+                selectedTag.putInt("ChunkZ", selected.chunkZ());
+                playerTag.put("Selected", selectedTag);
+            }
             players.add(playerTag);
         }
         tag.put("Players", players);
