@@ -27,6 +27,10 @@ public final class SpellComponents {
  public static final int TYPE_DIMENSIONAL_STORAGE=26;
  public static final int TYPE_TELEPORTATION=27;
  public static final int TYPE_MARK=28;
+ public static final int TYPE_RANGE=29;
+ public static final int TYPE_SPLIT=30;
+ public static final int TYPE_RICOCHET=31;
+ public static final int TYPE_PIERCING=32;
  private static final SpellPropertyDefinition RADIUS_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.RADIUS,"Radius",SpellPropertyKind.STEPPER,SpellPresentation.RADIUS_MIN,SpellPresentation.RADIUS_MAX,SpellPresentation.RADIUS_DEFAULT,Integer::toString);
  private static final SpellPropertyDefinition SPHERE_MODE_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.SPHERE_MODE,"Shape",SpellPropertyKind.OPTIONS,0,SpellPresentation.SPHERE_MODE_COUNT-1,SpellPresentation.SPHERE_MODE_DEFAULT,SpellPresentation::sphereModeName);
  private static final SpellPropertyDefinition POTENCE_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.POTENCE,"Potence",SpellPropertyKind.STEPPER,SpellPresentation.POTENCE_MIN,SpellPresentation.POTENCE_MAX,SpellPresentation.POTENCE_DEFAULT,Integer::toString);
@@ -52,23 +56,30 @@ public final class SpellComponents {
  private static final SpellPropertyDefinition ALTER_SPEED_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.ALTER_SPEED,"Speed",SpellPropertyKind.STEPPER,SpellPresentation.ALTER_SETTING_MIN,SpellPresentation.ALTER_SETTING_MAX,SpellPresentation.ALTER_SETTING_DEFAULT,SpellComponents::alterSettingLabel);
  private static final SpellPropertyDefinition ALTER_TOUGHNESS_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.ALTER_TOUGHNESS,"Toughness",SpellPropertyKind.STEPPER,SpellPresentation.ALTER_SETTING_MIN,SpellPresentation.ALTER_SETTING_MAX,SpellPresentation.ALTER_SETTING_DEFAULT,SpellComponents::alterSettingLabel);
  private static final SpellPropertyDefinition TELEPORT_MODE_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.TELEPORT_MODE,"Mode",SpellPropertyKind.OPTIONS,0,SpellPresentation.TELEPORT_MODE_COUNT-1,SpellPresentation.TELEPORT_MODE_DEFAULT,SpellPresentation::teleportModeName);
- private static final List<SpellComponentDefinition> ALL=List.of(new MissileDefinition(),new ChainDefinition(),new SphereDefinition(),new BoxDefinition(),new ConeDefinition(),new FloatingDefinition(),new TouchDefinition(),new TargetDefinition(),new DamageDefinition(),new DigDefinition(),new RestoreDefinition(),new MoveDefinition(),new SiphonDefinition(),new GravityDefinition(),new AlterDefinition(),new FlightDefinition(),new DimensionalStorageDefinition(),new TeleportationDefinition(),new MarkDefinition(),new ProtectionDefinition(),new TemporaryBlockDefinition(),new SelfDefinition(),new RelativeDefinition(),new RuneDefinition(),new ChannelDefinition(),new StreamDefinition(),new DurationDefinition(),new BlockInteractionDefinition());
+ private static final SpellPropertyDefinition RANGE_VALUE_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.RANGE_VALUE,"Range",SpellPropertyKind.STEPPER,SpellPresentation.RANGE_VALUE_MIN,SpellPresentation.RANGE_VALUE_MAX,SpellPresentation.RANGE_VALUE_DEFAULT,SpellComponents::rangeValueLabel);
+ private static final SpellPropertyDefinition SPLIT_PATTERN_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.SPLIT_PATTERN,"Pattern",SpellPropertyKind.OPTIONS,0,SpellPresentation.SPLIT_PATTERN_COUNT-1,SpellPresentation.SPLIT_PATTERN_DEFAULT,SpellPresentation::splitPatternName);
+ private static final List<SpellComponentDefinition> ALL=List.of(new MissileDefinition(),new ChainDefinition(),new SphereDefinition(),new BoxDefinition(),new ConeDefinition(),new FloatingDefinition(),new TouchDefinition(),new TargetDefinition(),new DamageDefinition(),new DigDefinition(),new RestoreDefinition(),new MoveDefinition(),new SiphonDefinition(),new GravityDefinition(),new AlterDefinition(),new FlightDefinition(),new DimensionalStorageDefinition(),new TeleportationDefinition(),new MarkDefinition(),new ProtectionDefinition(),new TemporaryBlockDefinition(),new SelfDefinition(),new RelativeDefinition(),new RuneDefinition(),new ChannelDefinition(),new StreamDefinition(),new DurationDefinition(),new BlockInteractionDefinition(),new RangeDefinition(),new SplitDefinition(),new RicochetDefinition(),new PiercingDefinition());
  private static final Map<Integer,SpellComponentDefinition> BY_TYPE=ALL.stream().collect(Collectors.toUnmodifiableMap(SpellComponentDefinition::typeId,Function.identity()));
  private static final List<SpellComponentDefinition> SHAPES=ALL.stream().filter(SpellComponentDefinition::isShape).toList();
  private static final List<SpellComponentDefinition> EFFECTS=ALL.stream().filter(SpellComponents::isEffect).toList();
  private static final List<SpellComponentDefinition> MODIFIERS=ALL.stream().filter(SpellComponents::isModifier).toList();
  private SpellComponents(){}
  private static String alterSettingLabel(int stored){int value=stored-SpellPresentation.ALTER_SETTING_DEFAULT;return value>0?"+"+value:Integer.toString(value);}
+ private static String rangeValueLabel(int stored){int value=stored-SpellPresentation.RANGE_VALUE_DEFAULT;return value>0?"+"+value:Integer.toString(value);}
  public static SpellComponentDefinition byType(int type){return BY_TYPE.get(type);}
  public static List<SpellComponentDefinition> all(){return ALL;}
  public static List<SpellComponentDefinition> shapes(){return SHAPES;}
  public static List<SpellComponentDefinition> effects(){return EFFECTS;}
  public static List<SpellComponentDefinition> modifiers(){return MODIFIERS;}
- public static boolean isModifier(SpellComponentDefinition definition){if(definition==null)return false;int type=definition.typeId();return type==TYPE_CHANNEL||type==TYPE_STREAM||type==TYPE_DURATION||type==TYPE_BLOCK_INTERACTION;}
+ public static boolean isModifier(SpellComponentDefinition definition){if(definition==null)return false;int type=definition.typeId();return type==TYPE_CHANNEL||type==TYPE_STREAM||type==TYPE_DURATION||type==TYPE_BLOCK_INTERACTION||type==TYPE_RANGE||type==TYPE_SPLIT||type==TYPE_RICOCHET||type==TYPE_PIERCING;}
  public static boolean isEffect(SpellComponentDefinition definition){return definition!=null&&!definition.isShape()&&!isModifier(definition);}
  public static boolean hasChannel(int[] plan){if(plan==null)return false;for(int cell=0;cell<SpellPresentation.CELLS;cell++)if(SpellPresentation.typeAt(plan,cell)==TYPE_CHANNEL)return true;return false;}
  public static boolean hasStream(int[] plan){if(plan==null)return false;for(int cell=0;cell<SpellPresentation.CELLS;cell++)if(SpellPresentation.typeAt(plan,cell)==TYPE_STREAM)return true;return false;}
- public static boolean hasAttachedModifier(int[] plan,int row,int ownerCol,int modifierType){for(int col=ownerCol+1;col<SpellPresentation.COLS;col++){int type=SpellPresentation.typeAt(plan,row*SpellPresentation.COLS+col);if(type==SpellPresentation.TYPE_EMPTY)continue;SpellComponentDefinition definition=byType(type);if(definition==null)continue;if(isModifier(definition)){if(type==modifierType)return true;continue;}return false;}return false;}
+ public static boolean hasAttachedModifier(int[] plan,int row,int ownerCol,int modifierType){return attachedModifierCell(plan,row,ownerCol,modifierType)>=0;}
+ public static int attachedModifierCell(int[] plan,int row,int ownerCol,int modifierType){for(int col=ownerCol+1;col<SpellPresentation.COLS;col++){int cell=row*SpellPresentation.COLS+col;int type=SpellPresentation.typeAt(plan,cell);if(type==SpellPresentation.TYPE_EMPTY)continue;SpellComponentDefinition definition=byType(type);if(definition==null)continue;if(isModifier(definition)){if(type==modifierType)return cell;continue;}return -1;}return -1;}
+ public static int attachedRangeValue(int[] plan,int[] settings,int row,int ownerCol){int cell=attachedModifierCell(plan,row,ownerCol,TYPE_RANGE);return cell<0?0:SpellPresentation.rangeValueAt(settings,cell);}
+ public static int attachedSplitPotence(int[] plan,int[] settings,int row,int ownerCol){int cell=attachedModifierCell(plan,row,ownerCol,TYPE_SPLIT);return cell<0?0:SpellPresentation.potenceAt(settings,cell);}
+ public static int attachedSplitPattern(int[] plan,int[] settings,int row,int ownerCol){int cell=attachedModifierCell(plan,row,ownerCol,TYPE_SPLIT);return cell<0?SpellPresentation.SPLIT_PATTERN_DEFAULT:SpellPresentation.splitPatternAt(settings,cell);}
  public static int attachedDurationTicks(int[] plan,int[] settings,int row,int ownerCol){for(int col=ownerCol+1;col<SpellPresentation.COLS;col++){int cell=row*SpellPresentation.COLS+col;int type=SpellPresentation.typeAt(plan,cell);if(type==SpellPresentation.TYPE_EMPTY)continue;SpellComponentDefinition definition=byType(type);if(definition==null)continue;if(isModifier(definition)){if(type==TYPE_DURATION)return SpellPresentation.durationSecondsAt(settings,cell)*20;continue;}return 0;}return 0;}
  public static boolean requiresHeldUse(int[] plan){return hasChannel(plan)||hasStream(plan);}
  public static boolean acceptsContinuationTarget(int[] plan,int resolvedRow,Entity entity){
@@ -91,7 +102,7 @@ public final class SpellComponents {
  private static final class MissileDefinition extends BaseDefinition {
   MissileDefinition(){super(SpellPresentation.TYPE_MISSILE,"Missile",true,SpellPresentation.STYLE_DEFAULT,SpellPresentation.VISUAL_DEFAULT,List.of(SpellPresentation.STYLE_DEFAULT,SpellPresentation.STYLE_ARC,SpellPresentation.STYLE_SPIRAL),true,List.of(IMPACT_DIRECTION_PROPERTY));}
   @Override public ItemStack createEditorIcon(){return SyntacticWizardry.MISSILE_SHAPE.get().getDefaultInstance();}
-  @Override public ComponentExecutionResult execute(SpellExecutionContext context){SpellMissile missile=new SpellMissile(SyntacticWizardry.SPELL_MISSILE.get(),context.level());missile.prepare(context.owner(),context.parent().origin(),context.shapeDirection(),context.castYaw(),context.plan(),context.settings(),context.row(),context.cell(),context.activeDurationTicks(),context.blockInteraction());boolean spawned=context.level().addFreshEntity(missile);return ComponentExecutionResult.spawned();}
+  @Override public ComponentExecutionResult execute(SpellExecutionContext context){SpellMissile.spawnGroup(context);return ComponentExecutionResult.spawned();}
  }
  private static final class ChainDefinition extends BaseDefinition {
   ChainDefinition(){super(TYPE_CHAIN,"Chain",true,SpellPresentation.STYLE_DEFAULT,SpellPresentation.VISUAL_DEFAULT,List.of(SpellPresentation.STYLE_DEFAULT,SpellPresentation.STYLE_ARC,SpellPresentation.STYLE_SPIRAL),true,List.of(IMPACT_DIRECTION_PROPERTY));}
@@ -247,6 +258,26 @@ public final class SpellComponents {
  private static final class BlockInteractionDefinition extends BaseDefinition {
   BlockInteractionDefinition(){super(TYPE_BLOCK_INTERACTION,"Block Interaction",false,0,0,List.of(),false,List.of());}
   @Override public ItemStack createEditorIcon(){return Items.IRON_PICKAXE.getDefaultInstance();}
+  @Override public ComponentExecutionResult execute(SpellExecutionContext context){return ComponentExecutionResult.NONE;}
+ }
+ private static final class RangeDefinition extends BaseDefinition {
+  RangeDefinition(){super(TYPE_RANGE,"Range",false,0,0,List.of(),false,List.of(RANGE_VALUE_PROPERTY));}
+  @Override public ItemStack createEditorIcon(){return Items.SPYGLASS.getDefaultInstance();}
+  @Override public ComponentExecutionResult execute(SpellExecutionContext context){return ComponentExecutionResult.NONE;}
+ }
+ private static final class SplitDefinition extends BaseDefinition {
+  SplitDefinition(){super(TYPE_SPLIT,"Split",false,0,0,List.of(),false,List.of(POTENCE_PROPERTY,SPLIT_PATTERN_PROPERTY));}
+  @Override public ItemStack createEditorIcon(){return Items.PRISMARINE_CRYSTALS.getDefaultInstance();}
+  @Override public ComponentExecutionResult execute(SpellExecutionContext context){return ComponentExecutionResult.NONE;}
+ }
+ private static final class RicochetDefinition extends BaseDefinition {
+  RicochetDefinition(){super(TYPE_RICOCHET,"Ricochet",false,0,0,List.of(),false,List.of());}
+  @Override public ItemStack createEditorIcon(){return Items.SLIME_BALL.getDefaultInstance();}
+  @Override public ComponentExecutionResult execute(SpellExecutionContext context){return ComponentExecutionResult.NONE;}
+ }
+ private static final class PiercingDefinition extends BaseDefinition {
+  PiercingDefinition(){super(TYPE_PIERCING,"Piercing",false,0,0,List.of(),false,List.of());}
+  @Override public ItemStack createEditorIcon(){return Items.ARROW.getDefaultInstance();}
   @Override public ComponentExecutionResult execute(SpellExecutionContext context){return ComponentExecutionResult.NONE;}
  }
 }
