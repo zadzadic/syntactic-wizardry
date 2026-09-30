@@ -50,11 +50,13 @@ public final class RandomSpellGenerator {
         List<PlacedComponent> core = new ArrayList<>(composition.shapes + composition.effects);
         int row = 0;
 
+        SpellComponentDefinition previousShape = null;
         for (int i = 0; i < composition.shapes && row < SpellPresentation.ROWS; i++, row++) {
-            SpellComponentDefinition definition = randomEntry(shapes, random);
+            SpellComponentDefinition definition = randomShapeFor(previousShape, shapes, random);
             int cell = row * SpellPresentation.COLS;
             place(plan, settings, cell, definition, tier, composition, random);
             core.add(new PlacedComponent(row, cell, definition));
+            previousShape = definition;
         }
 
         for (int i = 0; i < composition.effects && row < SpellPresentation.ROWS; i++, row++) {
@@ -158,6 +160,10 @@ public final class RandomSpellGenerator {
         }
 
         // Alter should not accidentally generate a completely neutral Effect.
+        if (definition.typeId() == SpellComponents.TYPE_RELATIVE) {
+            SpellPresentation.setSetting(settings, cell, SpellPropertyKey.GRAVITY_MODE, SpellPresentation.RELATIVE_FRONT);
+        }
+
         if (definition.typeId() == SpellComponents.TYPE_ALTER
                 && SpellPresentation.settingAt(settings, cell, SpellPropertyKey.ALTER_STRENGTH) == SpellPresentation.ALTER_SETTING_DEFAULT
                 && SpellPresentation.settingAt(settings, cell, SpellPropertyKey.ALTER_SPEED) == SpellPresentation.ALTER_SETTING_DEFAULT
@@ -279,6 +285,25 @@ public final class RandomSpellGenerator {
             return SpellPresentation.damageKindName(SpellPresentation.damageKindAt(settings, effectCell)) + " " + shapeName;
         }
         return firstEffect.displayName() + " " + shapeName;
+    }
+
+    private static SpellComponentDefinition randomShapeFor(SpellComponentDefinition previousShape,
+                                                           List<SpellComponentDefinition> shapes,
+                                                           RandomSource random) {
+        if (previousShape == null || previousShape.typeId() != SpellPresentation.TYPE_TARGET) {
+            return randomEntry(shapes, random);
+        }
+
+        List<SpellComponentDefinition> areaShapes = new ArrayList<>();
+        for (SpellComponentDefinition shape : shapes) {
+            int type = shape.typeId();
+            if (type == SpellPresentation.TYPE_SPHERE
+                    || type == SpellPresentation.TYPE_BOX
+                    || type == SpellPresentation.TYPE_CONE) {
+                areaShapes.add(shape);
+            }
+        }
+        return areaShapes.isEmpty() ? randomEntry(shapes, random) : randomEntry(areaShapes, random);
     }
 
     private static int between(RandomSource random, int min, int max) {
