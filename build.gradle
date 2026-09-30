@@ -8,6 +8,17 @@ group = mod_group_id
 base { archivesName = mod_id }
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 sourceSets.main.resources { srcDir('src/generated/resources') }
+
+repositories {
+ maven {
+  name = 'GeckoLib'
+  url = 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/'
+ }
+}
+
+dependencies {
+ implementation(jarJar("software.bernie.geckolib:geckolib-neoforge-${minecraft_version}:4.7.5.1"))
+}
 neoForge {
  version = project.neo_version
  parchment { mappingsVersion = project.parchment_mappings_version; minecraftVersion = project.parchment_minecraft_version }
