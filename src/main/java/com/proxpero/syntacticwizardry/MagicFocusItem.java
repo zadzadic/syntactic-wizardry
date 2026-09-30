@@ -48,6 +48,8 @@ public class MagicFocusItem extends Item {
             return InteractionResultHolder.sidedSuccess(focus, level.isClientSide());
         }
 
+        ItemStack rawSpell = rawActiveSpell(focus);
+        ItemStack rawSpell = rawActiveSpell(focus);
         ItemStack spell = discountedActiveSpell(focus);
         if (spell.isEmpty()) {
             if (!level.isClientSide) player.displayClientMessage(Component.literal("Focus slot " + (FocusSpellStorage.activeSlot(focus) + 1) + " is empty."), true);
@@ -63,7 +65,8 @@ public class MagicFocusItem extends Item {
 
         if (!level.isClientSide && level instanceof ServerLevel server) {
             float spellCost = SpellPresentation.readSpellCost(spell);
-            if (!player.isCreative() && !ManaService.tryConsume(player, spellCost)) {
+            float rawSpellCost = SpellPresentation.readSpellCost(rawSpell);
+            if (!player.isCreative() && !ManaService.tryConsume(player, spellCost, rawSpellCost)) {
                 if (sustained) player.stopUsingItem();
                 return InteractionResultHolder.fail(focus);
             }
@@ -98,7 +101,8 @@ public class MagicFocusItem extends Item {
         int elapsed = duration - remainingUseDuration;
         if (elapsed > 0 && elapsed % WrittenSpellItem.SUSTAINED_MANA_INTERVAL_TICKS == 0 && entity instanceof Player player && !player.isCreative()) {
             float sustainedCost = SpellPresentation.readSustainedCost(spell);
-            if (sustainedCost > 0.0F && !ManaService.tryConsume(player, sustainedCost)) {
+            float rawSustainedCost = SpellPresentation.readSustainedCost(rawSpell);
+            if (sustainedCost > 0.0F && !ManaService.tryConsume(player, sustainedCost, rawSustainedCost)) {
                 entity.stopUsingItem();
                 ChannelRuntime.clear(entity);
                 StreamRuntime.clear(entity);
@@ -115,6 +119,14 @@ public class MagicFocusItem extends Item {
             ChannelRuntime.clear(entity);
             StreamRuntime.clear(entity);
         }
+    }
+
+    protected ItemStack rawActiveSpell(ItemStack focus) {
+        ItemStack spell = FocusSpellStorage.getActiveSpell(focus);
+        if (spell.isEmpty()) return ItemStack.EMPTY;
+        spell = spell.copy();
+        SpellPresentation.ensureManaCosts(spell);
+        return spell;
     }
 
     protected ItemStack discountedActiveSpell(ItemStack focus) {
