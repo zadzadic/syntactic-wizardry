@@ -33,7 +33,7 @@ public final class ManaNetwork {
     private static final class ManaSyncHandler implements IPayloadHandler<ManaSyncPayload> {
         @Override
         public void handle(ManaSyncPayload payload, IPayloadContext context) {
-            ManaService.setClientMana(context.player(), payload.mana());
+            ManaService.setClientState(context.player(), payload.mana(), payload.castingExperience(), payload.maxManaBonus());
         }
     }
 
@@ -63,7 +63,6 @@ public final class ManaNetwork {
             player.displayClientMessage(net.minecraft.network.chat.Component.literal(cleared ? "Wand binding cleared." : "Wand has no binding."), true);
         }
     }
-
 
     private static final class FlightSyncHandler implements IPayloadHandler<FlightSyncPayload> {
         @Override
