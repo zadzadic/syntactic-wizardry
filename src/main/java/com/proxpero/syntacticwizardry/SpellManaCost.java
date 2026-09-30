@@ -82,7 +82,6 @@ public final class SpellManaCost {
                     SpellPresentation.boxWidthAt(settings, cell),
                     SpellPresentation.boxHeightAt(settings, cell),
                     SpellPresentation.boxDepthAt(settings, cell)).size();
-            case SpellPresentation.TYPE_FLOATING -> 3.0F;
             case SpellPresentation.TYPE_TARGET -> 3.0F;
             case SpellComponents.TYPE_RUNE -> 0.0F; // Rune pricing has not been defined yet.
             case SpellComponents.TYPE_RELATIVE -> 3.0F;
