@@ -2,7 +2,7 @@ name: Build Syntactic Wizardry
 on:
   workflow_dispatch:
   push:
-    branches: [ main, v0.1.136-golden-orb ]
+    branches: [ main ]
 jobs:
   build:
     runs-on: ubuntu-latest
