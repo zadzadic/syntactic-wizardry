@@ -94,13 +94,45 @@ public final class RelativeShape {
         );
     }
 
+    public static Vec3 previewLocation(ServerLevel level, Entity owner, int directionId, int distance) {
+        Vec3 start = new Vec3(owner.getX(), owner.getEyeY() - 0.1D, owner.getZ());
+        Vec3 look = normalize(owner.getLookAngle(), new Vec3(0.0D, 0.0D, 1.0D));
+        Vec3 yaw = SpellExecutor.normalizeYaw(look);
+        Vec3 right = new Vec3(yaw.z, 0.0D, -yaw.x).normalize();
+        Vec3 offsetDirection = switch (directionId) {
+            case SpellPresentation.RELATIVE_BACK -> look.scale(-1.0D);
+            case SpellPresentation.RELATIVE_LEFT -> right.scale(-1.0D);
+            case SpellPresentation.RELATIVE_RIGHT -> right;
+            case SpellPresentation.RELATIVE_UP -> WORLD_UP;
+            case SpellPresentation.RELATIVE_DOWN -> WORLD_UP.scale(-1.0D);
+            default -> look;
+        };
+        offsetDirection = normalize(offsetDirection, look);
+
+        int resolvedDistance = Math.max(SpellPresentation.DISTANCE_MIN, Math.min(SpellPresentation.DISTANCE_MAX, distance));
+        Vec3 requestedEnd = start.add(offsetDirection.scale(resolvedDistance));
+        BlockHitResult blockHit = level.clip(new ClipContext(
+                start, requestedEnd, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, owner));
+        boolean hasBlock = blockHit.getType() != HitResult.Type.MISS;
+        double blockDistanceSqr = hasBlock ? start.distanceToSqr(blockHit.getLocation()) : start.distanceToSqr(requestedEnd);
+
+        EntitySelection entityHit = findEntity(level, owner, start, requestedEnd, blockDistanceSqr);
+        if (entityHit != null && (!hasBlock || entityHit.distanceSqr() < blockDistanceSqr)) return entityHit.location();
+        if (hasBlock) return blockHit.getLocation();
+        return requestedEnd;
+    }
+
     private static EntitySelection findEntity(SpellExecutionContext context, Vec3 start, Vec3 end, double maximumDistanceSqr) {
+        return findEntity(context.level(), context.owner(), start, end, maximumDistanceSqr);
+    }
+
+    private static EntitySelection findEntity(ServerLevel level, Entity owner, Vec3 start, Vec3 end, double maximumDistanceSqr) {
         AABB search = new AABB(start, end).inflate(1.0D);
         EntitySelection best = null;
-        for (Entity entity : context.level().getEntities(
-                context.owner(),
+        for (Entity entity : level.getEntities(
+                owner,
                 search,
-                e -> e != context.owner() && !e.isRemoved() && e.isPickable() && !e.isSpectator())) {
+                e -> e != owner && !e.isRemoved() && e.isPickable() && !e.isSpectator())) {
             AABB bounds = entity.getBoundingBox().inflate(entity.getPickRadius());
             Vec3 location;
             if (bounds.contains(start)) {
