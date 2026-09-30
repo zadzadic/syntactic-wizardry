@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "MMM",
+    "MAM",
+    "M M"
+  ],
+  "key": {
+    "M": {
+      "tag": "minecraft:wool"
+    },
+    "A": {
+      "item": "minecraft:amethyst_shard"
+    }
+  },
+  "result": {
+    "id": "syntacticwizardry:heavy_lower_robe",
+    "count": 1
+  }
+}
