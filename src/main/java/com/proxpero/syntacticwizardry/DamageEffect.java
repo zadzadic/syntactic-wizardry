@@ -10,10 +10,10 @@ import java.util.List;
 import java.util.Set;
 public final class DamageEffect {
  private DamageEffect(){}
- public static void apply(ServerLevel level,Entity owner,ShapeResolution resolution,int damageKind,int potence){
+ public static void apply(ServerLevel level,Entity owner,ShapeResolution resolution,int damageKind,int potence,boolean excludeCaster){
   float amount=Mth.clamp(potence,SpellPresentation.POTENCE_MIN,SpellPresentation.POTENCE_MAX);
   Entity direct=resolution.directEntity();
-  if(direct instanceof LivingEntity living&&living.isAlive()){
+  if(direct instanceof LivingEntity living&&living.isAlive()&&(!excludeCaster||direct!=owner)){
    hurtProtected(level,living,damageKind,amount);
    return;
   }
@@ -28,7 +28,7 @@ public final class DamageEffect {
    maxX=Math.max(maxX,pos.getX());maxY=Math.max(maxY,pos.getY());maxZ=Math.max(maxZ,pos.getZ());
   }
   AABB bounds=new AABB(minX,minY,minZ,maxX+1.0,maxY+1.0,maxZ+1.0);
-  for(LivingEntity living:level.getEntitiesOfClass(LivingEntity.class,bounds,LivingEntity::isAlive)){
+  for(LivingEntity living:level.getEntitiesOfClass(LivingEntity.class,bounds,e->e.isAlive()&&(!excludeCaster||e!=owner))){
    if(intersectsVoxel(living.getBoundingBox(),occupied))hurtProtected(level,living,damageKind,amount);
   }
  }
