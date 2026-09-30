@@ -88,6 +88,15 @@ public final class ManaService {
         return rate;
     }
 
+    /** Exact pre-floor regeneration value for progression inspection. */
+    public static float getUnroundedPassiveRegenPerSecond(Player player) {
+        float thresholdRegen = (getMaxMana(player) / 100.0F) / 5.0F;
+        float castingRegen = CASTING_REGEN_PER_LEVEL * (getCastingLevel(player) - 1);
+        float rate = thresholdRegen + castingRegen;
+        if (player.getFoodData().getSaturationLevel() > 0.0F) rate *= 2.0F;
+        return rate;
+    }
+
     public static void tickRegeneration(ServerPlayer player) {
         if (player.tickCount % 20 != 0) return;
         float rate = getPassiveRegenPerSecond(player);
