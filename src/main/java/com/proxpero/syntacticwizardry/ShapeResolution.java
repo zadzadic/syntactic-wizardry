@@ -1,6 +1,5 @@
 package com.proxpero.syntacticwizardry;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Position;
 import net.minecraft.core.Direction;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
@@ -69,13 +68,5 @@ public record ShapeResolution(Vec3 origin,Vec3 direction,Vec3 up,Vec3 surfaceNor
   Vec3 resolvedUp=normalize(up,WORLD_UP);
   Vec3 normal=surfaceNormal==null?null:normalize(surfaceNormal,dir);
   return new ShapeResolution(origin,dir,resolvedUp,normal,ConeShape.voxels(origin,dir,width,height,depth),null,policy(vectorPolicy,normal));
- }
- public static ShapeResolution floating(Vec3 origin,Vec3 direction,Vec3 up,Vec3 surfaceNormal,int distance){
-  int d=Math.max(SpellPresentation.DISTANCE_MIN,Math.min(SpellPresentation.DISTANCE_MAX,distance));
-  Vec3 dir=normalize(direction,new Vec3(0.0,0.0,1.0));
-  Vec3 target=origin.add(dir.scale(d));
-  Vec3 resolvedUp=normalize(up,WORLD_UP);
-  Vec3 normal=surfaceNormal==null?null:normalize(surfaceNormal,dir);
-  return new ShapeResolution(target,dir,resolvedUp,normal,List.of(BlockPos.containing((Position) target)),null,VectorPolicy.RADIAL);
  }
 }
