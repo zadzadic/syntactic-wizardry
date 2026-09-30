@@ -47,14 +47,14 @@ public final class GoldenOrbScreen extends AbstractContainerScreen<GoldenOrbMenu
         int level = ManaService.getCastingLevel(player);
         float xp = ManaService.getCastingExperience(player);
         float maxMana = ManaService.getMaxMana(player);
-        float regen = ManaService.getPassiveRegenPerSecond(player);
+        float regen = ManaService.getUnroundedPassiveRegenPerSecond(player);
 
         int tx = x + 24;
         graphics.drawString(font, "Lore: N/A", tx, y + 45, 0xFFE5D79D, false);
         graphics.drawString(font, "Casting Level: " + level, tx, y + 62, 0xFFFFFFFF, false);
         graphics.drawString(font, "Casting Experience: " + format(xp), tx, y + 79, 0xFFFFFFFF, false);
         graphics.drawString(font, "Maximum Mana: " + format(maxMana), tx, y + 96, 0xFFFFFFFF, false);
-        graphics.drawString(font, "Mana Regen: " + format(regen) + " / second", tx, y + 113, 0xFFFFFFFF, false);
+        graphics.drawString(font, "Mana Regen (pre-floor): " + format(regen) + " / second", tx, y + 113, 0xFFFFFFFF, false);
     }
 
     private static String format(float value) {
