@@ -49,7 +49,6 @@ public class MagicFocusItem extends Item {
         }
 
         ItemStack rawSpell = rawActiveSpell(focus);
-        ItemStack rawSpell = rawActiveSpell(focus);
         ItemStack spell = discountedActiveSpell(focus);
         if (spell.isEmpty()) {
             if (!level.isClientSide) player.displayClientMessage(Component.literal("Focus slot " + (FocusSpellStorage.activeSlot(focus) + 1) + " is empty."), true);
@@ -90,6 +89,7 @@ public class MagicFocusItem extends Item {
     @Override
     public void onUseTick(Level level, LivingEntity entity, ItemStack focus, int remainingUseDuration) {
         if (level.isClientSide) return;
+        ItemStack rawSpell = rawActiveSpell(focus);
         ItemStack spell = discountedActiveSpell(focus);
         if (spell.isEmpty()) {
             entity.stopUsingItem();
