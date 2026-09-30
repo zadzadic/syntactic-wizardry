@@ -1,0 +1,172 @@
+{
+  "parent": "minecraft:block/block",
+  "ambientocclusion": false,
+  "textures": {
+    "crystal": "minecraft:block/amethyst_block",
+    "growth": "minecraft:block/budding_amethyst",
+    "gold": "minecraft:block/gold_block",
+    "particle": "minecraft:block/amethyst_block"
+  },
+  "elements": [
+    {
+      "from": [
+        5,
+        0,
+        5
+      ],
+      "to": [
+        11,
+        2,
+        11
+      ],
+      "faces": {
+        "down": {
+          "texture": "#growth"
+        },
+        "up": {
+          "texture": "#growth"
+        },
+        "north": {
+          "texture": "#growth"
+        },
+        "south": {
+          "texture": "#growth"
+        },
+        "west": {
+          "texture": "#growth"
+        },
+        "east": {
+          "texture": "#growth"
+        }
+      }
+    },
+    {
+      "from": [
+        6,
+        2,
+        6
+      ],
+      "to": [
+        10,
+        13,
+        10
+      ],
+      "faces": {
+        "down": {
+          "texture": "#crystal"
+        },
+        "up": {
+          "texture": "#crystal"
+        },
+        "north": {
+          "texture": "#crystal"
+        },
+        "south": {
+          "texture": "#crystal"
+        },
+        "west": {
+          "texture": "#crystal"
+        },
+        "east": {
+          "texture": "#crystal"
+        }
+      }
+    },
+    {
+      "from": [
+        7,
+        13,
+        7
+      ],
+      "to": [
+        9,
+        16,
+        9
+      ],
+      "faces": {
+        "down": {
+          "texture": "#growth"
+        },
+        "up": {
+          "texture": "#growth"
+        },
+        "north": {
+          "texture": "#growth"
+        },
+        "south": {
+          "texture": "#growth"
+        },
+        "west": {
+          "texture": "#growth"
+        },
+        "east": {
+          "texture": "#growth"
+        }
+      }
+    },
+    {
+      "from": [
+        5.5,
+        4.75,
+        5.5
+      ],
+      "to": [
+        10.5,
+        5.25,
+        10.5
+      ],
+      "faces": {
+        "down": {
+          "texture": "#gold"
+        },
+        "up": {
+          "texture": "#gold"
+        },
+        "north": {
+          "texture": "#gold"
+        },
+        "south": {
+          "texture": "#gold"
+        },
+        "west": {
+          "texture": "#gold"
+        },
+        "east": {
+          "texture": "#gold"
+        }
+      }
+    },
+    {
+      "from": [
+        5.5,
+        9.75,
+        5.5
+      ],
+      "to": [
+        10.5,
+        10.25,
+        10.5
+      ],
+      "faces": {
+        "down": {
+          "texture": "#gold"
+        },
+        "up": {
+          "texture": "#gold"
+        },
+        "north": {
+          "texture": "#gold"
+        },
+        "south": {
+          "texture": "#gold"
+        },
+        "west": {
+          "texture": "#gold"
+        },
+        "east": {
+          "texture": "#gold"
+        }
+      }
+    }
+  ]
+}

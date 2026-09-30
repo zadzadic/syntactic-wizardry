@@ -1,0 +1,15 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.arcane.magic.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "BuilderSliceBlockRenderMixin",
+    "BuilderSliceBlockEntityMixin",
+    "BuilderSliceShiftExitMixin",
+    "BuilderSliceGridMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

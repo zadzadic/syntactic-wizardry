@@ -1,0 +1,10 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [" G ", "GAG", " G "],
+  "key": {
+    "G": {"item": "minecraft:gold_ingot"},
+    "A": {"item": "minecraft:amethyst_shard"}
+  },
+  "result": {"id": "syntacticwizardry:high_mana_compass", "count": 1}
+}

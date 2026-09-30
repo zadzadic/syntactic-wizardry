@@ -6,6 +6,7 @@
     "PlayerFlightMixin",
     "LivingEntityFlightMixin"
   ],
+  "client": [],
   "injectors": {
     "defaultRequire": 1
   }

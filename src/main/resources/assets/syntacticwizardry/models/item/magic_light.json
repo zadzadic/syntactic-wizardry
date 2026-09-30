@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "syntacticwizardry:block/magic_light_orange"
+  }
+}

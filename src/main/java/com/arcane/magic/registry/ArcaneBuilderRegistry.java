@@ -1,12 +1,11 @@
 package com.arcane.magic.registry;
 
-import com.proxpero.syntacticwizardry.SyntacticWizardry;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 
-/** Compatibility bridge for the exact Arcane 0.4.267 Builder runtime. */
+/** Bridge from the original Builder bytecode to the Syntactic Wizardry registry. */
 public final class ArcaneBuilderRegistry {
     private ArcaneBuilderRegistry() {}
-    public static Block block() { return SyntacticWizardry.ARCANE_BUILDER.get(); }
-    public static Item item() { return SyntacticWizardry.ARCANE_BUILDER_ITEM.get(); }
+    public static Block block() { return com.proxpero.syntacticwizardry.ArcaneBuilderRegistry.block(); }
+    public static Item item() { return com.proxpero.syntacticwizardry.ArcaneBuilderRegistry.item(); }
 }

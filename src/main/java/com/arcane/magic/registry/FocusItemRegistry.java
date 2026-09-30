@@ -1,10 +1,9 @@
 package com.arcane.magic.registry;
 
-import com.proxpero.syntacticwizardry.SyntacticWizardry;
 import net.minecraft.world.item.Item;
 
-/** Compatibility bridge used by the legacy Builder's Wand interaction code. */
+/** Bridge from the original Builder bytecode to the current Wand item. */
 public final class FocusItemRegistry {
     private FocusItemRegistry() {}
-    public static Item wand() { return SyntacticWizardry.WAND.get(); }
+    public static Item wand() { return com.proxpero.syntacticwizardry.SyntacticWizardry.WAND.get(); }
 }

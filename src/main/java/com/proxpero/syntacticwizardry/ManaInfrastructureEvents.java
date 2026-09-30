@@ -6,6 +6,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -20,13 +21,15 @@ import net.neoforged.neoforge.event.tick.LevelTickEvent;
 public final class ManaInfrastructureEvents {
     private ManaInfrastructureEvents(){}
     @SubscribeEvent public static void onRightClick(PlayerInteractEvent.RightClickBlock event){
-        if(LegacyBuilderBridge.invokeBoolean("com.arcane.magic.builder.BuilderLinkSupport", "onRightClick", event))return;
         Level level=event.getLevel();BlockPos pos=event.getPos();BlockState state=level.getBlockState(pos);ItemStack held=event.getItemStack();
-        if(held.isEmpty()&&level instanceof ServerLevel server){
+        if(held.isEmpty()){
+            if(event.getHand()!=InteractionHand.MAIN_HAND)return;
+            if(level instanceof ServerLevel server){
             BlockPos center=PowerCoreSupport.centerFromPart(level,pos,state);
             if(center!=null&&PowerCoreSupport.isValid(server,center)){
                 int output=ManaGridSupport.coreOutput(server,center),capacity=ManaGridSupport.coreStorageCapacity(server,center),stored=(int)Math.floor(ManaGridSupport.coreStored(server,center)+1.0E-4D);
                 event.getEntity().displayClientMessage(Component.literal("Power Core: "+output+" Mana/s, "+stored+"/"+capacity+" stored."),false);cancel(event,level);
+            }
             }
             return;
         }
@@ -67,7 +70,6 @@ public final class ManaInfrastructureEvents {
         if(core!=null){PylonNetworkData.get(level).unregisterCore(level,core);PowerCoreSupport.clear(level,core);}
     }
     @SubscribeEvent public static void onLevelTick(LevelTickEvent.Post event){
-        LegacyBuilderBridge.invoke("com.arcane.magic.builder.BuilderLinkSupport", "tick", event);
         if(!(event.getLevel() instanceof ServerLevel level))return;long time=level.getGameTime();if(time%5L!=0L)return;
         PylonNetworkData network=PylonNetworkData.get(level);
         for(BlockPos pylon:network.activePylons(level))glow(level,pylon,0.65D);

@@ -1,10 +1,6 @@
 package com.arcane.magic.client;
 
-/**
- * The legacy Builder render hook also invoked Arcane's spell Field renderer.
- * Syntactic Wizardry has its own spell renderer, so the Builder compatibility
- * bridge deliberately leaves that unrelated call empty.
- */
+/** The old Builder visual event also serviced Arcane Field visuals. Those are unrelated here. */
 public final class FieldClientRenderRuntime {
     private FieldClientRenderRuntime() {}
     public static void render(Object event) {}

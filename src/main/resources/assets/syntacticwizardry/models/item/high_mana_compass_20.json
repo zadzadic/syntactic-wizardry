@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "syntacticwizardry:item/high_mana_compass_20"
+  }
+}
