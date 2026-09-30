@@ -91,6 +91,21 @@ public final class RandomSpellGenerator {
             int cell = row * SpellPresentation.COLS;
             place(plan, settings, cell, definition, tier, composition, random);
             core.add(new PlacedComponent(row, cell, definition));
+
+            if (definition.typeId() == SpellComponents.TYPE_TEMPORARY_BLOCK) {
+                SpellComponentDefinition duration = SpellComponents.byType(SpellComponents.TYPE_DURATION);
+                if (duration != null) {
+                    int durationCell = cell + 1;
+                    place(plan, settings, durationCell, duration, tier, composition, random);
+                    SpellPresentation.setSetting(
+                            settings,
+                            durationCell,
+                            SpellPropertyKey.DURATION_SECONDS,
+                            between(random, 15, 30)
+                    );
+                }
+            }
+
             row++;
         }
 
