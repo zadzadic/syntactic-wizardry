@@ -153,11 +153,15 @@ public final class RandomSpellGenerator {
             int value;
             if (property.key() == SpellPropertyKey.POTENCE) {
                 value = randomPotence(tier, composition, random);
+            } else if (property.kind() == SpellPropertyKind.OPTIONS) {
+                value = randomOptionValue(property, random);
             } else {
                 value = randomPropertyValue(property, random);
             }
             SpellPresentation.setSetting(settings, cell, property.key(), value);
         }
+
+        ensureOptionSelections(settings, cell, definition, random);
 
         // Alter should not accidentally generate a completely neutral Effect.
         if (definition.typeId() == SpellComponents.TYPE_RELATIVE) {
@@ -197,6 +201,22 @@ public final class RandomSpellGenerator {
             return Math.max(first, between(random, min, max));
         }
         return first;
+    }
+
+    private static int randomOptionValue(SpellPropertyDefinition property, RandomSource random) {
+        return between(random, property.minValue(), property.maxValue());
+    }
+
+    private static void ensureOptionSelections(int[] settings, int cell,
+                                               SpellComponentDefinition definition,
+                                               RandomSource random) {
+        for (SpellPropertyDefinition property : definition.settings()) {
+            if (property.kind() != SpellPropertyKind.OPTIONS) continue;
+            int value = SpellPresentation.settingAt(settings, cell, property.key());
+            if (value < property.minValue() || value > property.maxValue()) {
+                SpellPresentation.setSetting(settings, cell, property.key(), randomOptionValue(property, random));
+            }
+        }
     }
 
     private static int randomPropertyValue(SpellPropertyDefinition property, RandomSource random) {
