@@ -10,9 +10,9 @@ import java.util.List;
 import java.util.Set;
 public final class ProtectionEffect {
  private ProtectionEffect(){}
- public static void apply(ServerLevel level,ShapeResolution resolution,int protectionKind,int potence,int durationExtensionTicks){
+ public static void apply(ServerLevel level,Entity owner,ShapeResolution resolution,int protectionKind,int potence,int durationExtensionTicks,boolean excludeCaster){
   Entity direct=resolution.directEntity();
-  if(direct instanceof LivingEntity living&&living.isAlive()){
+  if(direct instanceof LivingEntity living&&living.isAlive()&&(!excludeCaster||direct!=owner)){
    SpellProtectionService.apply(level,living,protectionKind,potence,durationExtensionTicks);
    return;
   }
@@ -27,7 +27,7 @@ public final class ProtectionEffect {
    maxX=Math.max(maxX,pos.getX());maxY=Math.max(maxY,pos.getY());maxZ=Math.max(maxZ,pos.getZ());
   }
   AABB bounds=new AABB(minX,minY,minZ,maxX+1.0,maxY+1.0,maxZ+1.0);
-  for(LivingEntity living:level.getEntitiesOfClass(LivingEntity.class,bounds,LivingEntity::isAlive))
+  for(LivingEntity living:level.getEntitiesOfClass(LivingEntity.class,bounds,e->e.isAlive()&&(!excludeCaster||e!=owner)))
    if(intersectsVoxel(living.getBoundingBox(),occupied))SpellProtectionService.apply(level,living,protectionKind,potence,durationExtensionTicks);
  }
  private static boolean intersectsVoxel(AABB box,Set<Long> occupied){

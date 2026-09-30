@@ -2,8 +2,8 @@ package com.proxpero.syntacticwizardry;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
-public record SpellExecutionContext(ServerLevel level,Entity owner,int[] plan,int[] settings,int row,int cell,ShapeResolution parent,boolean rootCast,Vec3 castYaw,int activeDurationTicks,boolean blockInteraction) {
- public SpellExecutionContext(ServerLevel level,Entity owner,int[] plan,int[] settings,int row,int cell,ShapeResolution parent,boolean rootCast,Vec3 castYaw){this(level,owner,plan,settings,row,cell,parent,rootCast,castYaw,0,false);}
+public record SpellExecutionContext(ServerLevel level,Entity owner,int[] plan,int[] settings,int row,int cell,ShapeResolution parent,boolean rootCast,Vec3 castYaw,int activeDurationTicks,boolean blockInteraction,boolean excludeCaster) {
+ public SpellExecutionContext(ServerLevel level,Entity owner,int[] plan,int[] settings,int row,int cell,ShapeResolution parent,boolean rootCast,Vec3 castYaw){this(level,owner,plan,settings,row,cell,parent,rootCast,castYaw,0,false,false);}
  public int style(){return SpellPresentation.styleAt(plan,cell);}
  public int visual(){return SpellPresentation.visualAt(plan,cell);}
  public int setting(SpellPropertyKey key){return SpellPresentation.settingAt(settings,cell,key);}

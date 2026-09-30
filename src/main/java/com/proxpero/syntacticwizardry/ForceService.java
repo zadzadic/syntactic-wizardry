@@ -14,12 +14,12 @@ import java.util.List;
 public final class ForceService {
     private ForceService() {}
 
-    public static void apply(ServerLevel level, Entity owner, ShapeResolution resolution, int targetType, int mode, int potence) {
+    public static void apply(ServerLevel level, Entity owner, ShapeResolution resolution, int targetType, int mode, int potence, boolean excludeCaster) {
         boolean pull = mode == SpellPresentation.MOVE_PULL;
         if (targetType != SpellPresentation.TARGET_BLOCKS) {
             boolean directOwner = resolution.directEntity() == owner;
             for (Entity target : ResolvedTargets.entities(level, resolution)) {
-                if ((target == owner && !directOwner) || target.isRemoved()) continue;
+                if ((excludeCaster && target == owner) || (target == owner && !directOwner) || target.isRemoved()) continue;
                 Vec3 direction = vectorFor(resolution, target.position(), pull);
                 MoveTravelRuntime.launch(target, direction, potence);
             }

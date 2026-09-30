@@ -28,7 +28,7 @@ public final class TeleportationEffect {
 
     public static void apply(SpellExecutionContext context) {
         if (context == null) return;
-        List<Entity> targets = ResolvedTargets.entities(context.level(), context.parent());
+        List<Entity> targets = ResolvedTargets.entities(context.level(), context.parent(), context.excludeCaster() ? context.owner() : null);
         if (targets.isEmpty()) return;
         int potence = Math.max(SpellPresentation.POTENCE_MIN, Math.min(SpellPresentation.POTENCE_MAX, context.potence()));
         for (Entity target : targets) {

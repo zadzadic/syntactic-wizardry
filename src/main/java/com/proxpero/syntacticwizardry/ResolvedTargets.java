@@ -16,26 +16,34 @@ public final class ResolvedTargets {
     private ResolvedTargets() {}
 
     public static List<Entity> entities(ServerLevel level, ShapeResolution resolution) {
+        return entities(level, resolution, null);
+    }
+
+    public static List<Entity> entities(ServerLevel level, ShapeResolution resolution, Entity excluded) {
         Entity direct = resolution.directEntity();
-        if (direct != null && !direct.isRemoved()) return List.of(direct);
+        if (direct != null && direct != excluded && !direct.isRemoved()) return List.of(direct);
         List<BlockPos> voxels = resolution.voxels();
         if (voxels.isEmpty()) return List.of();
         Occupancy occupancy = occupancy(voxels);
         List<Entity> result = new ArrayList<>();
-        for (Entity entity : level.getEntitiesOfClass(Entity.class, occupancy.bounds(), e -> !e.isRemoved())) {
+        for (Entity entity : level.getEntitiesOfClass(Entity.class, occupancy.bounds(), e -> e != excluded && !e.isRemoved())) {
             if (intersectsVoxel(entity.getBoundingBox(), occupancy.occupied())) result.add(entity);
         }
         return result;
     }
 
     public static List<LivingEntity> living(ServerLevel level, ShapeResolution resolution) {
+        return living(level, resolution, null);
+    }
+
+    public static List<LivingEntity> living(ServerLevel level, ShapeResolution resolution, Entity excluded) {
         Entity direct = resolution.directEntity();
-        if (direct instanceof LivingEntity living && living.isAlive()) return List.of(living);
+        if (direct != excluded && direct instanceof LivingEntity living && living.isAlive()) return List.of(living);
         List<BlockPos> voxels = resolution.voxels();
         if (voxels.isEmpty()) return List.of();
         Occupancy occupancy = occupancy(voxels);
         List<LivingEntity> result = new ArrayList<>();
-        for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, occupancy.bounds(), LivingEntity::isAlive)) {
+        for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, occupancy.bounds(), e -> e != excluded && e.isAlive())) {
             if (intersectsVoxel(living.getBoundingBox(), occupancy.occupied())) result.add(living);
         }
         return result;

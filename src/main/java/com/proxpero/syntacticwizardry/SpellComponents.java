@@ -32,6 +32,7 @@ public final class SpellComponents {
  public static final int TYPE_RICOCHET=31;
  public static final int TYPE_PIERCING=32;
  public static final int TYPE_HOMING=33;
+ public static final int TYPE_EXCLUDE_CASTER=34;
  private static final SpellPropertyDefinition RADIUS_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.RADIUS,"Radius",SpellPropertyKind.STEPPER,SpellPresentation.RADIUS_MIN,SpellPresentation.RADIUS_MAX,SpellPresentation.RADIUS_DEFAULT,Integer::toString);
  private static final SpellPropertyDefinition SPHERE_MODE_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.SPHERE_MODE,"Shape",SpellPropertyKind.OPTIONS,0,SpellPresentation.SPHERE_MODE_COUNT-1,SpellPresentation.SPHERE_MODE_DEFAULT,SpellPresentation::sphereModeName);
  private static final SpellPropertyDefinition POTENCE_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.POTENCE,"Potence",SpellPropertyKind.STEPPER,SpellPresentation.POTENCE_MIN,SpellPresentation.POTENCE_MAX,SpellPresentation.POTENCE_DEFAULT,Integer::toString);
@@ -59,7 +60,7 @@ public final class SpellComponents {
  private static final SpellPropertyDefinition TELEPORT_MODE_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.TELEPORT_MODE,"Mode",SpellPropertyKind.OPTIONS,0,SpellPresentation.TELEPORT_MODE_COUNT-1,SpellPresentation.TELEPORT_MODE_DEFAULT,SpellPresentation::teleportModeName);
  private static final SpellPropertyDefinition RANGE_VALUE_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.RANGE_VALUE,"Range",SpellPropertyKind.STEPPER,SpellPresentation.RANGE_VALUE_MIN,SpellPresentation.RANGE_VALUE_MAX,SpellPresentation.RANGE_VALUE_DEFAULT,SpellComponents::rangeValueLabel);
  private static final SpellPropertyDefinition SPLIT_PATTERN_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.SPLIT_PATTERN,"Pattern",SpellPropertyKind.OPTIONS,0,SpellPresentation.SPLIT_PATTERN_COUNT-1,SpellPresentation.SPLIT_PATTERN_DEFAULT,SpellPresentation::splitPatternName);
- private static final List<SpellComponentDefinition> ALL=List.of(new MissileDefinition(),new ChainDefinition(),new SphereDefinition(),new BoxDefinition(),new ConeDefinition(),new FloatingDefinition(),new TouchDefinition(),new TargetDefinition(),new DamageDefinition(),new DigDefinition(),new RestoreDefinition(),new MoveDefinition(),new SiphonDefinition(),new GravityDefinition(),new AlterDefinition(),new FlightDefinition(),new DimensionalStorageDefinition(),new TeleportationDefinition(),new MarkDefinition(),new ProtectionDefinition(),new TemporaryBlockDefinition(),new SelfDefinition(),new RelativeDefinition(),new RuneDefinition(),new ChannelDefinition(),new StreamDefinition(),new DurationDefinition(),new BlockInteractionDefinition(),new RangeDefinition(),new SplitDefinition(),new RicochetDefinition(),new PiercingDefinition(),new HomingDefinition());
+ private static final List<SpellComponentDefinition> ALL=List.of(new MissileDefinition(),new ChainDefinition(),new SphereDefinition(),new BoxDefinition(),new ConeDefinition(),new FloatingDefinition(),new TouchDefinition(),new TargetDefinition(),new DamageDefinition(),new DigDefinition(),new RestoreDefinition(),new MoveDefinition(),new SiphonDefinition(),new GravityDefinition(),new AlterDefinition(),new FlightDefinition(),new DimensionalStorageDefinition(),new TeleportationDefinition(),new MarkDefinition(),new ProtectionDefinition(),new TemporaryBlockDefinition(),new SelfDefinition(),new RelativeDefinition(),new RuneDefinition(),new ChannelDefinition(),new StreamDefinition(),new DurationDefinition(),new BlockInteractionDefinition(),new RangeDefinition(),new SplitDefinition(),new RicochetDefinition(),new PiercingDefinition(),new HomingDefinition(),new ExcludeCasterDefinition());
  private static final Map<Integer,SpellComponentDefinition> BY_TYPE=ALL.stream().collect(Collectors.toUnmodifiableMap(SpellComponentDefinition::typeId,Function.identity()));
  private static final List<SpellComponentDefinition> SHAPES=ALL.stream().filter(SpellComponentDefinition::isShape).toList();
  private static final List<SpellComponentDefinition> EFFECTS=ALL.stream().filter(SpellComponents::isEffect).toList();
@@ -72,7 +73,7 @@ public final class SpellComponents {
  public static List<SpellComponentDefinition> shapes(){return SHAPES;}
  public static List<SpellComponentDefinition> effects(){return EFFECTS;}
  public static List<SpellComponentDefinition> modifiers(){return MODIFIERS;}
- public static boolean isModifier(SpellComponentDefinition definition){if(definition==null)return false;int type=definition.typeId();return type==TYPE_CHANNEL||type==TYPE_STREAM||type==TYPE_DURATION||type==TYPE_BLOCK_INTERACTION||type==TYPE_RANGE||type==TYPE_SPLIT||type==TYPE_RICOCHET||type==TYPE_PIERCING||type==TYPE_HOMING;}
+ public static boolean isModifier(SpellComponentDefinition definition){if(definition==null)return false;int type=definition.typeId();return type==TYPE_CHANNEL||type==TYPE_STREAM||type==TYPE_DURATION||type==TYPE_BLOCK_INTERACTION||type==TYPE_RANGE||type==TYPE_SPLIT||type==TYPE_RICOCHET||type==TYPE_PIERCING||type==TYPE_HOMING||type==TYPE_EXCLUDE_CASTER;}
  public static boolean isEffect(SpellComponentDefinition definition){return definition!=null&&!definition.isShape()&&!isModifier(definition);}
  public static boolean hasChannel(int[] plan){if(plan==null)return false;for(int cell=0;cell<SpellPresentation.CELLS;cell++)if(SpellPresentation.typeAt(plan,cell)==TYPE_CHANNEL)return true;return false;}
  public static boolean hasStream(int[] plan){if(plan==null)return false;for(int cell=0;cell<SpellPresentation.CELLS;cell++)if(SpellPresentation.typeAt(plan,cell)==TYPE_STREAM)return true;return false;}
@@ -148,31 +149,31 @@ public final class SpellComponents {
  private static final class DamageDefinition extends BaseDefinition {
   DamageDefinition(){super(SpellPresentation.TYPE_DAMAGE,"Damage",false,0,0,List.of(),false,List.of(POTENCE_PROPERTY,DAMAGE_KIND_PROPERTY));}
   @Override public ItemStack createEditorIcon(){return SyntacticWizardry.DAMAGE_EFFECT.get().getDefaultInstance();}
-  @Override public ComponentExecutionResult execute(SpellExecutionContext context){DamageEffect.apply(context.level(),context.owner(),context.parent(),context.damageKind(),context.potence());return ComponentExecutionResult.NONE;}
+  @Override public ComponentExecutionResult execute(SpellExecutionContext context){DamageEffect.apply(context.level(),context.owner(),context.parent(),context.damageKind(),context.potence(),context.excludeCaster());return ComponentExecutionResult.NONE;}
   @Override public boolean acceptsDirectEntity(Entity entity){return entity instanceof LivingEntity living&&living.isAlive();}
  }
  private static final class RestoreDefinition extends BaseDefinition {
   RestoreDefinition(){super(TYPE_RESTORE,"Restore",false,0,0,List.of(),false,List.of(POTENCE_PROPERTY));}
   @Override public ItemStack createEditorIcon(){return Items.GLISTERING_MELON_SLICE.getDefaultInstance();}
-  @Override public ComponentExecutionResult execute(SpellExecutionContext context){RestoreEffect.apply(context.level(),context.parent(),context.potence());return ComponentExecutionResult.NONE;}
+  @Override public ComponentExecutionResult execute(SpellExecutionContext context){RestoreEffect.apply(context.level(),context.owner(),context.parent(),context.potence(),context.excludeCaster());return ComponentExecutionResult.NONE;}
   @Override public boolean acceptsDirectEntity(Entity entity){return entity instanceof LivingEntity living&&living.isAlive();}
  }
  private static final class MoveDefinition extends BaseDefinition {
   MoveDefinition(){super(TYPE_MOVE,"Move",false,0,0,List.of(),false,List.of(POTENCE_PROPERTY,TARGET_TYPE_PROPERTY,MOVE_MODE_PROPERTY));}
   @Override public ItemStack createEditorIcon(){return Items.PISTON.getDefaultInstance();}
-  @Override public ComponentExecutionResult execute(SpellExecutionContext context){MoveEffect.apply(context.level(),context.owner(),context.parent(),context.targetType(),context.moveMode(),context.potence());return ComponentExecutionResult.NONE;}
+  @Override public ComponentExecutionResult execute(SpellExecutionContext context){MoveEffect.apply(context.level(),context.owner(),context.parent(),context.targetType(),context.moveMode(),context.potence(),context.excludeCaster());return ComponentExecutionResult.NONE;}
   @Override public boolean acceptsDirectEntity(Entity entity){return entity!=null&&!entity.isRemoved();}
  }
  private static final class SiphonDefinition extends BaseDefinition {
   SiphonDefinition(){super(TYPE_SIPHON,"Siphon",false,0,0,List.of(),false,List.of(POTENCE_PROPERTY,SIPHON_RESOURCE_PROPERTY,SIPHON_MODE_PROPERTY));}
   @Override public ItemStack createEditorIcon(){return Items.GLISTERING_MELON_SLICE.getDefaultInstance();}
-  @Override public ComponentExecutionResult execute(SpellExecutionContext context){SiphonEffect.apply(context.level(),context.owner(),context.parent(),context.siphonResource(),context.siphonMode(),context.potence());return ComponentExecutionResult.NONE;}
+  @Override public ComponentExecutionResult execute(SpellExecutionContext context){SiphonEffect.apply(context.level(),context.owner(),context.parent(),context.siphonResource(),context.siphonMode(),context.potence(),context.excludeCaster());return ComponentExecutionResult.NONE;}
   @Override public boolean acceptsDirectEntity(Entity entity){return entity instanceof LivingEntity living&&living.isAlive();}
  }
  private static final class GravityDefinition extends BaseDefinition {
   GravityDefinition(){super(TYPE_GRAVITY,"Gravity",false,0,0,List.of(),false,List.of(POTENCE_PROPERTY,GRAVITY_MODE_PROPERTY));}
   @Override public ItemStack createEditorIcon(){return Items.ENDER_PEARL.getDefaultInstance();}
-  @Override public ComponentExecutionResult execute(SpellExecutionContext context){GravityEffect.apply(context.level(),context.owner(),context.parent(),context.potence(),context.gravityMode(),context.blockInteraction());return ComponentExecutionResult.NONE;}
+  @Override public ComponentExecutionResult execute(SpellExecutionContext context){GravityEffect.apply(context.level(),context.owner(),context.parent(),context.potence(),context.gravityMode(),context.blockInteraction(),context.excludeCaster());return ComponentExecutionResult.NONE;}
   @Override public boolean acceptsDirectEntity(Entity entity){return entity!=null&&!entity.isRemoved();}
   @Override public EffectReplayPolicy replayPolicy(){return EffectReplayPolicy.TICK;}
   @Override public boolean supportsBlockInteraction(){return true;}
@@ -182,14 +183,14 @@ public final class SpellComponents {
   @Override public ItemStack createEditorIcon(){return Items.POTION.getDefaultInstance();}
   @Override public boolean acceptsDirectEntity(Entity entity){return entity instanceof LivingEntity living&&living.isAlive();}
   @Override public EffectReplayPolicy replayPolicy(){return EffectReplayPolicy.CREATE_ONCE;}
-  @Override public ComponentExecutionResult execute(SpellExecutionContext context){AlterEffect.apply(context.level(),context.parent(),context.alterStrength(),context.alterSpeed(),context.alterToughness(),context.activeDurationTicks());return ComponentExecutionResult.NONE;}
+  @Override public ComponentExecutionResult execute(SpellExecutionContext context){AlterEffect.apply(context.level(),context.owner(),context.parent(),context.alterStrength(),context.alterSpeed(),context.alterToughness(),context.activeDurationTicks(),context.excludeCaster());return ComponentExecutionResult.NONE;}
  }
  private static final class FlightDefinition extends BaseDefinition {
   FlightDefinition(){super(TYPE_FLIGHT,"Flight",false,0,0,List.of(),false,List.of(FLIGHT_POTENCE_PROPERTY));}
   @Override public ItemStack createEditorIcon(){return Items.ELYTRA.getDefaultInstance();}
   @Override public boolean acceptsDirectEntity(Entity entity){return entity instanceof net.minecraft.world.entity.player.Player player&&player.isAlive();}
   @Override public EffectReplayPolicy replayPolicy(){return EffectReplayPolicy.STATEFUL;}
-  @Override public ComponentExecutionResult execute(SpellExecutionContext context){FlightEffect.apply(context.level(),context.parent(),context.potence(),context.activeDurationTicks());return ComponentExecutionResult.NONE;}
+  @Override public ComponentExecutionResult execute(SpellExecutionContext context){FlightEffect.apply(context.level(),context.owner(),context.parent(),context.potence(),context.activeDurationTicks(),context.excludeCaster());return ComponentExecutionResult.NONE;}
  }
  private static final class DimensionalStorageDefinition extends BaseDefinition {
   DimensionalStorageDefinition(){super(TYPE_DIMENSIONAL_STORAGE,"Dimensional Storage",false,0,0,List.of(),false,List.of(POTENCE_PROPERTY));}
@@ -216,7 +217,7 @@ public final class SpellComponents {
   @Override public ItemStack createEditorIcon(){return Items.SHIELD.getDefaultInstance();}
   @Override public boolean acceptsDirectEntity(Entity entity){return entity instanceof LivingEntity living&&living.isAlive();}
   @Override public EffectReplayPolicy replayPolicy(){return EffectReplayPolicy.STATEFUL;}
-  @Override public ComponentExecutionResult execute(SpellExecutionContext context){ProtectionEffect.apply(context.level(),context.parent(),context.protectionKind(),context.potence(),context.activeDurationTicks());return ComponentExecutionResult.NONE;}
+  @Override public ComponentExecutionResult execute(SpellExecutionContext context){ProtectionEffect.apply(context.level(),context.owner(),context.parent(),context.protectionKind(),context.potence(),context.activeDurationTicks(),context.excludeCaster());return ComponentExecutionResult.NONE;}
  }
  private static final class TemporaryBlockDefinition extends BaseDefinition {
   TemporaryBlockDefinition(){super(TYPE_TEMPORARY_BLOCK,"Temporary Block",false,0,0,List.of(),false,List.of());}
@@ -284,6 +285,11 @@ public final class SpellComponents {
  private static final class HomingDefinition extends BaseDefinition {
   HomingDefinition(){super(TYPE_HOMING,"Homing",false,0,0,List.of(),false,List.of());}
   @Override public ItemStack createEditorIcon(){return Items.COMPASS.getDefaultInstance();}
+  @Override public ComponentExecutionResult execute(SpellExecutionContext context){return ComponentExecutionResult.NONE;}
+ }
+ private static final class ExcludeCasterDefinition extends BaseDefinition {
+  ExcludeCasterDefinition(){super(TYPE_EXCLUDE_CASTER,"Exclude Caster",false,0,0,List.of(),false,List.of());}
+  @Override public ItemStack createEditorIcon(){return Items.BARRIER.getDefaultInstance();}
   @Override public ComponentExecutionResult execute(SpellExecutionContext context){return ComponentExecutionResult.NONE;}
  }
 }

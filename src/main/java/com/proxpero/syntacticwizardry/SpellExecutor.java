@@ -17,7 +17,8 @@ public final class SpellExecutor {
    if(definition==null||SpellComponents.isModifier(definition))continue;
    int activeDuration=SpellComponents.attachedDurationTicks(plan,settings,row,col);
    boolean activeBlockInteraction=SpellComponents.hasAttachedModifier(plan,row,col,SpellComponents.TYPE_BLOCK_INTERACTION);
-   SpellExecutionContext context=new SpellExecutionContext(level,owner,plan,settings,row,cell,parent,rootCast,castYaw,activeDuration,activeBlockInteraction);
+   boolean activeExcludeCaster=SpellComponents.isEffect(definition)&&SpellComponents.hasAttachedModifier(plan,row,col,SpellComponents.TYPE_EXCLUDE_CASTER);
+   SpellExecutionContext context=new SpellExecutionContext(level,owner,plan,settings,row,cell,parent,rootCast,castYaw,activeDuration,activeBlockInteraction,activeExcludeCaster);
    ComponentExecutionResult result=definition.execute(context);
    if(definition.isShape()&&SpellComponents.hasAttachedModifier(plan,row,col,SpellComponents.TYPE_STREAM))StreamRuntime.register(context,definition);
    if(SpellComponents.isEffect(definition)){
@@ -37,7 +38,8 @@ public final class SpellExecutor {
   int col=cell%SpellPresentation.COLS;
   int activeDuration=SpellComponents.attachedDurationTicks(plan,settings,row,col);
   boolean activeBlockInteraction=SpellComponents.hasAttachedModifier(plan,row,col,SpellComponents.TYPE_BLOCK_INTERACTION);
-  SpellExecutionContext context=new SpellExecutionContext(level,owner,plan,settings,row,cell,parent,rootCast,normalizeYaw(castYaw),activeDuration,activeBlockInteraction);
+  boolean activeExcludeCaster=SpellComponents.isEffect(definition)&&SpellComponents.hasAttachedModifier(plan,row,col,SpellComponents.TYPE_EXCLUDE_CASTER);
+  SpellExecutionContext context=new SpellExecutionContext(level,owner,plan,settings,row,cell,parent,rootCast,normalizeYaw(castYaw),activeDuration,activeBlockInteraction,activeExcludeCaster);
   ComponentExecutionResult result=definition.execute(context);
   for(ShapeResolution resolution:result.continuations())continueFrom(level,owner,plan,settings,row,resolution,castYaw);
  }

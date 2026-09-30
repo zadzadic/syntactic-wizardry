@@ -17,7 +17,7 @@ public final class ChannelRuntime {
   if(context==null||effect==null||!SpellComponents.isEffect(effect))return;
   if(!(context.owner() instanceof LivingEntity living))return;
   if(!living.isUsingItem()||!living.getUseItem().is(SyntacticWizardry.WRITTEN_SPELL.get()))return;
-  Invocation invocation=new Invocation(effect.typeId(),Arrays.copyOf(context.plan(),context.plan().length),Arrays.copyOf(context.settings(),context.settings().length),context.row(),context.cell(),context.parent(),context.castYaw(),context.blockInteraction());
+  Invocation invocation=new Invocation(effect.typeId(),Arrays.copyOf(context.plan(),context.plan().length),Arrays.copyOf(context.settings(),context.settings().length),context.row(),context.cell(),context.parent(),context.castYaw(),context.blockInteraction(),context.excludeCaster());
   ACTIVE.computeIfAbsent(context.owner().getUUID(),ignored->new ArrayList<>()).add(invocation);
  }
  public static void tick(LivingEntity owner){
@@ -29,12 +29,12 @@ public final class ChannelRuntime {
   for(Invocation invocation:List.copyOf(invocations)){
    SpellComponentDefinition effect=SpellComponents.byType(invocation.effectType);
    if(!SpellComponents.isEffect(effect))continue;
-   SpellExecutionContext replay=new SpellExecutionContext(level,owner,invocation.plan,invocation.settings,invocation.row,invocation.cell,invocation.resolution,false,invocation.castYaw,0,invocation.blockInteraction);
+   SpellExecutionContext replay=new SpellExecutionContext(level,owner,invocation.plan,invocation.settings,invocation.row,invocation.cell,invocation.resolution,false,invocation.castYaw,0,invocation.blockInteraction,invocation.excludeCaster);
    effect.execute(replay);
   }
  }
  private static final class Invocation {
-  final int effectType;final int[] plan;final int[] settings;final int row;final int cell;final ShapeResolution resolution;final net.minecraft.world.phys.Vec3 castYaw;final boolean blockInteraction;
-  Invocation(int effectType,int[] plan,int[] settings,int row,int cell,ShapeResolution resolution,net.minecraft.world.phys.Vec3 castYaw,boolean blockInteraction){this.effectType=effectType;this.plan=plan;this.settings=settings;this.row=row;this.cell=cell;this.resolution=resolution;this.castYaw=castYaw;this.blockInteraction=blockInteraction;}
+  final int effectType;final int[] plan;final int[] settings;final int row;final int cell;final ShapeResolution resolution;final net.minecraft.world.phys.Vec3 castYaw;final boolean blockInteraction;final boolean excludeCaster;
+  Invocation(int effectType,int[] plan,int[] settings,int row,int cell,ShapeResolution resolution,net.minecraft.world.phys.Vec3 castYaw,boolean blockInteraction,boolean excludeCaster){this.effectType=effectType;this.plan=plan;this.settings=settings;this.row=row;this.cell=cell;this.resolution=resolution;this.castYaw=castYaw;this.blockInteraction=blockInteraction;this.excludeCaster=excludeCaster;}
  }
 }

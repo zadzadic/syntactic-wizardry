@@ -8,10 +8,10 @@ import net.minecraft.world.entity.LivingEntity;
 public final class SiphonEffect {
     private SiphonEffect() {}
 
-    public static void apply(ServerLevel level, Entity owner, ShapeResolution resolution, int resource, int mode, int potence) {
+    public static void apply(ServerLevel level, Entity owner, ShapeResolution resolution, int resource, int mode, int potence, boolean excludeCaster) {
         int resolvedPotence = Math.max(SpellPresentation.POTENCE_MIN, Math.min(SpellPresentation.POTENCE_MAX, potence));
         float requestedDamage = 1.0F + resolvedPotence;
-        for (LivingEntity target : ResolvedTargets.living(level, resolution)) {
+        for (LivingEntity target : ResolvedTargets.living(level, resolution, excludeCaster ? owner : null)) {
             if (mode == SpellPresentation.SIPHON_SEND) {
                 send(level, owner, target, resource, requestedDamage);
             } else {

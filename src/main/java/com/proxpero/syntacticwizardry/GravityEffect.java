@@ -14,13 +14,13 @@ public final class GravityEffect {
 
     private GravityEffect() {}
 
-    public static void apply(ServerLevel level, Entity owner, ShapeResolution resolution, int potence, int mode, boolean blockInteraction) {
+    public static void apply(ServerLevel level, Entity owner, ShapeResolution resolution, int potence, int mode, boolean blockInteraction, boolean excludeCaster) {
         if (level == null || resolution == null) return;
 
         boolean repel = mode == SpellPresentation.GRAVITY_REPEL;
         Vec3 center = resolution.origin();
 
-        for (Entity target : ResolvedTargets.entities(level, resolution)) {
+        for (Entity target : ResolvedTargets.entities(level, resolution, excludeCaster ? owner : null)) {
             if (target == null || target.isRemoved() || target instanceof GravityBlockEntity) continue;
 
             int effectivePotence = effectivePotence(target, potence);
