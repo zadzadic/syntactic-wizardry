@@ -1,0 +1,13 @@
+{
+  "textures": {
+    "all": "minecraft:block/gold_block",
+    "particle": "minecraft:block/gold_block"
+  },
+  "elements": [
+    {"from":[4,1,4],"to":[12,3,12],"faces":{"down":{"texture":"#all"},"up":{"texture":"#all"},"north":{"texture":"#all"},"south":{"texture":"#all"},"west":{"texture":"#all"},"east":{"texture":"#all"}}},
+    {"from":[2,3,2],"to":[14,5,14],"faces":{"down":{"texture":"#all"},"up":{"texture":"#all"},"north":{"texture":"#all"},"south":{"texture":"#all"},"west":{"texture":"#all"},"east":{"texture":"#all"}}},
+    {"from":[1,5,1],"to":[15,11,15],"faces":{"down":{"texture":"#all"},"up":{"texture":"#all"},"north":{"texture":"#all"},"south":{"texture":"#all"},"west":{"texture":"#all"},"east":{"texture":"#all"}}},
+    {"from":[2,11,2],"to":[14,13,14],"faces":{"down":{"texture":"#all"},"up":{"texture":"#all"},"north":{"texture":"#all"},"south":{"texture":"#all"},"west":{"texture":"#all"},"east":{"texture":"#all"}}},
+    {"from":[4,13,4],"to":[12,15,12],"faces":{"down":{"texture":"#all"},"up":{"texture":"#all"},"north":{"texture":"#all"},"south":{"texture":"#all"},"west":{"texture":"#all"},"east":{"texture":"#all"}}}
+  ]
+}
