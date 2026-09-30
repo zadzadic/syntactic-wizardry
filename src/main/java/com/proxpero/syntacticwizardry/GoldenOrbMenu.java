@@ -3,6 +3,7 @@ package com.proxpero.syntacticwizardry;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.item.ItemStack;
 
 public final class GoldenOrbMenu extends AbstractContainerMenu {
     public static final int ACTION_MINUS_TEN = 1;
@@ -12,6 +13,11 @@ public final class GoldenOrbMenu extends AbstractContainerMenu {
 
     public GoldenOrbMenu(int id, Inventory inventory) {
         super(SyntacticWizardry.GOLDEN_ORB_MENU.get(), id);
+    }
+
+    @Override
+    public ItemStack quickMoveStack(Player player, int index) {
+        return ItemStack.EMPTY;
     }
 
     @Override
