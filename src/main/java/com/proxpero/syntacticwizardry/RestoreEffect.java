@@ -7,10 +7,10 @@ import net.minecraft.world.entity.LivingEntity;
 public final class RestoreEffect {
     private RestoreEffect() {}
 
-    public static void apply(ServerLevel level, ShapeResolution resolution, int potence) {
+    public static void apply(ServerLevel level, net.minecraft.world.entity.Entity owner, ShapeResolution resolution, int potence, boolean excludeCaster) {
         int resolvedPotence = Math.max(SpellPresentation.POTENCE_MIN, Math.min(SpellPresentation.POTENCE_MAX, potence));
         float amount = 0.5F + 0.5F * resolvedPotence;
-        for (LivingEntity living : ResolvedTargets.living(level, resolution)) {
+        for (LivingEntity living : ResolvedTargets.living(level, resolution, excludeCaster ? owner : null)) {
             living.heal(amount);
         }
         BlockRestorationService.restore(level, resolution.voxels());
