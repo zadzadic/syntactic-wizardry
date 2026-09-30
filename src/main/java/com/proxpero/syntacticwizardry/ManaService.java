@@ -35,10 +35,8 @@ public final class ManaService {
     }
 
     public static int getCastingLevel(Entity entity) {
-        float xp = getCastingExperience(entity);
-        int level = 1;
-        while (xp + EPSILON >= cumulativeExperienceForLevel(level + 1)) level++;
-        return level;
+        double xp = getCastingExperience(entity);
+        return Math.max(1, (int)Math.floor((1.0D + Math.sqrt(1.0D + 4.0D * xp / 125.0D)) / 2.0D + EPSILON));
     }
 
     public static float cumulativeExperienceForLevel(int level) {
@@ -49,6 +47,16 @@ public final class ManaService {
     public static float experienceToNextLevel(Entity entity) {
         int nextLevel = getCastingLevel(entity) + 1;
         return Math.max(0.0F, cumulativeExperienceForLevel(nextLevel) - getCastingExperience(entity));
+    }
+
+    public static void setCastingLevel(Entity entity, int level) {
+        if (!(entity instanceof Player)) return;
+        int targetLevel = Math.max(1, level);
+        entity.getPersistentData().putFloat(CASTING_XP_KEY, cumulativeExperienceForLevel(targetLevel));
+        float current = getMana(entity);
+        float maximum = getMaxMana(entity);
+        if (current > maximum) entity.getPersistentData().putFloat(KEY, maximum);
+        sync(entity);
     }
 
     public static float getMaxMana(Entity entity) {
