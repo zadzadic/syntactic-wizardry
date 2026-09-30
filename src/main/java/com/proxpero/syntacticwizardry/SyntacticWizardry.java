@@ -1,5 +1,9 @@
 package com.proxpero.syntacticwizardry;
+import net.minecraft.Util;
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.entity.EntityType;
@@ -7,11 +11,16 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.MenuType;
+import net.minecraft.world.item.ArmorItem;
+import net.minecraft.world.item.ArmorMaterial;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.SwordItem;
 import net.minecraft.world.item.Tiers;
+import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.neoforged.bus.api.IEventBus;
@@ -21,15 +30,25 @@ import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.function.Supplier;
 @Mod(SyntacticWizardry.MOD_ID)
 public final class SyntacticWizardry {
  public static final String MOD_ID="syntacticwizardry";
  private static final DeferredRegister.Blocks BLOCKS=DeferredRegister.createBlocks(MOD_ID);
  private static final DeferredRegister.Items ITEMS=DeferredRegister.createItems(MOD_ID);
+ private static final DeferredRegister<ArmorMaterial> ARMOR_MATERIALS=DeferredRegister.create(Registries.ARMOR_MATERIAL,MOD_ID);
+ public static final DeferredItem<Item> ENCHANTED_LEATHER=ITEMS.register("enchanted_leather",()->new Item(new Item.Properties()));
  private static final DeferredRegister<EntityType<?>> ENTITIES=DeferredRegister.create(Registries.ENTITY_TYPE,MOD_ID);
  private static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITY_TYPES=DeferredRegister.create(Registries.BLOCK_ENTITY_TYPE,MOD_ID);
  private static final DeferredRegister<MenuType<?>> MENUS=DeferredRegister.create(Registries.MENU,MOD_ID);
  private static final DeferredRegister<CreativeModeTab> CREATIVE_TABS=DeferredRegister.create(Registries.CREATIVE_MODE_TAB,MOD_ID);
+
+ public static final DeferredHolder<ArmorMaterial,ArmorMaterial> CLOTH_ARMOR_MATERIAL=ARMOR_MATERIALS.register("cloth",()->robeMaterial(()->Ingredient.of(Items.STRING)));
+ public static final DeferredHolder<ArmorMaterial,ArmorMaterial> HEAVY_ARMOR_MATERIAL=ARMOR_MATERIALS.register("heavy",()->robeMaterial(()->Ingredient.of(ItemTags.WOOL)));
+ public static final DeferredHolder<ArmorMaterial,ArmorMaterial> LEATHER_ROBE_MATERIAL=ARMOR_MATERIALS.register("leather_robe",()->robeMaterial(()->Ingredient.of(Items.LEATHER)));
+ public static final DeferredHolder<ArmorMaterial,ArmorMaterial> WIZARD_ARMOR_MATERIAL=ARMOR_MATERIALS.register("wizard",()->robeMaterial(()->Ingredient.of(ENCHANTED_LEATHER.get())));
  public static final DeferredBlock<Block> SCRIBES_LECTERN=BLOCKS.register("scribes_lectern",()->new ScribesLecternBlock(Block.Properties.ofFullCopy(Blocks.LECTERN)));
  public static final DeferredBlock<GoldenOrbBlock> GOLDEN_ORB=BLOCKS.register("golden_orb",()->new GoldenOrbBlock(Block.Properties.ofFullCopy(Blocks.GOLD_BLOCK).strength(-1.0F,3600000.0F).noOcclusion()));
  public static final DeferredBlock<SpellRandomizerBlock> SPELL_RANDOMIZER=BLOCKS.register("spell_randomizer",()->new SpellRandomizerBlock(Block.Properties.ofFullCopy(Blocks.ENCHANTING_TABLE).strength(-1.0F,3600000.0F)));
@@ -50,6 +69,19 @@ public final class SyntacticWizardry {
  public static final DeferredBlock<Block> POWER_CORE_SE=BLOCKS.register("power_core_se",()->new Block(Block.Properties.of().strength(2.0F).noOcclusion().noLootTable()));
  public static final DeferredBlock<Block> POWER_CORE_CRYSTAL=BLOCKS.register("power_core_crystal",()->new Block(Block.Properties.of().strength(2.0F).noOcclusion().noLootTable()));
  public static final DeferredHolder<BlockEntityType<?>,BlockEntityType<RuneBlockEntity>> RUNE_BLOCK_ENTITY=BLOCK_ENTITY_TYPES.register("rune",()->BlockEntityType.Builder.of(RuneBlockEntity::new,RUNE_BLOCK.get()).build(null));
+
+ public static final DeferredItem<ArmorItem> CLOTH_HOOD=ITEMS.register("cloth_hood",()->robePiece(CLOTH_ARMOR_MATERIAL,ArmorItem.Type.HELMET));
+ public static final DeferredItem<ArmorItem> CLOTH_UPPER_ROBE=ITEMS.register("cloth_upper_robe",()->robePiece(CLOTH_ARMOR_MATERIAL,ArmorItem.Type.CHESTPLATE));
+ public static final DeferredItem<ArmorItem> CLOTH_LOWER_ROBE=ITEMS.register("cloth_lower_robe",()->robePiece(CLOTH_ARMOR_MATERIAL,ArmorItem.Type.LEGGINGS));
+ public static final DeferredItem<ArmorItem> HEAVY_HOOD=ITEMS.register("heavy_hood",()->robePiece(HEAVY_ARMOR_MATERIAL,ArmorItem.Type.HELMET));
+ public static final DeferredItem<ArmorItem> HEAVY_UPPER_ROBE=ITEMS.register("heavy_upper_robe",()->robePiece(HEAVY_ARMOR_MATERIAL,ArmorItem.Type.CHESTPLATE));
+ public static final DeferredItem<ArmorItem> HEAVY_LOWER_ROBE=ITEMS.register("heavy_lower_robe",()->robePiece(HEAVY_ARMOR_MATERIAL,ArmorItem.Type.LEGGINGS));
+ public static final DeferredItem<ArmorItem> LEATHER_HOOD=ITEMS.register("leather_hood",()->robePiece(LEATHER_ROBE_MATERIAL,ArmorItem.Type.HELMET));
+ public static final DeferredItem<ArmorItem> LEATHER_UPPER_ROBE=ITEMS.register("leather_upper_robe",()->robePiece(LEATHER_ROBE_MATERIAL,ArmorItem.Type.CHESTPLATE));
+ public static final DeferredItem<ArmorItem> LEATHER_LOWER_ROBE=ITEMS.register("leather_lower_robe",()->robePiece(LEATHER_ROBE_MATERIAL,ArmorItem.Type.LEGGINGS));
+ public static final DeferredItem<ArmorItem> WIZARDS_HOOD=ITEMS.register("wizards_hood",()->robePiece(WIZARD_ARMOR_MATERIAL,ArmorItem.Type.HELMET));
+ public static final DeferredItem<ArmorItem> WIZARDS_UPPER_ROBE=ITEMS.register("wizards_upper_robe",()->robePiece(WIZARD_ARMOR_MATERIAL,ArmorItem.Type.CHESTPLATE));
+ public static final DeferredItem<ArmorItem> WIZARDS_LOWER_ROBE=ITEMS.register("wizards_lower_robe",()->robePiece(WIZARD_ARMOR_MATERIAL,ArmorItem.Type.LEGGINGS));
  public static final DeferredItem<BlockItem> SCRIBES_LECTERN_ITEM=ITEMS.register("scribes_lectern",()->new BlockItem(SCRIBES_LECTERN.get(),new Item.Properties()));
  public static final DeferredItem<BlockItem> GOLDEN_ORB_ITEM=ITEMS.register("golden_orb",()->new BlockItem(GOLDEN_ORB.get(),new Item.Properties()));
  public static final DeferredItem<BlockItem> SPELL_RANDOMIZER_ITEM=ITEMS.register("spell_randomizer",()->new BlockItem(SPELL_RANDOMIZER.get(),new Item.Properties()));
@@ -82,7 +114,13 @@ public final class SyntacticWizardry {
  public static final DeferredHolder<MenuType<?>,MenuType<DimensionalStorageMenu>> DIMENSIONAL_STORAGE_MENU=MENUS.register("dimensional_storage",()->IMenuTypeExtension.create(DimensionalStorageMenu::client));
  public static final DeferredHolder<MenuType<?>,MenuType<HighManaCompassMenu>> HIGH_MANA_COMPASS_MENU=MENUS.register("high_mana_compass",()->IMenuTypeExtension.create(HighManaCompassMenu::client));
  public static final DeferredHolder<MenuType<?>,MenuType<FocusSpellMenu>> FOCUS_SPELL_MENU=MENUS.register("focus_spells",()->IMenuTypeExtension.create(FocusSpellMenu::client));
- public static final DeferredHolder<CreativeModeTab,CreativeModeTab> SYNTACTIC_WIZARDRY_TAB=CREATIVE_TABS.register("syntactic_wizardry",()->CreativeModeTab.builder().title(Component.translatable("itemGroup.syntacticwizardry")).icon(()->SCRIBES_LECTERN_ITEM.get().getDefaultInstance()).displayItems((parameters,output)->{output.accept(SCRIBES_LECTERN_ITEM.get());output.accept(GOLDEN_ORB_ITEM.get());output.accept(SPELL_RANDOMIZER_ITEM.get());output.accept(TEMPORARY_BLOCK_ITEM.get());output.accept(MATURE_CRYSTAL_ITEM.get());output.accept(MISSILE_SHAPE.get());output.accept(SPHERE_SHAPE.get());output.accept(BOX_SHAPE.get());output.accept(CONE_SHAPE.get());output.accept(FLOATING_SHAPE.get());output.accept(TOUCH_SHAPE.get());output.accept(TARGET_SHAPE.get());output.accept(DAMAGE_EFFECT.get());output.accept(DIG_EFFECT.get());output.accept(HIGH_MANA_COMPASS.get());output.accept(WAND.get());output.accept(WOOD_STAFF.get());output.accept(IRON_STAFF.get());output.accept(DIAMOND_STAFF.get());output.accept(NETHERITE_STAFF.get());}).build());
+ public static final DeferredHolder<CreativeModeTab,CreativeModeTab> SYNTACTIC_WIZARDRY_TAB=CREATIVE_TABS.register("syntactic_wizardry",()->CreativeModeTab.builder().title(Component.translatable("itemGroup.syntacticwizardry")).icon(()->SCRIBES_LECTERN_ITEM.get().getDefaultInstance()).displayItems((parameters,output)->{output.accept(SCRIBES_LECTERN_ITEM.get());output.accept(ENCHANTED_LEATHER.get());output.accept(CLOTH_HOOD.get());output.accept(CLOTH_UPPER_ROBE.get());output.accept(CLOTH_LOWER_ROBE.get());output.accept(HEAVY_HOOD.get());output.accept(HEAVY_UPPER_ROBE.get());output.accept(HEAVY_LOWER_ROBE.get());output.accept(LEATHER_HOOD.get());output.accept(LEATHER_UPPER_ROBE.get());output.accept(LEATHER_LOWER_ROBE.get());output.accept(WIZARDS_HOOD.get());output.accept(WIZARDS_UPPER_ROBE.get());output.accept(WIZARDS_LOWER_ROBE.get());output.accept(GOLDEN_ORB_ITEM.get());output.accept(SPELL_RANDOMIZER_ITEM.get());output.accept(TEMPORARY_BLOCK_ITEM.get());output.accept(MATURE_CRYSTAL_ITEM.get());output.accept(MISSILE_SHAPE.get());output.accept(SPHERE_SHAPE.get());output.accept(BOX_SHAPE.get());output.accept(CONE_SHAPE.get());output.accept(FLOATING_SHAPE.get());output.accept(TOUCH_SHAPE.get());output.accept(TARGET_SHAPE.get());output.accept(DAMAGE_EFFECT.get());output.accept(DIG_EFFECT.get());output.accept(HIGH_MANA_COMPASS.get());output.accept(WAND.get());output.accept(WOOD_STAFF.get());output.accept(IRON_STAFF.get());output.accept(DIAMOND_STAFF.get());output.accept(NETHERITE_STAFF.get());}).build());
+ private static ArmorMaterial robeMaterial(Supplier<Ingredient> repair){
+  EnumMap<ArmorItem.Type,Integer> defense=new EnumMap<>(ArmorItem.Type.class);
+  for(ArmorItem.Type type:ArmorItem.Type.values())defense.put(type,0);
+  return new ArmorMaterial(defense,0,SoundEvents.ARMOR_EQUIP_LEATHER,repair,List.of(new ArmorMaterial.Layer(ResourceLocation.withDefaultNamespace("leather"),"",true)),0.0F,0.0F);
+ }
+ private static ArmorItem robePiece(Holder<ArmorMaterial> material,ArmorItem.Type type){return new ArmorItem(material,type,new Item.Properties());}
  private static ScribesLecternMenu createScribesLecternMenu(int id,Inventory inv,RegistryFriendlyByteBuf data){return new ScribesLecternMenu(id,inv);}
- public SyntacticWizardry(IEventBus bus){BLOCKS.register(bus);ITEMS.register(bus);ENTITIES.register(bus);BLOCK_ENTITY_TYPES.register(bus);MENUS.register(bus);CREATIVE_TABS.register(bus);}
+ public SyntacticWizardry(IEventBus bus){BLOCKS.register(bus);ARMOR_MATERIALS.register(bus);ITEMS.register(bus);ENTITIES.register(bus);BLOCK_ENTITY_TYPES.register(bus);MENUS.register(bus);CREATIVE_TABS.register(bus);}
 }

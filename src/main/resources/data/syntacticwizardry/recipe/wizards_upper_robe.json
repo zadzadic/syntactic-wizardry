@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "M M",
+    "MAM",
+    "MMM"
+  ],
+  "key": {
+    "M": {
+      "item": "syntacticwizardry:enchanted_leather"
+    },
+    "A": {
+      "item": "minecraft:amethyst_shard"
+    }
+  },
+  "result": {
+    "id": "syntacticwizardry:wizards_upper_robe",
+    "count": 1
+  }
+}

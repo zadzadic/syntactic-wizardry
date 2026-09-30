@@ -1,0 +1,17 @@
+{
+  "replace": false,
+  "values": [
+    "syntacticwizardry:cloth_hood",
+    "syntacticwizardry:cloth_upper_robe",
+    "syntacticwizardry:cloth_lower_robe",
+    "syntacticwizardry:heavy_hood",
+    "syntacticwizardry:heavy_upper_robe",
+    "syntacticwizardry:heavy_lower_robe",
+    "syntacticwizardry:leather_hood",
+    "syntacticwizardry:leather_upper_robe",
+    "syntacticwizardry:leather_lower_robe",
+    "syntacticwizardry:wizards_hood",
+    "syntacticwizardry:wizards_upper_robe",
+    "syntacticwizardry:wizards_lower_robe"
+  ]
+}
