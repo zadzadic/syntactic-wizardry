@@ -340,6 +340,7 @@ public final class RandomSpellGenerator {
                                                                   RandomSource random) {
         List<SpellComponentDefinition> candidates = new ArrayList<>();
         for (SpellComponentDefinition shape : shapes) {
+            if (previousShape != null && isFirstShapeOnly(shape)) continue;
             if (forbidTarget && shape.typeId() == SpellPresentation.TYPE_TARGET) continue;
             if (previousShape != null && previousShape.typeId() == SpellPresentation.TYPE_TARGET && !isAreaShape(shape)) continue;
             candidates.add(shape);
@@ -354,6 +355,7 @@ public final class RandomSpellGenerator {
                                                               RandomSource random) {
         List<SpellComponentDefinition> candidates = new ArrayList<>();
         for (SpellComponentDefinition shape : shapes) {
+            if (previousShape != null && isFirstShapeOnly(shape)) continue;
             if (previousShape != null && previousShape.typeId() == SpellPresentation.TYPE_TARGET && !isAreaShape(shape)) continue;
 
             int type = shape.typeId();
@@ -384,6 +386,13 @@ public final class RandomSpellGenerator {
             }
         }
         return candidates.isEmpty() ? randomEntry(shapes, random) : randomEntry(candidates, random);
+    }
+
+    private static boolean isFirstShapeOnly(SpellComponentDefinition shape) {
+        if (shape == null) return false;
+        int type = shape.typeId();
+        return type == SpellPresentation.TYPE_TOUCH
+                || type == SpellPresentation.TYPE_MISSILE;
     }
 
     private static boolean isAreaShape(SpellComponentDefinition shape) {
