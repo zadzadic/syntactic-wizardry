@@ -48,22 +48,48 @@ public final class RandomSpellGenerator {
         if (shapes.isEmpty() || effects.isEmpty()) return ItemStack.EMPTY;
 
         List<PlacedComponent> core = new ArrayList<>(composition.shapes + composition.effects);
-        int row = 0;
+        List<SpellComponentDefinition> selectedEffects = new ArrayList<>(composition.effects);
 
+        SpellComponentDefinition firstEffect = randomEntry(effects, random);
+        TargetFamily targetFamily = targetFamily(firstEffect);
+        selectedEffects.add(firstEffect);
+        while (selectedEffects.size() < composition.effects) {
+            selectedEffects.add(randomEffectForFamily(effects, targetFamily, random));
+        }
+
+        boolean requiresDirectPlayer = selectedEffects.stream()
+                .anyMatch(definition -> definition.typeId() == SpellComponents.TYPE_DIMENSIONAL_STORAGE);
+
+        int row = 0;
         SpellComponentDefinition previousShape = null;
         for (int i = 0; i < composition.shapes && row < SpellPresentation.ROWS; i++, row++) {
-            SpellComponentDefinition definition = randomShapeFor(previousShape, shapes, random);
+            boolean terminal = i == composition.shapes - 1;
+            SpellComponentDefinition definition = terminal
+                    ? randomTerminalShape(previousShape, shapes, targetFamily, requiresDirectPlayer, random)
+                    : randomIntermediateShape(previousShape, shapes, requiresDirectPlayer && i == composition.shapes - 2, random);
+
             int cell = row * SpellPresentation.COLS;
             place(plan, settings, cell, definition, tier, composition, random);
+
+            if (terminal && (definition.typeId() == SpellPresentation.TYPE_TARGET || definition.typeId() == SpellPresentation.TYPE_TOUCH)) {
+                SpellPresentation.setSetting(
+                        settings,
+                        cell,
+                        SpellPropertyKey.TARGET_TYPE,
+                        targetFamily == TargetFamily.BLOCK ? SpellPresentation.TARGET_BLOCKS : SpellPresentation.TARGET_ENTITIES
+                );
+            }
+
             core.add(new PlacedComponent(row, cell, definition));
             previousShape = definition;
         }
 
-        for (int i = 0; i < composition.effects && row < SpellPresentation.ROWS; i++, row++) {
-            SpellComponentDefinition definition = randomEntry(effects, random);
+        for (SpellComponentDefinition definition : selectedEffects) {
+            if (row >= SpellPresentation.ROWS) break;
             int cell = row * SpellPresentation.COLS;
             place(plan, settings, cell, definition, tier, composition, random);
             core.add(new PlacedComponent(row, cell, definition));
+            row++;
         }
 
         if (composition.modifiers > 0) {
@@ -153,6 +179,7 @@ public final class RandomSpellGenerator {
             int value;
             if (property.key() == SpellPropertyKey.POTENCE) {
                 value = randomPotence(tier, composition, random);
+                if (definition.typeId() == SpellComponents.TYPE_FLIGHT) value = Math.max(4, value);
             } else if (property.kind() == SpellPropertyKind.OPTIONS) {
                 value = randomOptionValue(property, random);
             } else {
@@ -307,23 +334,83 @@ public final class RandomSpellGenerator {
         return firstEffect.displayName() + " " + shapeName;
     }
 
-    private static SpellComponentDefinition randomShapeFor(SpellComponentDefinition previousShape,
-                                                           List<SpellComponentDefinition> shapes,
-                                                           RandomSource random) {
-        if (previousShape == null || previousShape.typeId() != SpellPresentation.TYPE_TARGET) {
-            return randomEntry(shapes, random);
-        }
-
-        List<SpellComponentDefinition> areaShapes = new ArrayList<>();
+    private static SpellComponentDefinition randomIntermediateShape(SpellComponentDefinition previousShape,
+                                                                  List<SpellComponentDefinition> shapes,
+                                                                  boolean forbidTarget,
+                                                                  RandomSource random) {
+        List<SpellComponentDefinition> candidates = new ArrayList<>();
         for (SpellComponentDefinition shape : shapes) {
+            if (forbidTarget && shape.typeId() == SpellPresentation.TYPE_TARGET) continue;
+            if (previousShape != null && previousShape.typeId() == SpellPresentation.TYPE_TARGET && !isAreaShape(shape)) continue;
+            candidates.add(shape);
+        }
+        return candidates.isEmpty() ? randomEntry(shapes, random) : randomEntry(candidates, random);
+    }
+
+    private static SpellComponentDefinition randomTerminalShape(SpellComponentDefinition previousShape,
+                                                              List<SpellComponentDefinition> shapes,
+                                                              TargetFamily family,
+                                                              boolean requiresDirectPlayer,
+                                                              RandomSource random) {
+        List<SpellComponentDefinition> candidates = new ArrayList<>();
+        for (SpellComponentDefinition shape : shapes) {
+            if (previousShape != null && previousShape.typeId() == SpellPresentation.TYPE_TARGET && !isAreaShape(shape)) continue;
+
             int type = shape.typeId();
-            if (type == SpellPresentation.TYPE_SPHERE
-                    || type == SpellPresentation.TYPE_BOX
-                    || type == SpellPresentation.TYPE_CONE) {
-                areaShapes.add(shape);
+            if (requiresDirectPlayer) {
+                if (type == SpellComponents.TYPE_SELF
+                        || type == SpellPresentation.TYPE_TARGET
+                        || type == SpellPresentation.TYPE_TOUCH
+                        || type == SpellComponents.TYPE_RUNE) {
+                    candidates.add(shape);
+                }
+                continue;
+            }
+
+            if (family == TargetFamily.BLOCK) {
+                if (type == SpellPresentation.TYPE_TARGET
+                        || type == SpellPresentation.TYPE_TOUCH
+                        || isAreaShape(shape)) {
+                    candidates.add(shape);
+                }
+            } else {
+                if (type == SpellComponents.TYPE_SELF
+                        || type == SpellPresentation.TYPE_TARGET
+                        || type == SpellPresentation.TYPE_TOUCH
+                        || type == SpellComponents.TYPE_RUNE
+                        || isAreaShape(shape)) {
+                    candidates.add(shape);
+                }
             }
         }
-        return areaShapes.isEmpty() ? randomEntry(shapes, random) : randomEntry(areaShapes, random);
+        return candidates.isEmpty() ? randomEntry(shapes, random) : randomEntry(candidates, random);
+    }
+
+    private static boolean isAreaShape(SpellComponentDefinition shape) {
+        if (shape == null) return false;
+        int type = shape.typeId();
+        return type == SpellPresentation.TYPE_SPHERE
+                || type == SpellPresentation.TYPE_BOX
+                || type == SpellPresentation.TYPE_CONE;
+    }
+
+    private static TargetFamily targetFamily(SpellComponentDefinition effect) {
+        int type = effect.typeId();
+        return type == SpellPresentation.TYPE_DIG
+                || type == SpellComponents.TYPE_TEMPORARY_BLOCK
+                || type == SpellComponents.TYPE_MARK
+                ? TargetFamily.BLOCK
+                : TargetFamily.ENTITY;
+    }
+
+    private static SpellComponentDefinition randomEffectForFamily(List<SpellComponentDefinition> effects,
+                                                                  TargetFamily family,
+                                                                  RandomSource random) {
+        List<SpellComponentDefinition> candidates = new ArrayList<>();
+        for (SpellComponentDefinition effect : effects) {
+            if (targetFamily(effect) == family) candidates.add(effect);
+        }
+        return candidates.isEmpty() ? randomEntry(effects, random) : randomEntry(candidates, random);
     }
 
     private static int between(RandomSource random, int min, int max) {
@@ -333,6 +420,8 @@ public final class RandomSpellGenerator {
     private static <T> T randomEntry(List<T> values, RandomSource random) {
         return values.get(random.nextInt(values.size()));
     }
+
+    private enum TargetFamily { ENTITY, BLOCK }
 
     private record Composition(int shapes, int effects, int modifiers) {}
     private record PlacedComponent(int row, int cell, SpellComponentDefinition definition) {}
