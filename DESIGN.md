@@ -203,7 +203,6 @@ The current component ids are:
 | 4 | Damage | Effect |
 | 5 | Target | Shape |
 | 6 | Cone | Shape |
-| 7 | Floating | Shape |
 | 8 | Touch | Shape |
 | 9 | Dig | Effect |
 | 10 | Channel | Modifier |
@@ -335,7 +334,6 @@ Box uses the inherited surface normal when one exists.
 
 Otherwise Box uses cast yaw.
 
-Floating uses the Shape direction and creates radial force semantics for downstream force effects.
 
 Root area Shapes use an area origin shifted one block along the horizontal cast yaw.
 
@@ -446,20 +444,6 @@ Depth ranges from 1 to 10.
 It generates a discrete layered cone oriented from the current Shape frame.
 
 Cone supports the Default Style and current Visual set.
-
-### Floating
-
-Floating resolves a point in space without requiring a solid target.
-
-Distance ranges from 1 to 32 blocks.
-
-The point is placed along the current Shape direction.
-
-Floating returns `RADIAL` vector policy.
-
-Downstream radial effects therefore use the Floating point as their origin.
-
-Floating does not expose Style or Visual controls.
 
 ### Touch
 
