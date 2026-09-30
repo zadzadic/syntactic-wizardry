@@ -39,6 +39,7 @@ public final class SyntacticWizardry {
  private static final DeferredRegister.Blocks BLOCKS=DeferredRegister.createBlocks(MOD_ID);
  private static final DeferredRegister.Items ITEMS=DeferredRegister.createItems(MOD_ID);
  private static final DeferredRegister<ArmorMaterial> ARMOR_MATERIALS=DeferredRegister.create(Registries.ARMOR_MATERIAL,MOD_ID);
+ public static final DeferredItem<Item> ENCHANTED_LEATHER=ITEMS.register("enchanted_leather",()->new Item(new Item.Properties()));
  private static final DeferredRegister<EntityType<?>> ENTITIES=DeferredRegister.create(Registries.ENTITY_TYPE,MOD_ID);
  private static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITY_TYPES=DeferredRegister.create(Registries.BLOCK_ENTITY_TYPE,MOD_ID);
  private static final DeferredRegister<MenuType<?>> MENUS=DeferredRegister.create(Registries.MENU,MOD_ID);
@@ -69,7 +70,6 @@ public final class SyntacticWizardry {
  public static final DeferredBlock<Block> POWER_CORE_CRYSTAL=BLOCKS.register("power_core_crystal",()->new Block(Block.Properties.of().strength(2.0F).noOcclusion().noLootTable()));
  public static final DeferredHolder<BlockEntityType<?>,BlockEntityType<RuneBlockEntity>> RUNE_BLOCK_ENTITY=BLOCK_ENTITY_TYPES.register("rune",()->BlockEntityType.Builder.of(RuneBlockEntity::new,RUNE_BLOCK.get()).build(null));
 
- public static final DeferredItem<Item> ENCHANTED_LEATHER=ITEMS.register("enchanted_leather",()->new Item(new Item.Properties()));
  public static final DeferredItem<ArmorItem> CLOTH_HOOD=ITEMS.register("cloth_hood",()->robePiece(CLOTH_ARMOR_MATERIAL,ArmorItem.Type.HELMET));
  public static final DeferredItem<ArmorItem> CLOTH_UPPER_ROBE=ITEMS.register("cloth_upper_robe",()->robePiece(CLOTH_ARMOR_MATERIAL,ArmorItem.Type.CHESTPLATE));
  public static final DeferredItem<ArmorItem> CLOTH_LOWER_ROBE=ITEMS.register("cloth_lower_robe",()->robePiece(CLOTH_ARMOR_MATERIAL,ArmorItem.Type.LEGGINGS));
