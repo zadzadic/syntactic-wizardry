@@ -13,9 +13,9 @@ public final class AlterEffect {
 
     private AlterEffect() {}
 
-    public static void apply(ServerLevel level, ShapeResolution resolution, int strength, int speed, int toughness, int durationExtensionTicks) {
+    public static void apply(ServerLevel level, net.minecraft.world.entity.Entity owner, ShapeResolution resolution, int strength, int speed, int toughness, int durationExtensionTicks, boolean excludeCaster) {
         int duration = BASE_DURATION_TICKS + Math.max(0, durationExtensionTicks);
-        for (LivingEntity living : ResolvedTargets.living(level, resolution)) {
+        for (LivingEntity living : ResolvedTargets.living(level, resolution, excludeCaster ? owner : null)) {
             applyStrength(living, strength, duration);
             applySpeed(living, speed, duration);
             applyToughness(living, toughness, duration);
