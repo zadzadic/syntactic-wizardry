@@ -240,7 +240,11 @@ public final class SpellComponents {
  private static final class RuneDefinition extends BaseDefinition {
   RuneDefinition(){super(TYPE_RUNE,"Rune",true,SpellPresentation.STYLE_DEFAULT,SpellPresentation.VISUAL_DEFAULT,List.of(),false,List.of());}
   @Override public ItemStack createEditorIcon(){return Items.ENCHANTED_BOOK.getDefaultInstance();}
-  @Override public ComponentExecutionResult execute(SpellExecutionContext context){RuneShape.place(context);return ComponentExecutionResult.spawned();}
+  @Override public ComponentExecutionResult execute(SpellExecutionContext context){
+   boolean placed=RuneShape.place(context);
+   if(!placed&&context.owner() instanceof net.minecraft.world.entity.player.Player player)player.displayClientMessage(net.minecraft.network.chat.Component.literal("Rune requires a nearby valid surface."),true);
+   return ComponentExecutionResult.spawned();
+  }
  }
  private static final class ChannelDefinition extends BaseDefinition {
   ChannelDefinition(){super(TYPE_CHANNEL,"Channel",false,0,0,List.of(),false,List.of());}

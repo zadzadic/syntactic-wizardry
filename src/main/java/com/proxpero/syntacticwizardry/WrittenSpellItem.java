@@ -79,6 +79,7 @@ public final class WrittenSpellItem extends Item {
    float spellCost=SpellPresentation.readSpellCost(stack);
    if(!player.isCreative()&&!ManaService.tryConsume(player,spellCost)){
     if(sustained)player.stopUsingItem();
+    player.displayClientMessage(Component.literal("Not enough Mana. Need "+formatCost(spellCost)+", have "+formatCost(ManaService.getMana(player))+"."),true);
     return InteractionResultHolder.fail(stack);
    }
    player.getCooldowns().addCooldown(this,CAST_COOLDOWN_TICKS);
