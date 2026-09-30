@@ -50,11 +50,13 @@ public final class RandomSpellGenerator {
         List<PlacedComponent> core = new ArrayList<>(composition.shapes + composition.effects);
         List<SpellComponentDefinition> selectedEffects = new ArrayList<>(composition.effects);
 
-        SpellComponentDefinition firstEffect = randomEntry(effects, random);
+        SpellComponentDefinition firstEffect = composition.effects == 1
+                ? randomEntry(effects, random)
+                : randomEffectExcludingDimensionalStorage(effects, random);
         TargetFamily targetFamily = targetFamily(firstEffect);
         selectedEffects.add(firstEffect);
         while (selectedEffects.size() < composition.effects) {
-            selectedEffects.add(randomEffectForFamily(effects, targetFamily, random));
+            selectedEffects.add(randomEffectForFamily(effects, targetFamily, true, random));
         }
 
         boolean requiresDirectPlayer = selectedEffects.stream()
@@ -341,8 +343,7 @@ public final class RandomSpellGenerator {
         List<SpellComponentDefinition> candidates = new ArrayList<>();
         for (SpellComponentDefinition shape : shapes) {
             if (previousShape != null && isFirstShapeOnly(shape)) continue;
-            if (forbidTarget && shape.typeId() == SpellPresentation.TYPE_TARGET) continue;
-            if (previousShape != null && previousShape.typeId() == SpellPresentation.TYPE_TARGET && !isAreaShape(shape)) continue;
+            if (shape.typeId() == SpellPresentation.TYPE_TARGET) continue;
             candidates.add(shape);
         }
         return candidates.isEmpty() ? randomEntry(shapes, random) : randomEntry(candidates, random);
@@ -355,8 +356,8 @@ public final class RandomSpellGenerator {
                                                               RandomSource random) {
         List<SpellComponentDefinition> candidates = new ArrayList<>();
         for (SpellComponentDefinition shape : shapes) {
+            if (previousShape != null && previousShape.typeId() == SpellPresentation.TYPE_TARGET) continue;
             if (previousShape != null && isFirstShapeOnly(shape)) continue;
-            if (previousShape != null && previousShape.typeId() == SpellPresentation.TYPE_TARGET && !isAreaShape(shape)) continue;
 
             int type = shape.typeId();
             if (requiresDirectPlayer) {
@@ -414,10 +415,21 @@ public final class RandomSpellGenerator {
 
     private static SpellComponentDefinition randomEffectForFamily(List<SpellComponentDefinition> effects,
                                                                   TargetFamily family,
+                                                                  boolean excludeDimensionalStorage,
                                                                   RandomSource random) {
         List<SpellComponentDefinition> candidates = new ArrayList<>();
         for (SpellComponentDefinition effect : effects) {
+            if (excludeDimensionalStorage && effect.typeId() == SpellComponents.TYPE_DIMENSIONAL_STORAGE) continue;
             if (targetFamily(effect) == family) candidates.add(effect);
+        }
+        return candidates.isEmpty() ? randomEffectExcludingDimensionalStorage(effects, random) : randomEntry(candidates, random);
+    }
+
+    private static SpellComponentDefinition randomEffectExcludingDimensionalStorage(List<SpellComponentDefinition> effects,
+                                                                                     RandomSource random) {
+        List<SpellComponentDefinition> candidates = new ArrayList<>();
+        for (SpellComponentDefinition effect : effects) {
+            if (effect.typeId() != SpellComponents.TYPE_DIMENSIONAL_STORAGE) candidates.add(effect);
         }
         return candidates.isEmpty() ? randomEntry(effects, random) : randomEntry(candidates, random);
     }
