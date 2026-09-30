@@ -7,7 +7,7 @@ import net.minecraft.world.entity.Entity;
 public final class MoveEffect {
     private MoveEffect() {}
 
-    public static void apply(ServerLevel level, Entity owner, ShapeResolution resolution, int targetType, int mode, int potence) {
-        ForceService.apply(level, owner, resolution, targetType, mode, potence);
+    public static void apply(ServerLevel level, Entity owner, ShapeResolution resolution, int targetType, int mode, int potence, boolean excludeCaster) {
+        ForceService.apply(level, owner, resolution, targetType, mode, potence, excludeCaster);
     }
 }
