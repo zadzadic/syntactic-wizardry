@@ -70,9 +70,9 @@ public final class SyntacticWizardry {
  public static final DeferredBlock<Block> POWER_CORE_CRYSTAL=BLOCKS.register("power_core_crystal",()->new Block(Block.Properties.of().strength(2.0F).noOcclusion().noLootTable()));
  public static final DeferredHolder<BlockEntityType<?>,BlockEntityType<RuneBlockEntity>> RUNE_BLOCK_ENTITY=BLOCK_ENTITY_TYPES.register("rune",()->BlockEntityType.Builder.of(RuneBlockEntity::new,RUNE_BLOCK.get()).build(null));
 
- public static final DeferredItem<ArmorItem> CLOTH_HOOD=ITEMS.register("cloth_hood",()->robePiece(CLOTH_ARMOR_MATERIAL,ArmorItem.Type.HELMET));
- public static final DeferredItem<ArmorItem> CLOTH_UPPER_ROBE=ITEMS.register("cloth_upper_robe",()->robePiece(CLOTH_ARMOR_MATERIAL,ArmorItem.Type.CHESTPLATE));
- public static final DeferredItem<ArmorItem> CLOTH_LOWER_ROBE=ITEMS.register("cloth_lower_robe",()->robePiece(CLOTH_ARMOR_MATERIAL,ArmorItem.Type.LEGGINGS));
+ public static final DeferredItem<ClothRobeArmorItem> CLOTH_HOOD=ITEMS.register("cloth_hood",()->new ClothRobeArmorItem(CLOTH_ARMOR_MATERIAL,ArmorItem.Type.HELMET,new Item.Properties()));
+ public static final DeferredItem<ClothRobeArmorItem> CLOTH_UPPER_ROBE=ITEMS.register("cloth_upper_robe",()->new ClothRobeArmorItem(CLOTH_ARMOR_MATERIAL,ArmorItem.Type.CHESTPLATE,new Item.Properties()));
+ public static final DeferredItem<ClothRobeArmorItem> CLOTH_LOWER_ROBE=ITEMS.register("cloth_lower_robe",()->new ClothRobeArmorItem(CLOTH_ARMOR_MATERIAL,ArmorItem.Type.LEGGINGS,new Item.Properties()));
  public static final DeferredItem<ArmorItem> HEAVY_HOOD=ITEMS.register("heavy_hood",()->robePiece(HEAVY_ARMOR_MATERIAL,ArmorItem.Type.HELMET));
  public static final DeferredItem<ArmorItem> HEAVY_UPPER_ROBE=ITEMS.register("heavy_upper_robe",()->robePiece(HEAVY_ARMOR_MATERIAL,ArmorItem.Type.CHESTPLATE));
  public static final DeferredItem<ArmorItem> HEAVY_LOWER_ROBE=ITEMS.register("heavy_lower_robe",()->robePiece(HEAVY_ARMOR_MATERIAL,ArmorItem.Type.LEGGINGS));
