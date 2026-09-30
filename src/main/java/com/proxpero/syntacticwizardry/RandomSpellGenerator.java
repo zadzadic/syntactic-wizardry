@@ -187,7 +187,7 @@ public final class RandomSpellGenerator {
             case WIZARD -> 5;
             case MASTER -> 6;
         };
-        if (complexity <= tierMaximum - 2) {
+        if (complexity < tierMaximum) {
             return Math.max(first, between(random, min, max));
         }
         return first;
