@@ -34,10 +34,10 @@ public final class CarvingStationMenu extends AbstractContainerMenu {
     public static int actionClear(int cell){return ACTION_CLEAR_BASE+cell;}
     public static int actionMove(int from,int to){return ACTION_MOVE_BASE+from*MAX_CELLS+to;}
     public ItemStack runestone(){return station.getItem(0);}
-    public int faces(){return RunestoneItem.faces(runestone());}
+    public int slots(){return RunestoneItem.slots(runestone());}
     public boolean carved(){return RunestoneItem.isRunestone(runestone())&&RunestoneItem.isCarved(runestone());}
     public int typeAt(int cell){return cell>=0&&cell<MAX_CELLS?data.get(cell):0;}
-    public int activeCells(){return faces()*3;}
+    public int activeCells(){return slots();}
     private boolean validCell(int cell){return cell>=0&&cell<activeCells();}
     private boolean editable(){return RunestoneItem.isRunestone(runestone())&&!carved();}
     private boolean allowedType(int type){

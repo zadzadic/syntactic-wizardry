@@ -46,12 +46,15 @@ public final class CarvingStationScreen extends AbstractContainerScreen<CarvingS
         slotFrame(g,x+43,y+60);
         slotFrame(g,x+67,y+60);
         for(int c=0;c<9;c++)slotFrame(g,x+79+c*18,y+203);
-        int faces=menu.faces();
-        if(faces>0){
-            g.drawString(font,"Faces: "+faces,x+18,y+110,0xFFE8F2FF,false);
+        int slots=menu.slots();
+        if(slots>0){
+            g.drawString(font,"Slots: "+slots,x+18,y+110,0xFFE8F2FF,false);
             g.drawString(font,menu.carved()?"LOCKED":"Uncarved",x+18,y+124,menu.carved()?0xFFFF7777:0xFF9FE6A0,false);
-            for(int row=0;row<3;row++)for(int col=0;col<faces;col++){
-                int cell=row*faces+col,sx=x+GRID_X+col*STEP,sy=y+GRID_Y+row*STEP;
+            int totalWidth=slots*STEP-2;
+            int startX=x+154-totalWidth/2;
+            int sy=y+GRID_Y+STEP;
+            for(int cell=0;cell<slots;cell++){
+                int sx=startX+cell*STEP;
                 gridCell(g,sx,sy);
                 int type=menu.typeAt(cell);
                 if(type!=0){
@@ -67,7 +70,7 @@ public final class CarvingStationScreen extends AbstractContainerScreen<CarvingS
             int col=i%4,row=i/4,sx=x+220+col*21,sy=y+52+row*21;
             g.fill(sx,sy,sx+16,sy+16,0xFF2A3B55);g.renderItem(list.get(i).createEditorIcon(),sx,sy);
         }
-        carveButton.active=faces>0&&!menu.carved();
+        carveButton.active=slots>0&&!menu.carved();
         formButton.active=menu.runestone().isEmpty();
     }
 
@@ -95,11 +98,14 @@ public final class CarvingStationScreen extends AbstractContainerScreen<CarvingS
     private void tab(GuiGraphics g,int x,int y,int w,String text,boolean active){g.fill(x,y,x+w,y+16,active?0xFF36587A:0xB02A3B55);g.drawCenteredString(font,text,x+w/2,y+4,0xFFE8F2FF);}
 
     private int gridCellAt(double mx,double my){
-        int faces=menu.faces();
-        if(faces<=0)return -1;
+        int slots=menu.slots();
+        if(slots<=0)return -1;
         int x=leftPos,y=topPos;
-        for(int row=0;row<3;row++)for(int col=0;col<faces;col++){
-            int cell=row*faces+col,sx=x+GRID_X+col*STEP,sy=y+GRID_Y+row*STEP;
+        int totalWidth=slots*STEP-2;
+        int startX=x+154-totalWidth/2;
+        int sy=y+GRID_Y+STEP;
+        for(int cell=0;cell<slots;cell++){
+            int sx=startX+cell*STEP;
             if(mx>=sx&&mx<sx+CELL&&my>=sy&&my<sy+CELL)return cell;
         }
         return -1;
