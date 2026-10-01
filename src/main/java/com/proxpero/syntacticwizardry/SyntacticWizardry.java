@@ -121,7 +121,7 @@ public final class SyntacticWizardry {
   defense.put(ArmorItem.Type.LEGGINGS,leggings);
   defense.put(ArmorItem.Type.BOOTS,boots);
   defense.put(ArmorItem.Type.BODY,0);
-  return new ArmorMaterial(defense,0,SoundEvents.ARMOR_EQUIP_LEATHER,repair,List.of(new ArmorMaterial.Layer(ResourceLocation.withDefaultNamespace("leather"),"",true)),0.0F,0.0F);
+  return new ArmorMaterial(defense,15,SoundEvents.ARMOR_EQUIP_LEATHER,repair,List.of(new ArmorMaterial.Layer(ResourceLocation.withDefaultNamespace("leather"),"",true)),0.0F,0.0F);
  }
  private static ArmorItem robePiece(Holder<ArmorMaterial> material,ArmorItem.Type type,float spellDiscount){return new RobeArmorItem(material,type,new Item.Properties().durability(type.getDurability(5)),spellDiscount);}
  private static ScribesLecternMenu createScribesLecternMenu(int id,Inventory inv,RegistryFriendlyByteBuf data){return new ScribesLecternMenu(id,inv);}
