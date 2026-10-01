@@ -1080,3 +1080,36 @@ Dungeon spell tier weights are 60% Apprentice, 25% Initiate, 12% Wizard, and 3% 
 Supported loot tables include simple dungeons, abandoned mineshafts, desert pyramids, jungle temples, woodland mansions, Nether fortresses, End cities, ancient cities, underwater ruins, strongholds, bastions, and trial chambers.
 
 All generated loot spells use RandomSpellGenerator and therefore follow the same spell grammar and tier rules as the Spell Randomizer.
+
+
+### Carving Station UI
+
+The Carving Station is divided into three visually distinct panels.
+
+The left panel is Runestone creation and input.
+
+The center panel is the carving grid.
+
+The right panel is the Shape and Effect component palette.
+
+Panel boundaries use explicit borders and vertical separators.
+
+All real inventory and station slots are drawn with visible slot borders.
+
+The three Runestone-forming ingredient slots are order-independent.
+
+Iron Ingot + Iron Pickaxe + Red Dye forms an Iron Runestone regardless of ingredient slot order.
+
+Gold Ingot + Golden Pickaxe + Red Dye forms a Gold Runestone regardless of ingredient slot order.
+
+Diamond + Diamond Pickaxe + Red Dye forms a Diamond Runestone regardless of ingredient slot order.
+
+Spell components are placed by dragging from the component palette onto a carving-grid cell.
+
+Existing carving-grid components may be dragged between cells before carving.
+
+Dropping an existing component onto another occupied carving cell swaps the two components.
+
+Right-clicking a carving-grid cell clears it.
+
+The Carve action remains unavailable once a Runestone has been carved.
