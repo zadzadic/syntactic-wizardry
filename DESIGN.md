@@ -1030,7 +1030,7 @@ The robe discount is applied after any focus-specific Mana multiplier.
 
 Casting Experience continues to use the raw undiscounted spell cost.
 
-All robe families use Leather-tier enchantability.
+All robe families use Gold-tier enchantability.
 
 For gameplay enchantment queries, every enchantment present on a robe is treated as one level higher.
 
