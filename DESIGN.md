@@ -1134,3 +1134,36 @@ Diamond Runestone: 5 slots.
 The Carving Station renders only those active slots.
 
 The previous three-row-by-face grid model is removed.
+
+
+## Runecasters
+
+Runecasters are staff-length magical foci.
+
+Their held model is approximately the length of the player.
+
+Four visual material variants exist: Wood, Iron, Diamond, and Netherite.
+
+All Runecasters deal exactly 1 point of melee attack damage before other external modifiers.
+
+Runecasters use the same 50% mana multiplier as Staves.
+
+Shift-right-click opens the Runecaster mounting interface.
+
+A Runecaster has one mounted Rune slot.
+
+Only carved Runestones can be mounted.
+
+The mounted Runestone's carving row is interpreted from left to right as a spell sequence.
+
+Each non-empty Runestone slot becomes one spell row.
+
+Runestone components use their normal default Style, Visual, and property values when cast from a Runecaster.
+
+The mounted Rune must begin with a Shape.
+
+Right-click casts the mounted Rune using the normal spell runtime.
+
+Channel and Stream behavior, mana consumption, cooldowns, and robe mana discounts are handled the same way as Staff casting.
+
+The Runestone itself is preserved while mounted and can be removed through the mounting interface.
