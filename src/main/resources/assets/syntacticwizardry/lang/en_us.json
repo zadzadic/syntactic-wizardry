@@ -58,5 +58,10 @@
   "item.syntacticwizardry.diamond_runestone": "Diamond Runestone",
   "block.syntacticwizardry.carving_station": "Carving Station",
   "item.syntacticwizardry.carving_station": "Carving Station",
-  "menu.syntacticwizardry.carving_station": "Carving Station"
+  "menu.syntacticwizardry.carving_station": "Carving Station",
+  "item.syntacticwizardry.wood_runecaster": "Wood Runecaster",
+  "item.syntacticwizardry.iron_runecaster": "Iron Runecaster",
+  "item.syntacticwizardry.diamond_runecaster": "Diamond Runecaster",
+  "item.syntacticwizardry.netherite_runecaster": "Netherite Runecaster",
+  "menu.syntacticwizardry.runecaster": "Runecaster"
 }
