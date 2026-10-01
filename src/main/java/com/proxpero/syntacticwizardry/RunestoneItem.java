@@ -11,11 +11,11 @@ import java.util.List;
 
 public final class RunestoneItem extends Item {
     public static final int MAX_CELLS=15;
-    private final int faces;
-    public RunestoneItem(Properties properties,int faces){super(properties);this.faces=Math.max(2,Math.min(5,faces));}
-    public int faces(){return faces;}
+    private final int slots;
+    public RunestoneItem(Properties properties,int slots){super(properties);this.slots=Math.max(2,Math.min(5,slots));}
+    public int slots(){return slots;}
     public static boolean isRunestone(ItemStack stack){return stack!=null&&!stack.isEmpty()&&stack.getItem() instanceof RunestoneItem;}
-    public static int faces(ItemStack stack){return stack!=null&&stack.getItem() instanceof RunestoneItem item?item.faces():0;}
+    public static int slots(ItemStack stack){return stack!=null&&stack.getItem() instanceof RunestoneItem item?item.slots():0;}
     public static boolean isCarved(ItemStack stack){return stack.getOrDefault(DataComponents.CUSTOM_DATA,CustomData.EMPTY).copyTag().getBoolean("sw_runestone_carved");}
     public static int[] cells(ItemStack stack){
         int[] out=new int[MAX_CELLS];
@@ -30,7 +30,7 @@ public final class RunestoneItem extends Item {
     }
     @Override public void appendHoverText(ItemStack stack,TooltipContext context,List<Component> tooltip,TooltipFlag flag){
         super.appendHoverText(stack,context,tooltip,flag);
-        tooltip.add(Component.literal("Faces: "+faces));
+        tooltip.add(Component.literal("Slots: "+slots));
         tooltip.add(Component.literal(isCarved(stack)?"Carved":"Uncarved"));
     }
 }
