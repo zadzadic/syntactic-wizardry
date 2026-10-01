@@ -39,7 +39,7 @@ public abstract class RunecasterItemRenderMixin {
         poseStack.pushPose();
 
         // Match the Runecaster's first-person model transform.
-        poseStack.translate((left ? 24.0D : -24.0D) / 16.0D, 1.0D / 16.0D, 0.0D);
+        poseStack.translate((left ? -24.0D : 24.0D) / 16.0D, 1.0D / 16.0D, 0.0D);
         poseStack.mulPose(Axis.YP.rotationDegrees(left ? 90.0F : -90.0F));
         poseStack.scale(0.9F, 0.9F, 0.9F);
 
