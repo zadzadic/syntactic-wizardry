@@ -63,7 +63,7 @@ public class MagicFocusItem extends Item {
         if (sustained) player.startUsingItem(hand);
 
         if (!level.isClientSide && level instanceof ServerLevel server) {
-            float spellCost = SpellPresentation.readSpellCost(spell);
+            float spellCost = RobeArmorSupport.discountedManaCost(player, SpellPresentation.readSpellCost(spell));
             float rawSpellCost = SpellPresentation.readSpellCost(rawSpell);
             if (!player.isCreative() && !ManaService.tryConsume(player, spellCost, rawSpellCost)) {
                 if (sustained) player.stopUsingItem();
@@ -100,7 +100,7 @@ public class MagicFocusItem extends Item {
         int duration = getUseDuration(focus, entity);
         int elapsed = duration - remainingUseDuration;
         if (elapsed > 0 && elapsed % WrittenSpellItem.SUSTAINED_MANA_INTERVAL_TICKS == 0 && entity instanceof Player player && !player.isCreative()) {
-            float sustainedCost = SpellPresentation.readSustainedCost(spell);
+            float sustainedCost = RobeArmorSupport.discountedManaCost(player, SpellPresentation.readSustainedCost(spell));
             float rawSustainedCost = SpellPresentation.readSustainedCost(rawSpell);
             if (sustainedCost > 0.0F && !ManaService.tryConsume(player, sustainedCost, rawSustainedCost)) {
                 entity.stopUsingItem();
