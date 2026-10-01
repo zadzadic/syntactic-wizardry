@@ -33,6 +33,7 @@ public final class SpellComponents {
  public static final int TYPE_PIERCING=32;
  public static final int TYPE_HOMING=33;
  public static final int TYPE_EXCLUDE_CASTER=34;
+ public static final int TYPE_LIGHT=35;
  private static final SpellPropertyDefinition RADIUS_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.RADIUS,"Radius",SpellPropertyKind.STEPPER,SpellPresentation.RADIUS_MIN,SpellPresentation.RADIUS_MAX,SpellPresentation.RADIUS_DEFAULT,Integer::toString);
  private static final SpellPropertyDefinition SPHERE_MODE_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.SPHERE_MODE,"Shape",SpellPropertyKind.OPTIONS,0,SpellPresentation.SPHERE_MODE_COUNT-1,SpellPresentation.SPHERE_MODE_DEFAULT,SpellPresentation::sphereModeName);
  private static final SpellPropertyDefinition POTENCE_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.POTENCE,"Potence",SpellPropertyKind.STEPPER,SpellPresentation.POTENCE_MIN,SpellPresentation.POTENCE_MAX,SpellPresentation.POTENCE_DEFAULT,Integer::toString);
@@ -60,7 +61,7 @@ public final class SpellComponents {
  private static final SpellPropertyDefinition TELEPORT_MODE_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.TELEPORT_MODE,"Mode",SpellPropertyKind.OPTIONS,0,SpellPresentation.TELEPORT_MODE_COUNT-1,SpellPresentation.TELEPORT_MODE_DEFAULT,SpellPresentation::teleportModeName);
  private static final SpellPropertyDefinition RANGE_VALUE_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.RANGE_VALUE,"Range",SpellPropertyKind.STEPPER,SpellPresentation.RANGE_VALUE_MIN,SpellPresentation.RANGE_VALUE_MAX,SpellPresentation.RANGE_VALUE_DEFAULT,SpellComponents::rangeValueLabel);
  private static final SpellPropertyDefinition SPLIT_PATTERN_PROPERTY=new SpellPropertyDefinition(SpellPropertyKey.SPLIT_PATTERN,"Pattern",SpellPropertyKind.OPTIONS,0,SpellPresentation.SPLIT_PATTERN_COUNT-1,SpellPresentation.SPLIT_PATTERN_DEFAULT,SpellPresentation::splitPatternName);
- private static final List<SpellComponentDefinition> ALL=List.of(new MissileDefinition(),new ChainDefinition(),new SphereDefinition(),new BoxDefinition(),new ConeDefinition(),new TouchDefinition(),new TargetDefinition(),new DamageDefinition(),new DigDefinition(),new RestoreDefinition(),new MoveDefinition(),new SiphonDefinition(),new GravityDefinition(),new AlterDefinition(),new FlightDefinition(),new DimensionalStorageDefinition(),new TeleportationDefinition(),new MarkDefinition(),new ProtectionDefinition(),new TemporaryBlockDefinition(),new SelfDefinition(),new RelativeDefinition(),new RuneDefinition(),new ChannelDefinition(),new StreamDefinition(),new DurationDefinition(),new BlockInteractionDefinition(),new RangeDefinition(),new SplitDefinition(),new RicochetDefinition(),new PiercingDefinition(),new HomingDefinition(),new ExcludeCasterDefinition());
+ private static final List<SpellComponentDefinition> ALL=List.of(new MissileDefinition(),new ChainDefinition(),new SphereDefinition(),new BoxDefinition(),new ConeDefinition(),new TouchDefinition(),new TargetDefinition(),new DamageDefinition(),new DigDefinition(),new RestoreDefinition(),new MoveDefinition(),new SiphonDefinition(),new GravityDefinition(),new AlterDefinition(),new FlightDefinition(),new DimensionalStorageDefinition(),new TeleportationDefinition(),new MarkDefinition(),new ProtectionDefinition(),new TemporaryBlockDefinition(),new LightDefinition(),new SelfDefinition(),new RelativeDefinition(),new RuneDefinition(),new ChannelDefinition(),new StreamDefinition(),new DurationDefinition(),new BlockInteractionDefinition(),new RangeDefinition(),new SplitDefinition(),new RicochetDefinition(),new PiercingDefinition(),new HomingDefinition(),new ExcludeCasterDefinition());
  private static final Map<Integer,SpellComponentDefinition> BY_TYPE=ALL.stream().collect(Collectors.toUnmodifiableMap(SpellComponentDefinition::typeId,Function.identity()));
  private static final List<SpellComponentDefinition> SHAPES=ALL.stream().filter(SpellComponentDefinition::isShape).toList();
  private static final List<SpellComponentDefinition> EFFECTS=ALL.stream().filter(SpellComponents::isEffect).toList();
@@ -219,6 +220,13 @@ public final class SpellComponents {
   @Override public ItemStack createEditorIcon(){return SyntacticWizardry.TEMPORARY_BLOCK_ITEM.get().getDefaultInstance();}
   @Override public EffectReplayPolicy replayPolicy(){return EffectReplayPolicy.CREATE_ONCE;}
   @Override public ComponentExecutionResult execute(SpellExecutionContext context){TemporaryBlockEffect.apply(context.level(),context.parent(),context.activeDurationTicks());return ComponentExecutionResult.NONE;}
+ }
+ private static final class LightDefinition extends BaseDefinition {
+  LightDefinition(){super(TYPE_LIGHT,"Light",false,0,0,List.of(),false,List.of());}
+  @Override public ItemStack createEditorIcon(){return MagicLightRegistry.item()==null?Items.GLOWSTONE.getDefaultInstance():MagicLightRegistry.item().getDefaultInstance();}
+  @Override public boolean acceptsDirectEntity(Entity entity){return entity!=null&&!entity.isRemoved();}
+  @Override public EffectReplayPolicy replayPolicy(){return EffectReplayPolicy.CREATE_ONCE;}
+  @Override public ComponentExecutionResult execute(SpellExecutionContext context){LightEffect.apply(context);return ComponentExecutionResult.NONE;}
  }
  private static final class SelfDefinition extends BaseDefinition {
   SelfDefinition(){super(TYPE_SELF,"Self",true,SpellPresentation.STYLE_DEFAULT,SpellPresentation.VISUAL_DEFAULT,List.of(),false,List.of());}
