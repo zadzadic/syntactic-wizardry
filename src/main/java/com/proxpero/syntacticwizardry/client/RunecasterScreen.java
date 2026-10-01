@@ -9,35 +9,40 @@ import net.minecraft.world.entity.player.Inventory;
 public final class RunecasterScreen extends AbstractContainerScreen<RunecasterMenu> {
     public RunecasterScreen(RunecasterMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
-        imageWidth = RunecasterMenu.WIDTH;
-        imageHeight = RunecasterMenu.HEIGHT;
-        inventoryLabelY = 73;
+        this.imageWidth = 176;
+        this.imageHeight = 166;
+        this.inventoryLabelY = 73;
     }
 
     @Override
     protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
-        graphics.fill(leftPos, topPos, leftPos + imageWidth, topPos + imageHeight, 0xE0121722);
-        graphics.renderOutline(leftPos, topPos, imageWidth, imageHeight, 0xFF7A5B45);
+        graphics.fill(leftPos, topPos, leftPos + imageWidth, topPos + imageHeight, -535685342);
+        graphics.renderOutline(leftPos, topPos, imageWidth, imageHeight, -8758459);
 
-        graphics.fill(leftPos + 79, topPos + 23, leftPos + 97, topPos + 41, 0xFF2A3240);
-        graphics.renderOutline(leftPos + 79, topPos + 23, 18, 18, 0xFFD8A767);
+        for (int i = 0; i < 3; i++) {
+            slotBox(graphics, leftPos + 79, topPos + 17 + i * 18);
+        }
 
         for (int row = 0; row < 3; row++) {
-            for (int col = 0; col < 9; col++) slotBox(graphics, leftPos + 7 + col * 18, topPos + 83 + row * 18);
+            for (int col = 0; col < 9; col++) {
+                slotBox(graphics, leftPos + 7 + col * 18, topPos + 83 + row * 18);
+            }
         }
-        for (int col = 0; col < 9; col++) slotBox(graphics, leftPos + 7 + col * 18, topPos + 141);
+        for (int col = 0; col < 9; col++) {
+            slotBox(graphics, leftPos + 7 + col * 18, topPos + 141);
+        }
     }
 
     private static void slotBox(GuiGraphics graphics, int x, int y) {
-        graphics.fill(x, y, x + 18, y + 18, 0xFF202833);
-        graphics.renderOutline(x, y, 18, 18, 0xFF566474);
+        graphics.fill(x, y, x + 18, y + 18, -14669773);
+        graphics.renderOutline(x, y, 18, 18, -11115404);
     }
 
     @Override
     protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
-        graphics.drawCenteredString(font, title, imageWidth / 2, 8, 0xF0E5D8);
-        graphics.drawCenteredString(font, "Mounted Rune", imageWidth / 2, 48, 0xD8B98A);
-        graphics.drawString(font, playerInventoryTitle, 8, inventoryLabelY, 0xC8D8E8, false);
+        graphics.drawCenteredString(font, title, imageWidth / 2, 6, 15787480);
+        graphics.drawCenteredString(font, "Runestones", imageWidth / 2, 64, 14203274);
+        graphics.drawString(font, playerInventoryTitle, 8, inventoryLabelY, 13162728, false);
     }
 
     @Override
