@@ -30,6 +30,9 @@ import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
+import net.neoforged.neoforge.common.NeoForgeRegistries;
+import net.neoforged.neoforge.common.loot.IGlobalLootModifier;
+import com.mojang.serialization.MapCodec;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.function.Supplier;
@@ -44,6 +47,8 @@ public final class SyntacticWizardry {
  private static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITY_TYPES=DeferredRegister.create(Registries.BLOCK_ENTITY_TYPE,MOD_ID);
  private static final DeferredRegister<MenuType<?>> MENUS=DeferredRegister.create(Registries.MENU,MOD_ID);
  private static final DeferredRegister<CreativeModeTab> CREATIVE_TABS=DeferredRegister.create(Registries.CREATIVE_MODE_TAB,MOD_ID);
+ private static final DeferredRegister<MapCodec<? extends IGlobalLootModifier>> GLOBAL_LOOT_MODIFIER_SERIALIZERS=DeferredRegister.create(NeoForgeRegistries.Keys.GLOBAL_LOOT_MODIFIER_SERIALIZERS,MOD_ID);
+ public static final Supplier<MapCodec<RandomSpellLootModifier>> RANDOM_SPELL_LOOT_MODIFIER=GLOBAL_LOOT_MODIFIER_SERIALIZERS.register("random_spell_loot",()->RandomSpellLootModifier.CODEC);
 
  public static final DeferredHolder<ArmorMaterial,ArmorMaterial> CLOTH_ARMOR_MATERIAL=ARMOR_MATERIALS.register("cloth",()->robeMaterial(0,0,0,0,()->Ingredient.of(Items.STRING)));
  public static final DeferredHolder<ArmorMaterial,ArmorMaterial> HEAVY_ARMOR_MATERIAL=ARMOR_MATERIALS.register("heavy",()->robeMaterial(1,3,2,1,()->Ingredient.of(ItemTags.WOOL)));
@@ -125,5 +130,5 @@ public final class SyntacticWizardry {
  }
  private static ArmorItem robePiece(Holder<ArmorMaterial> material,ArmorItem.Type type,float spellDiscount){return new RobeArmorItem(material,type,new Item.Properties().durability(type.getDurability(5)),spellDiscount);}
  private static ScribesLecternMenu createScribesLecternMenu(int id,Inventory inv,RegistryFriendlyByteBuf data){return new ScribesLecternMenu(id,inv);}
- public SyntacticWizardry(IEventBus bus){BLOCKS.register(bus);ARMOR_MATERIALS.register(bus);ITEMS.register(bus);ENTITIES.register(bus);BLOCK_ENTITY_TYPES.register(bus);MENUS.register(bus);CREATIVE_TABS.register(bus);}
+ public SyntacticWizardry(IEventBus bus){BLOCKS.register(bus);ARMOR_MATERIALS.register(bus);ITEMS.register(bus);ENTITIES.register(bus);BLOCK_ENTITY_TYPES.register(bus);MENUS.register(bus);CREATIVE_TABS.register(bus);GLOBAL_LOOT_MODIFIER_SERIALIZERS.register(bus);}
 }
