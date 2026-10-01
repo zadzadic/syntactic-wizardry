@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "syntacticwizardry:cloth_hood",
+    "syntacticwizardry:heavy_hood",
+    "syntacticwizardry:leather_hood",
+    "syntacticwizardry:wizards_hood"
+  ]
+}
