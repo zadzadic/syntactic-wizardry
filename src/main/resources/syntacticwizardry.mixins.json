@@ -6,7 +6,9 @@
     "PlayerFlightMixin",
     "LivingEntityFlightMixin"
   ],
-  "client": [],
+  "client": [
+    "RunecasterItemRenderMixin"
+  ],
   "injectors": {
     "defaultRequire": 1
   }
