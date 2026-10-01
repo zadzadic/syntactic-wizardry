@@ -981,3 +981,59 @@ Current examples include:
 - `GravityBlockRuntime`.
 - `WandBindingService`.
 - `ManaGridSupport`.
+
+
+## Robe armor rules
+
+The robe families use the following protection values.
+
+| Family | Hood | Upper Robe | Lower Robe |
+|---|---:|---:|---:|
+| Cloth | 0 | 0 | 0 |
+| Heavy | 1 | 3 | 2 |
+| Leather | 2 | 5 | 3 |
+| Wizard | 2 | 5 | 4 |
+
+Heavy protection matches the corresponding vanilla Leather pieces.
+
+Leather Robe protection matches the corresponding vanilla Gold pieces.
+
+Wizard Robe protection matches the corresponding vanilla Chainmail pieces.
+
+All robe pieces use vanilla Leather durability values.
+
+Hoods use 55 durability.
+
+Upper Robes use 80 durability.
+
+Lower Robes use 75 durability.
+
+Robes do not break normally.
+
+Durability damage is capped at one remaining durability.
+
+At one remaining durability, an equipped robe piece is removed from the armor slot and dropped.
+
+A robe at one remaining durability cannot be equipped until repaired.
+
+Spell Mana discounts are additive across equipped, usable robe pieces.
+
+Cloth pieces grant 5% discount each.
+
+Heavy pieces grant 10% discount each.
+
+Leather Robe pieces grant 15% discount each.
+
+Wizard Robe pieces grant 20% discount each.
+
+The robe discount is applied after any focus-specific Mana multiplier.
+
+Casting Experience continues to use the raw undiscounted spell cost.
+
+All robe families use Leather-tier enchantability.
+
+For gameplay enchantment queries, every enchantment present on a robe is treated as one level higher.
+
+This +1 effective level is not clamped to the enchantment's vanilla maximum.
+
+Armor enchantments therefore may function one level above their normal cap while worn or otherwise queried for gameplay.
