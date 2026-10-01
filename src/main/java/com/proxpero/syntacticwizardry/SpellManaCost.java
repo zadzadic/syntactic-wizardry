@@ -98,6 +98,7 @@ public final class SpellManaCost {
             case SpellComponents.TYPE_MARK -> 0.0F; // Mark pricing has not been defined yet.
             case SpellComponents.TYPE_PROTECTION -> 5.0F * potence;
             case SpellComponents.TYPE_TEMPORARY_BLOCK -> temporaryBlockCost(plan, settings, cell);
+            case SpellComponents.TYPE_LIGHT -> 1.0F;
             case SpellComponents.TYPE_DURATION -> durationCost(plan, settings, cell);
             case SpellComponents.TYPE_BLOCK_INTERACTION -> 0.0F;
             case SpellComponents.TYPE_SELF -> 0.0F;
