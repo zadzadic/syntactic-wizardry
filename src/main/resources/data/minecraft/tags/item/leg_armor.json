@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "syntacticwizardry:cloth_lower_robe",
+    "syntacticwizardry:heavy_lower_robe",
+    "syntacticwizardry:leather_lower_robe",
+    "syntacticwizardry:wizards_lower_robe"
+  ]
+}
