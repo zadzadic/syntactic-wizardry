@@ -51,5 +51,9 @@
   "block.syntacticwizardry.power_core_s": "Power Core",
   "block.syntacticwizardry.power_core_se": "Power Core",
   "block.syntacticwizardry.arcane_builder": "Arcane Builder",
-  "block.syntacticwizardry.magic_light": "Magic Light"
+  "block.syntacticwizardry.magic_light": "Magic Light",
+  "item.syntacticwizardry.iron_runestone": "Iron Runestone",
+  "item.syntacticwizardry.gold_runestone": "Gold Runestone",
+  "item.syntacticwizardry.emerald_runestone": "Emerald Runestone",
+  "item.syntacticwizardry.diamond_runestone": "Diamond Runestone"
 }
