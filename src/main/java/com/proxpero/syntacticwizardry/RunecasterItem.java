@@ -27,10 +27,12 @@ public final class RunecasterItem extends Item {
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
         super.appendHoverText(stack, context, tooltip, flag);
-        ItemStack rune = RunecasterRuneStorage.getRune(stack);
-        tooltip.add(Component.literal("Mounted Rune: " + (rune.isEmpty() ? "Empty" : rune.getHoverName().getString())));
+        for (int slot = 0; slot < RunecasterRuneStorage.RUNE_SLOTS; slot++) {
+            ItemStack rune = RunecasterRuneStorage.getMountedRune(stack, slot);
+            tooltip.add(Component.literal("Runestone " + (slot + 1) + ": " + (rune.isEmpty() ? "Empty" : rune.getHoverName().getString())));
+        }
         tooltip.add(Component.literal("Mana cost: 50%"));
-        tooltip.add(Component.literal("Melee damage: 1"));
+        tooltip.add(Component.literal("Melee damage: 2"));
     }
 
     @Override
@@ -45,7 +47,7 @@ public final class RunecasterItem extends Item {
         ItemStack rawSpell = rawMountedSpell(runecaster);
         ItemStack spell = discountedMountedSpell(runecaster);
         if (spell.isEmpty()) {
-            if (!level.isClientSide) player.displayClientMessage(Component.literal("No carved Runestone is mounted."), true);
+            if (!level.isClientSide) player.displayClientMessage(Component.literal("No active Runestone components are mounted."), true);
             return InteractionResultHolder.sidedSuccess(runecaster, level.isClientSide());
         }
 
