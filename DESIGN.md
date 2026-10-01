@@ -1113,3 +1113,24 @@ Dropping an existing component onto another occupied carving cell swaps the two 
 Right-clicking a carving-grid cell clears it.
 
 The Carve action remains unavailable once a Runestone has been carved.
+
+
+### Runestone slot layout correction
+
+Runestones do not have Faces.
+
+Each Runestone has one horizontal carving row.
+
+The Runestone material determines the number of component slots in that row.
+
+Iron Runestone: 2 slots.
+
+Gold Runestone: 3 slots.
+
+Emerald Runestone: 4 slots.
+
+Diamond Runestone: 5 slots.
+
+The Carving Station renders only those active slots.
+
+The previous three-row-by-face grid model is removed.
