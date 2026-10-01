@@ -8,16 +8,14 @@ public final class RunecasterSpellBuilder {
     public static ItemStack build(ItemStack rune) {
         if (!RunestoneItem.isRunestone(rune) || !RunestoneItem.isCarved(rune)) return ItemStack.EMPTY;
 
-        int[] runeCells = RunestoneItem.cells(rune);
-        int slotCount = RunestoneItem.slots(rune);
+        int[] cells = RunestoneItem.cells(rune);
         int[] plan = SpellPresentation.emptyPlan();
         int[] settings = SpellPresentation.emptySettings();
-
         int row = 0;
-        for (int i = 0; i < slotCount && row < SpellPresentation.ROWS; i++) {
-            int type = runeCells[i];
-            if (type == SpellPresentation.TYPE_EMPTY) continue;
 
+        for (int i = 0; i < Math.min(cells.length, RunecasterRuneStorage.RUNE_SLOTS) && row < SpellPresentation.ROWS; i++) {
+            int type = cells[i];
+            if (type == SpellPresentation.TYPE_EMPTY) continue;
             SpellComponentDefinition definition = SpellComponents.byType(type);
             if (definition == null) continue;
 
@@ -27,7 +25,6 @@ public final class RunecasterSpellBuilder {
         }
 
         if (row == 0) return ItemStack.EMPTY;
-
         ItemStack spell = WrittenSpellItem.create(plan, settings, rune.getHoverName().getString());
         SpellPresentation.ensureManaCosts(spell);
         return spell;
