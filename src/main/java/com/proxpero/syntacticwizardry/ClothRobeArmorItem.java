@@ -17,11 +17,11 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.util.function.Consumer;
 
-public final class ClothRobeArmorItem extends ArmorItem implements GeoItem {
+public final class ClothRobeArmorItem extends RobeArmorItem implements GeoItem {
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
     public ClothRobeArmorItem(Holder<ArmorMaterial> material, Type type, Properties properties) {
-        super(material, type, properties);
+        super(material, type, properties, 0.05F);
     }
 
     @Override
