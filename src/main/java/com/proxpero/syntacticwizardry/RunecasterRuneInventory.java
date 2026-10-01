@@ -8,15 +8,21 @@ public final class RunecasterRuneInventory extends SimpleContainer {
     private boolean loading = true;
 
     public RunecasterRuneInventory(ItemStack runecaster) {
-        super(1);
+        super(RunecasterRuneStorage.RUNE_SLOTS);
         this.runecaster = runecaster;
-        super.setItem(0, RunecasterRuneStorage.getRune(runecaster));
+        for (int i = 0; i < RunecasterRuneStorage.RUNE_SLOTS; i++) {
+            super.setItem(i, RunecasterRuneStorage.getMountedRune(runecaster, i));
+        }
         loading = false;
     }
 
     @Override
     public void setChanged() {
         super.setChanged();
-        if (!loading) RunecasterRuneStorage.setRune(runecaster, getItem(0));
+        if (!loading) {
+            for (int i = 0; i < RunecasterRuneStorage.RUNE_SLOTS; i++) {
+                RunecasterRuneStorage.setMountedRune(runecaster, i, getItem(i));
+            }
+        }
     }
 }
