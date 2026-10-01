@@ -55,5 +55,8 @@
   "item.syntacticwizardry.iron_runestone": "Iron Runestone",
   "item.syntacticwizardry.gold_runestone": "Gold Runestone",
   "item.syntacticwizardry.emerald_runestone": "Emerald Runestone",
-  "item.syntacticwizardry.diamond_runestone": "Diamond Runestone"
+  "item.syntacticwizardry.diamond_runestone": "Diamond Runestone",
+  "block.syntacticwizardry.carving_station": "Carving Station",
+  "item.syntacticwizardry.carving_station": "Carving Station",
+  "menu.syntacticwizardry.carving_station": "Carving Station"
 }
