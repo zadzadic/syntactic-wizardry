@@ -49,7 +49,41 @@ public final class ManaNetwork {
 
     private static final class FocusSlotCycleHandler implements IPayloadHandler<FocusSlotCyclePayload> {
         @Override public void handle(FocusSlotCyclePayload payload, IPayloadContext context) {
-            if (context.player() instanceof net.minecraft.server.level.ServerPlayer player) FocusSpellStorage.cycleHeldFocus(player, payload.delta());
+            if (!(context.player() instanceof net.minecraft.server.level.ServerPlayer player)) return;
+            int delta = payload.delta();
+
+            if (Math.abs(delta) >= 10) {
+                net.minecraft.world.item.ItemStack runecaster = heldRunecaster(player);
+                if (!runecaster.isEmpty()) {
+                    if (Math.abs(delta) >= 100) {
+                        int selected = RunecasterRuneStorage.getSelectedSlot(runecaster);
+                        int rotation = RunecasterRuneStorage.rotateSelected(runecaster, delta);
+                        int activeType = RunecasterRuneStorage.activeType(runecaster, selected);
+                        SpellComponentDefinition definition = SpellComponents.byType(activeType);
+                        String activeName = definition == null ? "Empty" : definition.displayName();
+                        player.displayClientMessage(net.minecraft.network.chat.Component.literal(
+                                "Runestone " + (selected + 1) + ": " + activeName + " [" + (rotation + 1) + "]"), true);
+                    } else {
+                        int selected = RunecasterRuneStorage.cycleSelectedSlot(runecaster, delta);
+                        net.minecraft.world.item.ItemStack rune = RunecasterRuneStorage.getMountedRune(runecaster, selected);
+                        player.displayClientMessage(net.minecraft.network.chat.Component.literal(
+                                "Selected Runestone " + (selected + 1) + (rune.isEmpty() ? " (empty)" : "")), true);
+                    }
+                    player.getInventory().setChanged();
+                    player.containerMenu.broadcastChanges();
+                    return;
+                }
+            }
+
+            FocusSpellStorage.cycleHeldFocus(player, delta);
+        }
+
+        private static net.minecraft.world.item.ItemStack heldRunecaster(net.minecraft.world.entity.player.Player player) {
+            net.minecraft.world.item.ItemStack main = player.getMainHandItem();
+            if (main.getItem() instanceof RunecasterItem) return main;
+            net.minecraft.world.item.ItemStack off = player.getOffhandItem();
+            if (off.getItem() instanceof RunecasterItem) return off;
+            return net.minecraft.world.item.ItemStack.EMPTY;
         }
     }
 
