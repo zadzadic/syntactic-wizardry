@@ -1057,3 +1057,26 @@ For gameplay enchantment queries, every enchantment present on a robe is treated
 This +1 effective level is not clamped to the enchantment's vanilla maximum.
 
 Armor enchantments therefore may function one level above their normal cap while worn or otherwise queried for gameplay.
+
+
+## Random spell loot
+
+Random Written Spells are injected through a NeoForge Global Loot Modifier.
+
+Ordinary mobs have a 0.5% chance to drop an Apprentice spell.
+
+Witches, Endermen, Pillagers, and Blazes have a 5% chance to drop an Initiate spell.
+
+Evokers, Guardians, and Piglin Brutes have a 15% chance to drop a Wizard spell.
+
+Elder Guardians, Ravagers, Withers, and Wardens always drop a Master spell.
+
+The mob-specific tier replaces the ordinary Apprentice roll.
+
+Supported dungeon and hostile-structure chests have a 10% chance to gain one random Written Spell.
+
+Dungeon spell tier weights are 60% Apprentice, 25% Initiate, 12% Wizard, and 3% Master.
+
+Supported loot tables include simple dungeons, abandoned mineshafts, desert pyramids, jungle temples, woodland mansions, Nether fortresses, End cities, ancient cities, underwater ruins, strongholds, bastions, and trial chambers.
+
+All generated loot spells use RandomSpellGenerator and therefore follow the same spell grammar and tier rules as the Spell Randomizer.

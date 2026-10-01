@@ -1,0 +1,8 @@
+{
+  "type": "syntacticwizardry:random_spell_loot",
+  "conditions": [],
+  "base_chance": 0.005,
+  "second_tier_chance": 0.05,
+  "third_tier_chance": 0.15,
+  "dungeon_chance": 0.1
+}
