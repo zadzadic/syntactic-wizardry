@@ -781,6 +781,26 @@ It does not block view or conduct redstone as an ordinary full block would.
 
 Temporary Block uses `CREATE_ONCE` replay policy.
 
+### Light
+
+Light costs 1 Mana.
+
+On a block or point resolution, Light places the mod's existing Magic Light block.
+
+The placed Light is permanent when no Duration Modifier is attached.
+
+When Duration is attached, the placed Light remains for that Duration and then restores the replaced air or water state.
+
+On a direct entity resolution, Light highlights the entity and makes it carry a moving Magic Light for 30 seconds.
+
+The moving light uses the existing Magic Light block, which emits light level 15.
+
+The moving light follows the entity and is cleaned up when the effect expires.
+
+The entity highlight is removed after 30 seconds unless the entity was already glowing before Light was applied.
+
+Light uses CREATE_ONCE replay semantics.
+
 ## 12. Current Modifiers
 
 ### Duration
