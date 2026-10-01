@@ -76,8 +76,9 @@ public final class WrittenSpellItem extends Item {
   if(player.getCooldowns().isOnCooldown(this))return InteractionResultHolder.fail(stack);
   if(sustained)player.startUsingItem(hand);
   if(!level.isClientSide&&level instanceof ServerLevel server){
-   float spellCost=SpellPresentation.readSpellCost(stack);
-   if(!player.isCreative()&&!ManaService.tryConsume(player,spellCost)){
+   float rawSpellCost=SpellPresentation.readSpellCost(stack);
+   float spellCost=RobeArmorSupport.discountedManaCost(player,rawSpellCost);
+   if(!player.isCreative()&&!ManaService.tryConsume(player,spellCost,rawSpellCost)){
     if(sustained)player.stopUsingItem();
     player.displayClientMessage(Component.literal("Not enough Mana. Need "+formatCost(spellCost)+", have "+formatCost(ManaService.getMana(player))+"."),true);
     return InteractionResultHolder.fail(stack);
@@ -97,8 +98,9 @@ public final class WrittenSpellItem extends Item {
   SpellPresentation.ensureManaCosts(stack);
   int elapsed=getUseDuration(stack,entity)-remainingUseDuration;
   if(elapsed>0&&elapsed%SUSTAINED_MANA_INTERVAL_TICKS==0&&entity instanceof Player player&&!player.isCreative()){
-   float sustainedCost=SpellPresentation.readSustainedCost(stack);
-   if(sustainedCost>0.0F&&!ManaService.tryConsume(player,sustainedCost)){
+   float rawSustainedCost=SpellPresentation.readSustainedCost(stack);
+   float sustainedCost=RobeArmorSupport.discountedManaCost(player,rawSustainedCost);
+   if(sustainedCost>0.0F&&!ManaService.tryConsume(player,sustainedCost,rawSustainedCost)){
     entity.stopUsingItem();
     ChannelRuntime.clear(entity);
     StreamRuntime.clear(entity);

@@ -45,10 +45,10 @@ public final class SyntacticWizardry {
  private static final DeferredRegister<MenuType<?>> MENUS=DeferredRegister.create(Registries.MENU,MOD_ID);
  private static final DeferredRegister<CreativeModeTab> CREATIVE_TABS=DeferredRegister.create(Registries.CREATIVE_MODE_TAB,MOD_ID);
 
- public static final DeferredHolder<ArmorMaterial,ArmorMaterial> CLOTH_ARMOR_MATERIAL=ARMOR_MATERIALS.register("cloth",()->robeMaterial(()->Ingredient.of(Items.STRING)));
- public static final DeferredHolder<ArmorMaterial,ArmorMaterial> HEAVY_ARMOR_MATERIAL=ARMOR_MATERIALS.register("heavy",()->robeMaterial(()->Ingredient.of(ItemTags.WOOL)));
- public static final DeferredHolder<ArmorMaterial,ArmorMaterial> LEATHER_ROBE_MATERIAL=ARMOR_MATERIALS.register("leather_robe",()->robeMaterial(()->Ingredient.of(Items.LEATHER)));
- public static final DeferredHolder<ArmorMaterial,ArmorMaterial> WIZARD_ARMOR_MATERIAL=ARMOR_MATERIALS.register("wizard",()->robeMaterial(()->Ingredient.of(ENCHANTED_LEATHER.get())));
+ public static final DeferredHolder<ArmorMaterial,ArmorMaterial> CLOTH_ARMOR_MATERIAL=ARMOR_MATERIALS.register("cloth",()->robeMaterial(0,0,0,0,()->Ingredient.of(Items.STRING)));
+ public static final DeferredHolder<ArmorMaterial,ArmorMaterial> HEAVY_ARMOR_MATERIAL=ARMOR_MATERIALS.register("heavy",()->robeMaterial(1,3,2,1,()->Ingredient.of(ItemTags.WOOL)));
+ public static final DeferredHolder<ArmorMaterial,ArmorMaterial> LEATHER_ROBE_MATERIAL=ARMOR_MATERIALS.register("leather_robe",()->robeMaterial(2,5,3,1,()->Ingredient.of(Items.LEATHER)));
+ public static final DeferredHolder<ArmorMaterial,ArmorMaterial> WIZARD_ARMOR_MATERIAL=ARMOR_MATERIALS.register("wizard",()->robeMaterial(2,5,4,1,()->Ingredient.of(ENCHANTED_LEATHER.get())));
  public static final DeferredBlock<Block> SCRIBES_LECTERN=BLOCKS.register("scribes_lectern",()->new ScribesLecternBlock(Block.Properties.ofFullCopy(Blocks.LECTERN)));
  public static final DeferredBlock<GoldenOrbBlock> GOLDEN_ORB=BLOCKS.register("golden_orb",()->new GoldenOrbBlock(Block.Properties.ofFullCopy(Blocks.GOLD_BLOCK).strength(-1.0F,3600000.0F).noOcclusion()));
  public static final DeferredBlock<SpellRandomizerBlock> SPELL_RANDOMIZER=BLOCKS.register("spell_randomizer",()->new SpellRandomizerBlock(Block.Properties.ofFullCopy(Blocks.ENCHANTING_TABLE).strength(-1.0F,3600000.0F)));
@@ -70,18 +70,18 @@ public final class SyntacticWizardry {
  public static final DeferredBlock<Block> POWER_CORE_CRYSTAL=BLOCKS.register("power_core_crystal",()->new Block(Block.Properties.of().strength(2.0F).noOcclusion().noLootTable()));
  public static final DeferredHolder<BlockEntityType<?>,BlockEntityType<RuneBlockEntity>> RUNE_BLOCK_ENTITY=BLOCK_ENTITY_TYPES.register("rune",()->BlockEntityType.Builder.of(RuneBlockEntity::new,RUNE_BLOCK.get()).build(null));
 
- public static final DeferredItem<ClothRobeArmorItem> CLOTH_HOOD=ITEMS.register("cloth_hood",()->new ClothRobeArmorItem(CLOTH_ARMOR_MATERIAL,ArmorItem.Type.HELMET,new Item.Properties()));
- public static final DeferredItem<ClothRobeArmorItem> CLOTH_UPPER_ROBE=ITEMS.register("cloth_upper_robe",()->new ClothRobeArmorItem(CLOTH_ARMOR_MATERIAL,ArmorItem.Type.CHESTPLATE,new Item.Properties()));
- public static final DeferredItem<ClothRobeArmorItem> CLOTH_LOWER_ROBE=ITEMS.register("cloth_lower_robe",()->new ClothRobeArmorItem(CLOTH_ARMOR_MATERIAL,ArmorItem.Type.LEGGINGS,new Item.Properties()));
- public static final DeferredItem<ArmorItem> HEAVY_HOOD=ITEMS.register("heavy_hood",()->robePiece(HEAVY_ARMOR_MATERIAL,ArmorItem.Type.HELMET));
- public static final DeferredItem<ArmorItem> HEAVY_UPPER_ROBE=ITEMS.register("heavy_upper_robe",()->robePiece(HEAVY_ARMOR_MATERIAL,ArmorItem.Type.CHESTPLATE));
- public static final DeferredItem<ArmorItem> HEAVY_LOWER_ROBE=ITEMS.register("heavy_lower_robe",()->robePiece(HEAVY_ARMOR_MATERIAL,ArmorItem.Type.LEGGINGS));
- public static final DeferredItem<ArmorItem> LEATHER_HOOD=ITEMS.register("leather_hood",()->robePiece(LEATHER_ROBE_MATERIAL,ArmorItem.Type.HELMET));
- public static final DeferredItem<ArmorItem> LEATHER_UPPER_ROBE=ITEMS.register("leather_upper_robe",()->robePiece(LEATHER_ROBE_MATERIAL,ArmorItem.Type.CHESTPLATE));
- public static final DeferredItem<ArmorItem> LEATHER_LOWER_ROBE=ITEMS.register("leather_lower_robe",()->robePiece(LEATHER_ROBE_MATERIAL,ArmorItem.Type.LEGGINGS));
- public static final DeferredItem<ArmorItem> WIZARDS_HOOD=ITEMS.register("wizards_hood",()->robePiece(WIZARD_ARMOR_MATERIAL,ArmorItem.Type.HELMET));
- public static final DeferredItem<ArmorItem> WIZARDS_UPPER_ROBE=ITEMS.register("wizards_upper_robe",()->robePiece(WIZARD_ARMOR_MATERIAL,ArmorItem.Type.CHESTPLATE));
- public static final DeferredItem<ArmorItem> WIZARDS_LOWER_ROBE=ITEMS.register("wizards_lower_robe",()->robePiece(WIZARD_ARMOR_MATERIAL,ArmorItem.Type.LEGGINGS));
+ public static final DeferredItem<ClothRobeArmorItem> CLOTH_HOOD=ITEMS.register("cloth_hood",()->new ClothRobeArmorItem(CLOTH_ARMOR_MATERIAL,ArmorItem.Type.HELMET,new Item.Properties().durability(ArmorItem.Type.HELMET.getDurability(5))));
+ public static final DeferredItem<ClothRobeArmorItem> CLOTH_UPPER_ROBE=ITEMS.register("cloth_upper_robe",()->new ClothRobeArmorItem(CLOTH_ARMOR_MATERIAL,ArmorItem.Type.CHESTPLATE,new Item.Properties().durability(ArmorItem.Type.CHESTPLATE.getDurability(5))));
+ public static final DeferredItem<ClothRobeArmorItem> CLOTH_LOWER_ROBE=ITEMS.register("cloth_lower_robe",()->new ClothRobeArmorItem(CLOTH_ARMOR_MATERIAL,ArmorItem.Type.LEGGINGS,new Item.Properties().durability(ArmorItem.Type.LEGGINGS.getDurability(5))));
+ public static final DeferredItem<ArmorItem> HEAVY_HOOD=ITEMS.register("heavy_hood",()->robePiece(HEAVY_ARMOR_MATERIAL,ArmorItem.Type.HELMET,0.10F));
+ public static final DeferredItem<ArmorItem> HEAVY_UPPER_ROBE=ITEMS.register("heavy_upper_robe",()->robePiece(HEAVY_ARMOR_MATERIAL,ArmorItem.Type.CHESTPLATE,0.10F));
+ public static final DeferredItem<ArmorItem> HEAVY_LOWER_ROBE=ITEMS.register("heavy_lower_robe",()->robePiece(HEAVY_ARMOR_MATERIAL,ArmorItem.Type.LEGGINGS,0.10F));
+ public static final DeferredItem<ArmorItem> LEATHER_HOOD=ITEMS.register("leather_hood",()->robePiece(LEATHER_ROBE_MATERIAL,ArmorItem.Type.HELMET,0.15F));
+ public static final DeferredItem<ArmorItem> LEATHER_UPPER_ROBE=ITEMS.register("leather_upper_robe",()->robePiece(LEATHER_ROBE_MATERIAL,ArmorItem.Type.CHESTPLATE,0.15F));
+ public static final DeferredItem<ArmorItem> LEATHER_LOWER_ROBE=ITEMS.register("leather_lower_robe",()->robePiece(LEATHER_ROBE_MATERIAL,ArmorItem.Type.LEGGINGS,0.15F));
+ public static final DeferredItem<ArmorItem> WIZARDS_HOOD=ITEMS.register("wizards_hood",()->robePiece(WIZARD_ARMOR_MATERIAL,ArmorItem.Type.HELMET,0.20F));
+ public static final DeferredItem<ArmorItem> WIZARDS_UPPER_ROBE=ITEMS.register("wizards_upper_robe",()->robePiece(WIZARD_ARMOR_MATERIAL,ArmorItem.Type.CHESTPLATE,0.20F));
+ public static final DeferredItem<ArmorItem> WIZARDS_LOWER_ROBE=ITEMS.register("wizards_lower_robe",()->robePiece(WIZARD_ARMOR_MATERIAL,ArmorItem.Type.LEGGINGS,0.20F));
  public static final DeferredItem<BlockItem> SCRIBES_LECTERN_ITEM=ITEMS.register("scribes_lectern",()->new BlockItem(SCRIBES_LECTERN.get(),new Item.Properties()));
  public static final DeferredItem<BlockItem> GOLDEN_ORB_ITEM=ITEMS.register("golden_orb",()->new BlockItem(GOLDEN_ORB.get(),new Item.Properties()));
  public static final DeferredItem<BlockItem> SPELL_RANDOMIZER_ITEM=ITEMS.register("spell_randomizer",()->new BlockItem(SPELL_RANDOMIZER.get(),new Item.Properties()));
@@ -114,12 +114,16 @@ public final class SyntacticWizardry {
  public static final DeferredHolder<MenuType<?>,MenuType<HighManaCompassMenu>> HIGH_MANA_COMPASS_MENU=MENUS.register("high_mana_compass",()->IMenuTypeExtension.create(HighManaCompassMenu::client));
  public static final DeferredHolder<MenuType<?>,MenuType<FocusSpellMenu>> FOCUS_SPELL_MENU=MENUS.register("focus_spells",()->IMenuTypeExtension.create(FocusSpellMenu::client));
  public static final DeferredHolder<CreativeModeTab,CreativeModeTab> SYNTACTIC_WIZARDRY_TAB=CREATIVE_TABS.register("syntactic_wizardry",()->CreativeModeTab.builder().title(Component.translatable("itemGroup.syntacticwizardry")).icon(()->SCRIBES_LECTERN_ITEM.get().getDefaultInstance()).displayItems((parameters,output)->{output.accept(SCRIBES_LECTERN_ITEM.get());output.accept(ENCHANTED_LEATHER.get());output.accept(CLOTH_HOOD.get());output.accept(CLOTH_UPPER_ROBE.get());output.accept(CLOTH_LOWER_ROBE.get());output.accept(HEAVY_HOOD.get());output.accept(HEAVY_UPPER_ROBE.get());output.accept(HEAVY_LOWER_ROBE.get());output.accept(LEATHER_HOOD.get());output.accept(LEATHER_UPPER_ROBE.get());output.accept(LEATHER_LOWER_ROBE.get());output.accept(WIZARDS_HOOD.get());output.accept(WIZARDS_UPPER_ROBE.get());output.accept(WIZARDS_LOWER_ROBE.get());output.accept(GOLDEN_ORB_ITEM.get());output.accept(SPELL_RANDOMIZER_ITEM.get());output.accept(TEMPORARY_BLOCK_ITEM.get());output.accept(MATURE_CRYSTAL_ITEM.get());output.accept(MISSILE_SHAPE.get());output.accept(SPHERE_SHAPE.get());output.accept(BOX_SHAPE.get());output.accept(CONE_SHAPE.get());output.accept(TOUCH_SHAPE.get());output.accept(TARGET_SHAPE.get());output.accept(DAMAGE_EFFECT.get());output.accept(DIG_EFFECT.get());output.accept(HIGH_MANA_COMPASS.get());output.accept(WAND.get());output.accept(WOOD_STAFF.get());output.accept(IRON_STAFF.get());output.accept(DIAMOND_STAFF.get());output.accept(NETHERITE_STAFF.get());}).build());
- private static ArmorMaterial robeMaterial(Supplier<Ingredient> repair){
+ private static ArmorMaterial robeMaterial(int helmet,int chestplate,int leggings,int boots,Supplier<Ingredient> repair){
   EnumMap<ArmorItem.Type,Integer> defense=new EnumMap<>(ArmorItem.Type.class);
-  for(ArmorItem.Type type:ArmorItem.Type.values())defense.put(type,0);
-  return new ArmorMaterial(defense,0,SoundEvents.ARMOR_EQUIP_LEATHER,repair,List.of(new ArmorMaterial.Layer(ResourceLocation.withDefaultNamespace("leather"),"",true)),0.0F,0.0F);
+  defense.put(ArmorItem.Type.HELMET,helmet);
+  defense.put(ArmorItem.Type.CHESTPLATE,chestplate);
+  defense.put(ArmorItem.Type.LEGGINGS,leggings);
+  defense.put(ArmorItem.Type.BOOTS,boots);
+  defense.put(ArmorItem.Type.BODY,0);
+  return new ArmorMaterial(defense,15,SoundEvents.ARMOR_EQUIP_LEATHER,repair,List.of(new ArmorMaterial.Layer(ResourceLocation.withDefaultNamespace("leather"),"",true)),0.0F,0.0F);
  }
- private static ArmorItem robePiece(Holder<ArmorMaterial> material,ArmorItem.Type type){return new ArmorItem(material,type,new Item.Properties());}
+ private static ArmorItem robePiece(Holder<ArmorMaterial> material,ArmorItem.Type type,float spellDiscount){return new RobeArmorItem(material,type,new Item.Properties().durability(type.getDurability(5)),spellDiscount);}
  private static ScribesLecternMenu createScribesLecternMenu(int id,Inventory inv,RegistryFriendlyByteBuf data){return new ScribesLecternMenu(id,inv);}
  public SyntacticWizardry(IEventBus bus){BLOCKS.register(bus);ARMOR_MATERIALS.register(bus);ITEMS.register(bus);ENTITIES.register(bus);BLOCK_ENTITY_TYPES.register(bus);MENUS.register(bus);CREATIVE_TABS.register(bus);}
 }
