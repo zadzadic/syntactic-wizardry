@@ -42,6 +42,7 @@ public abstract class RunecasterItemRenderMixin {
         poseStack.translate(1.13D / 16.0D, 3.2D / 16.0D, 1.13D / 16.0D);
         poseStack.mulPose(Axis.YP.rotationDegrees(left ? 90.0F : -90.0F));
         poseStack.mulPose(Axis.ZP.rotationDegrees(left ? -25.0F : 25.0F));
+        poseStack.mulPose(Axis.YP.rotationDegrees(left ? -90.0F : 90.0F));
         poseStack.scale(0.68F, 0.68F, 0.68F);
 
         // Render the three currently active rune components directly on the visible shaft face.
