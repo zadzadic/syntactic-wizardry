@@ -15,6 +15,10 @@ public final class FocusKeyMappings {
             "key.syntacticwizardry.previous_focus_spell", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_Z, "key.categories.misc");
     public static final KeyMapping NEXT = new KeyMapping(
             "key.syntacticwizardry.next_focus_spell", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_X, "key.categories.misc");
+    public static final KeyMapping RUNE_LEFT = new KeyMapping(
+            "key.syntacticwizardry.rotate_runestone_left", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_COMMA, "key.categories.misc");
+    public static final KeyMapping RUNE_RIGHT = new KeyMapping(
+            "key.syntacticwizardry.rotate_runestone_right", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_PERIOD, "key.categories.misc");
 
     private FocusKeyMappings() {}
 
@@ -22,5 +26,7 @@ public final class FocusKeyMappings {
     public static void register(RegisterKeyMappingsEvent event) {
         event.register(PREVIOUS);
         event.register(NEXT);
+        event.register(RUNE_LEFT);
+        event.register(RUNE_RIGHT);
     }
 }
