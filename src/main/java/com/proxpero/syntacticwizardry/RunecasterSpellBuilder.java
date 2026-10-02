@@ -9,6 +9,7 @@ public final class RunecasterSpellBuilder {
         if (!RunestoneItem.isRunestone(rune) || !RunestoneItem.isCarved(rune)) return ItemStack.EMPTY;
 
         int[] cells = RunestoneItem.cells(rune);
+        int[] runeSettings = RunestoneItem.settings(rune);
         int[] plan = SpellPresentation.emptyPlan();
         int[] settings = SpellPresentation.emptySettings();
         int row = 0;
@@ -21,6 +22,9 @@ public final class RunecasterSpellBuilder {
 
             int cell = row * SpellPresentation.COLS;
             SpellPresentation.setCell(plan, cell, definition.typeId(), definition.defaultStyle(), definition.defaultVisual());
+            for (SpellPropertyDefinition property : definition.settings()) {
+                SpellPresentation.setSetting(settings, cell, property.key(), RunestoneItem.settingAt(runeSettings, i, property.key()));
+            }
             row++;
         }
 
