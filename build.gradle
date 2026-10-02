@@ -33,7 +33,8 @@ var generateModMetadata = tasks.register("generateModMetadata", ProcessResources
 }
 sourceSets.main.resources.srcDir generateModMetadata
 neoForge.ideSyncTask generateModMetadata
-tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }\n
+tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }
+
 def componentIconAtlasFile = file("$buildDir/generated/component-icons/component_atlas.png")
 tasks.register("generateComponentIconAtlas") {
  inputs.files((0..3).collect { file("component-icons/atlas_" + it + ".b64") })
