@@ -57,7 +57,7 @@ public abstract class RunecasterItemRenderMixin {
             poseStack.pushPose();
             poseStack.translate(0.0D, 0.58D - slot * 0.34D, -0.084D);
             poseStack.mulPose(Axis.YP.rotationDegrees(left ? -90.0F : 90.0F));
-            poseStack.mulPose(Axis.ZP.rotationDegrees(left ? 90.0F : -90.0F));
+            poseStack.mulPose(Axis.XP.rotationDegrees(left ? -90.0F : 90.0F));
             poseStack.scale(0.23F, 0.23F, 0.23F);
 
             Minecraft.getInstance().getItemRenderer().renderStatic(
