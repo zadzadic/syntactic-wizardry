@@ -56,7 +56,7 @@ public abstract class RunecasterItemRenderMixin {
 
             poseStack.pushPose();
             poseStack.translate(0.0D, 0.58D - slot * 0.34D, -0.084D);
-            poseStack.scale(0.23F, 0.23F, 0.23F);
+            poseStack.scale(0.25F, 0.25F, 0.25F);
 
             Minecraft.getInstance().getItemRenderer().renderStatic(
                     entity,

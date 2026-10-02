@@ -156,7 +156,7 @@ public final class SpellComponents {
  }
  private static final class MoveDefinition extends BaseDefinition {
   MoveDefinition(){super(TYPE_MOVE,"Move",false,0,0,List.of(),false,List.of(POTENCE_PROPERTY,TARGET_TYPE_PROPERTY,MOVE_MODE_PROPERTY));}
-  @Override public ItemStack createEditorIcon(){return Items.PISTON.getDefaultInstance();}
+  @Override public ItemStack createEditorIcon(){return SyntacticWizardry.COMPONENT_ICON_MOVE.get().getDefaultInstance();}
   @Override public ComponentExecutionResult execute(SpellExecutionContext context){MoveEffect.apply(context.level(),context.owner(),context.parent(),context.targetType(),context.moveMode(),context.potence(),context.excludeCaster());return ComponentExecutionResult.NONE;}
   @Override public boolean acceptsDirectEntity(Entity entity){return entity!=null&&!entity.isRemoved();}
  }
@@ -176,7 +176,7 @@ public final class SpellComponents {
  }
  private static final class AlterDefinition extends BaseDefinition {
   AlterDefinition(){super(TYPE_ALTER,"Alter",false,0,0,List.of(),false,List.of(ALTER_STRENGTH_PROPERTY,ALTER_SPEED_PROPERTY,ALTER_TOUGHNESS_PROPERTY));}
-  @Override public ItemStack createEditorIcon(){return Items.POTION.getDefaultInstance();}
+  @Override public ItemStack createEditorIcon(){return SyntacticWizardry.COMPONENT_ICON_ALTER.get().getDefaultInstance();}
   @Override public boolean acceptsDirectEntity(Entity entity){return entity instanceof LivingEntity living&&living.isAlive();}
   @Override public EffectReplayPolicy replayPolicy(){return EffectReplayPolicy.CREATE_ONCE;}
   @Override public ComponentExecutionResult execute(SpellExecutionContext context){AlterEffect.apply(context.level(),context.owner(),context.parent(),context.alterStrength(),context.alterSpeed(),context.alterToughness(),context.activeDurationTicks(),context.excludeCaster());return ComponentExecutionResult.NONE;}
@@ -204,7 +204,7 @@ public final class SpellComponents {
  }
  private static final class MarkDefinition extends BaseDefinition {
   MarkDefinition(){super(TYPE_MARK,"Mark",false,0,0,List.of(),false,List.of());}
-  @Override public ItemStack createEditorIcon(){return Items.RECOVERY_COMPASS.getDefaultInstance();}
+  @Override public ItemStack createEditorIcon(){return SyntacticWizardry.COMPONENT_ICON_MARK.get().getDefaultInstance();}
   @Override public EffectReplayPolicy replayPolicy(){return EffectReplayPolicy.CREATE_ONCE;}
   @Override public ComponentExecutionResult execute(SpellExecutionContext context){MarkEffect.apply(context);return ComponentExecutionResult.NONE;}
  }
@@ -256,7 +256,7 @@ public final class SpellComponents {
  }
  private static final class StreamDefinition extends BaseDefinition {
   StreamDefinition(){super(TYPE_STREAM,"Stream",false,0,0,List.of(),false,List.of());}
-  @Override public ItemStack createEditorIcon(){return Items.PRISMARINE_SHARD.getDefaultInstance();}
+  @Override public ItemStack createEditorIcon(){return SyntacticWizardry.COMPONENT_ICON_STREAM.get().getDefaultInstance();}
   @Override public ComponentExecutionResult execute(SpellExecutionContext context){return ComponentExecutionResult.NONE;}
  }
  private static final class DurationDefinition extends BaseDefinition {

@@ -137,6 +137,10 @@ public final class SyntacticWizardry {
  public static final DeferredItem<Item> COMPONENT_ICON_PIERCING=ITEMS.register("component_icon_piercing",()->new Item(new Item.Properties().stacksTo(1)));
  public static final DeferredItem<Item> COMPONENT_ICON_HOMING=ITEMS.register("component_icon_homing",()->new Item(new Item.Properties().stacksTo(1)));
  public static final DeferredItem<Item> COMPONENT_ICON_EXCLUDE_CASTER=ITEMS.register("component_icon_exclude_caster",()->new Item(new Item.Properties().stacksTo(1)));
+ public static final DeferredItem<Item> COMPONENT_ICON_MOVE=ITEMS.register("component_icon_move",()->new Item(new Item.Properties().stacksTo(1)));
+ public static final DeferredItem<Item> COMPONENT_ICON_ALTER=ITEMS.register("component_icon_alter",()->new Item(new Item.Properties().stacksTo(1)));
+ public static final DeferredItem<Item> COMPONENT_ICON_MARK=ITEMS.register("component_icon_mark",()->new Item(new Item.Properties().stacksTo(1)));
+ public static final DeferredItem<Item> COMPONENT_ICON_STREAM=ITEMS.register("component_icon_stream",()->new Item(new Item.Properties().stacksTo(1)));
  public static final DeferredItem<WrittenSpellItem> WRITTEN_SPELL=ITEMS.register("written_spell",()->new WrittenSpellItem(new Item.Properties().stacksTo(1)));
  public static final DeferredItem<HighManaCompassItem> HIGH_MANA_COMPASS=ITEMS.register("high_mana_compass",()->new HighManaCompassItem(new Item.Properties().stacksTo(1)));
  public static final DeferredItem<WandItem> WAND=ITEMS.register("wand",()->new WandItem(new Item.Properties().stacksTo(1)));
