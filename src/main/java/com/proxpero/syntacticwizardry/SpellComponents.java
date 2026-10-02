@@ -104,53 +104,53 @@ public final class SpellComponents {
  }
  private static final class MissileDefinition extends BaseDefinition {
   MissileDefinition(){super(SpellPresentation.TYPE_MISSILE,"Missile",true,SpellPresentation.STYLE_DEFAULT,SpellPresentation.VISUAL_DEFAULT,List.of(SpellPresentation.STYLE_DEFAULT,SpellPresentation.STYLE_ARC,SpellPresentation.STYLE_SPIRAL),true,List.of(IMPACT_DIRECTION_PROPERTY));}
-  @Override public ItemStack createEditorIcon(){return SyntacticWizardry.MISSILE_SHAPE.get().getDefaultInstance();}
+  @Override public ItemStack createEditorIcon(){return SyntacticWizardry.COMPONENT_ICON_MISSILE.get().getDefaultInstance();}
   @Override public ComponentExecutionResult execute(SpellExecutionContext context){SpellMissile.spawnGroup(context);return ComponentExecutionResult.spawned();}
  }
  private static final class ChainDefinition extends BaseDefinition {
   ChainDefinition(){super(TYPE_CHAIN,"Chain",true,SpellPresentation.STYLE_DEFAULT,SpellPresentation.VISUAL_DEFAULT,List.of(SpellPresentation.STYLE_DEFAULT,SpellPresentation.STYLE_ARC,SpellPresentation.STYLE_SPIRAL),true,List.of(IMPACT_DIRECTION_PROPERTY));}
-  @Override public ItemStack createEditorIcon(){return Items.CHAIN.getDefaultInstance();}
+  @Override public ItemStack createEditorIcon(){return SyntacticWizardry.COMPONENT_ICON_CHAIN.get().getDefaultInstance();}
   @Override public ComponentExecutionResult execute(SpellExecutionContext context){SpellMissile.spawnGroup(context);return ComponentExecutionResult.spawned();}
  }
  private static final class SphereDefinition extends BaseDefinition {
   SphereDefinition(){super(SpellPresentation.TYPE_SPHERE,"Sphere",true,SpellPresentation.STYLE_DEFAULT,SpellPresentation.VISUAL_DEFAULT,List.of(SpellPresentation.STYLE_DEFAULT,SpellPresentation.STYLE_INNER,SpellPresentation.STYLE_OUTER),true,List.of(RADIUS_PROPERTY,HEIGHT_PROPERTY,SPHERE_MODE_PROPERTY));}
-  @Override public ItemStack createEditorIcon(){return SyntacticWizardry.SPHERE_SHAPE.get().getDefaultInstance();}
+  @Override public ItemStack createEditorIcon(){return SyntacticWizardry.COMPONENT_ICON_SPHERE.get().getDefaultInstance();}
   @Override public ComponentExecutionResult execute(SpellExecutionContext context){ShapeResolution resolved=ShapeResolution.sphere(context.areaOrigin(),context.shapeDirection(),context.shapeUp(),context.inheritedSurfaceNormal(),context.parent().vectorPolicy(),context.radius(),context.sphereHeight(),context.sphereMode());SphereVisualEntity visual=new SphereVisualEntity(context.level(),resolved.origin(),context.radius(),context.sphereHeight(),context.sphereMode(),context.style(),context.visual(),VisualDurationSupport.lifetimeTicksForShape(context.plan(),context.settings(),context.row()));boolean spawned=context.level().addFreshEntity(visual);return ComponentExecutionResult.resolved(resolved);}
  }
  private static final class BoxDefinition extends BaseDefinition {
   BoxDefinition(){super(SpellPresentation.TYPE_BOX,"Box",true,SpellPresentation.STYLE_DEFAULT,SpellPresentation.VISUAL_DEFAULT,List.of(SpellPresentation.STYLE_DEFAULT),true,List.of(WIDTH_PROPERTY,HEIGHT_PROPERTY,DEPTH_PROPERTY));}
-  @Override public ItemStack createEditorIcon(){return SyntacticWizardry.BOX_SHAPE.get().getDefaultInstance();}
+  @Override public ItemStack createEditorIcon(){return SyntacticWizardry.COMPONENT_ICON_BOX.get().getDefaultInstance();}
   @Override public ComponentExecutionResult execute(SpellExecutionContext context){ShapeResolution resolved=ShapeResolution.box(context.areaOrigin(),context.boxDirection(),context.shapeUp(),context.inheritedSurfaceNormal(),context.parent().vectorPolicy(),context.width(),context.height(),context.depth());BoxVisualEntity visual=new BoxVisualEntity(context.level(),resolved.origin(),resolved.direction(),resolved.up(),context.width(),context.height(),context.depth(),context.style(),context.visual(),VisualDurationSupport.lifetimeTicksForShape(context.plan(),context.settings(),context.row()));boolean spawned=context.level().addFreshEntity(visual);return ComponentExecutionResult.resolved(resolved);}
  }
  private static final class ConeDefinition extends BaseDefinition {
   ConeDefinition(){super(SpellPresentation.TYPE_CONE,"Cone",true,SpellPresentation.STYLE_DEFAULT,SpellPresentation.VISUAL_DEFAULT,List.of(SpellPresentation.STYLE_DEFAULT),true,List.of(DEPTH_PROPERTY,HEIGHT_PROPERTY,WIDTH_PROPERTY));}
-  @Override public ItemStack createEditorIcon(){return SyntacticWizardry.CONE_SHAPE.get().getDefaultInstance();}
+  @Override public ItemStack createEditorIcon(){return SyntacticWizardry.COMPONENT_ICON_CONE.get().getDefaultInstance();}
   @Override public ComponentExecutionResult execute(SpellExecutionContext context){ShapeResolution resolved=ShapeResolution.cone(context.areaOrigin(),context.shapeDirection(),context.shapeUp(),context.inheritedSurfaceNormal(),context.parent().vectorPolicy(),context.width(),context.height(),context.depth());ConeVisualEntity visual=new ConeVisualEntity(context.level(),resolved.origin(),resolved.direction(),context.width(),context.height(),context.depth(),context.style(),context.visual(),VisualDurationSupport.lifetimeTicksForShape(context.plan(),context.settings(),context.row()));boolean spawned=context.level().addFreshEntity(visual);return ComponentExecutionResult.resolved(resolved);}
  }
  private static final class TouchDefinition extends BaseDefinition {
   TouchDefinition(){super(SpellPresentation.TYPE_TOUCH,"Touch",true,SpellPresentation.STYLE_DEFAULT,SpellPresentation.VISUAL_DEFAULT,List.of(),false,List.of(TOUCH_TARGET_TYPE_PROPERTY));}
-  @Override public ItemStack createEditorIcon(){return SyntacticWizardry.TOUCH_SHAPE.get().getDefaultInstance();}
+  @Override public ItemStack createEditorIcon(){return SyntacticWizardry.COMPONENT_ICON_TOUCH.get().getDefaultInstance();}
   @Override public ComponentExecutionResult execute(SpellExecutionContext context){ShapeResolution resolved=TouchShape.resolve(context);return resolved==null?ComponentExecutionResult.spawned():ComponentExecutionResult.resolved(resolved);}
  }
  private static final class TargetDefinition extends BaseDefinition {
   TargetDefinition(){super(SpellPresentation.TYPE_TARGET,"Target",true,SpellPresentation.STYLE_DEFAULT,SpellPresentation.VISUAL_DEFAULT,List.of(),false,List.of(TARGET_TYPE_PROPERTY,TARGET_DIRECTION_PROPERTY));}
-  @Override public ItemStack createEditorIcon(){return SyntacticWizardry.TARGET_SHAPE.get().getDefaultInstance();}
+  @Override public ItemStack createEditorIcon(){return SyntacticWizardry.COMPONENT_ICON_TARGET.get().getDefaultInstance();}
   @Override public ComponentExecutionResult execute(SpellExecutionContext context){ShapeResolution resolved=TargetShape.resolve(context);return resolved==null?ComponentExecutionResult.spawned():ComponentExecutionResult.resolved(resolved);}
  }
  private static final class DigDefinition extends BaseDefinition {
   DigDefinition(){super(SpellPresentation.TYPE_DIG,"Dig",false,0,0,List.of(),false,List.of(DIG_POTENCE_PROPERTY));}
-  @Override public ItemStack createEditorIcon(){return SyntacticWizardry.DIG_EFFECT.get().getDefaultInstance();}
+  @Override public ItemStack createEditorIcon(){return SyntacticWizardry.COMPONENT_ICON_DIG.get().getDefaultInstance();}
   @Override public ComponentExecutionResult execute(SpellExecutionContext context){AreaDigBulkRuntime.apply(context.level(),context.owner(),context.parent().voxels(),context.potence());return ComponentExecutionResult.NONE;}
  }
  private static final class DamageDefinition extends BaseDefinition {
   DamageDefinition(){super(SpellPresentation.TYPE_DAMAGE,"Damage",false,0,0,List.of(),false,List.of(POTENCE_PROPERTY,DAMAGE_KIND_PROPERTY));}
-  @Override public ItemStack createEditorIcon(){return SyntacticWizardry.DAMAGE_EFFECT.get().getDefaultInstance();}
+  @Override public ItemStack createEditorIcon(){return SyntacticWizardry.COMPONENT_ICON_DAMAGE.get().getDefaultInstance();}
   @Override public ComponentExecutionResult execute(SpellExecutionContext context){DamageEffect.apply(context.level(),context.owner(),context.parent(),context.damageKind(),context.potence(),context.excludeCaster());return ComponentExecutionResult.NONE;}
   @Override public boolean acceptsDirectEntity(Entity entity){return entity instanceof LivingEntity living&&living.isAlive();}
  }
  private static final class RestoreDefinition extends BaseDefinition {
   RestoreDefinition(){super(TYPE_RESTORE,"Restore",false,0,0,List.of(),false,List.of(POTENCE_PROPERTY));}
-  @Override public ItemStack createEditorIcon(){return Items.GLISTERING_MELON_SLICE.getDefaultInstance();}
+  @Override public ItemStack createEditorIcon(){return SyntacticWizardry.COMPONENT_ICON_RESTORE.get().getDefaultInstance();}
   @Override public ComponentExecutionResult execute(SpellExecutionContext context){RestoreEffect.apply(context.level(),context.owner(),context.parent(),context.potence(),context.excludeCaster());return ComponentExecutionResult.NONE;}
   @Override public boolean acceptsDirectEntity(Entity entity){return entity instanceof LivingEntity living&&living.isAlive();}
  }
@@ -162,13 +162,13 @@ public final class SpellComponents {
  }
  private static final class SiphonDefinition extends BaseDefinition {
   SiphonDefinition(){super(TYPE_SIPHON,"Siphon",false,0,0,List.of(),false,List.of(POTENCE_PROPERTY,SIPHON_RESOURCE_PROPERTY,SIPHON_MODE_PROPERTY));}
-  @Override public ItemStack createEditorIcon(){return Items.GLISTERING_MELON_SLICE.getDefaultInstance();}
+  @Override public ItemStack createEditorIcon(){return SyntacticWizardry.COMPONENT_ICON_SIPHON.get().getDefaultInstance();}
   @Override public ComponentExecutionResult execute(SpellExecutionContext context){SiphonEffect.apply(context.level(),context.owner(),context.parent(),context.siphonResource(),context.siphonMode(),context.potence(),context.excludeCaster());return ComponentExecutionResult.NONE;}
   @Override public boolean acceptsDirectEntity(Entity entity){return entity instanceof LivingEntity living&&living.isAlive();}
  }
  private static final class GravityDefinition extends BaseDefinition {
   GravityDefinition(){super(TYPE_GRAVITY,"Gravity",false,0,0,List.of(),false,List.of(POTENCE_PROPERTY,GRAVITY_MODE_PROPERTY));}
-  @Override public ItemStack createEditorIcon(){return Items.ENDER_PEARL.getDefaultInstance();}
+  @Override public ItemStack createEditorIcon(){return SyntacticWizardry.COMPONENT_ICON_GRAVITY.get().getDefaultInstance();}
   @Override public ComponentExecutionResult execute(SpellExecutionContext context){GravityEffect.apply(context.level(),context.owner(),context.parent(),context.potence(),context.gravityMode(),context.blockInteraction(),context.excludeCaster());return ComponentExecutionResult.NONE;}
   @Override public boolean acceptsDirectEntity(Entity entity){return entity!=null&&!entity.isRemoved();}
   @Override public EffectReplayPolicy replayPolicy(){return EffectReplayPolicy.TICK;}
@@ -183,21 +183,21 @@ public final class SpellComponents {
  }
  private static final class FlightDefinition extends BaseDefinition {
   FlightDefinition(){super(TYPE_FLIGHT,"Flight",false,0,0,List.of(),false,List.of(FLIGHT_POTENCE_PROPERTY));}
-  @Override public ItemStack createEditorIcon(){return Items.ELYTRA.getDefaultInstance();}
+  @Override public ItemStack createEditorIcon(){return SyntacticWizardry.COMPONENT_ICON_FLIGHT.get().getDefaultInstance();}
   @Override public boolean acceptsDirectEntity(Entity entity){return entity instanceof net.minecraft.world.entity.player.Player player&&player.isAlive();}
   @Override public EffectReplayPolicy replayPolicy(){return EffectReplayPolicy.STATEFUL;}
   @Override public ComponentExecutionResult execute(SpellExecutionContext context){FlightEffect.apply(context.level(),context.owner(),context.parent(),context.potence(),context.activeDurationTicks(),context.excludeCaster());return ComponentExecutionResult.NONE;}
  }
  private static final class DimensionalStorageDefinition extends BaseDefinition {
   DimensionalStorageDefinition(){super(TYPE_DIMENSIONAL_STORAGE,"Dimensional Storage",false,0,0,List.of(),false,List.of(POTENCE_PROPERTY));}
-  @Override public ItemStack createEditorIcon(){return Items.ENDER_CHEST.getDefaultInstance();}
+  @Override public ItemStack createEditorIcon(){return SyntacticWizardry.COMPONENT_ICON_DIMENSIONAL_STORAGE.get().getDefaultInstance();}
   @Override public boolean acceptsDirectEntity(Entity entity){return entity instanceof net.minecraft.server.level.ServerPlayer player&&player.isAlive();}
   @Override public EffectReplayPolicy replayPolicy(){return EffectReplayPolicy.CREATE_ONCE;}
   @Override public ComponentExecutionResult execute(SpellExecutionContext context){DimensionalStorageEffect.apply(context);return ComponentExecutionResult.NONE;}
  }
  private static final class TeleportationDefinition extends BaseDefinition {
   TeleportationDefinition(){super(TYPE_TELEPORTATION,"Teleportation",false,0,0,List.of(),false,List.of(POTENCE_PROPERTY,TELEPORT_MODE_PROPERTY));}
-  @Override public ItemStack createEditorIcon(){return Items.ENDER_PEARL.getDefaultInstance();}
+  @Override public ItemStack createEditorIcon(){return SyntacticWizardry.COMPONENT_ICON_TELEPORTATION.get().getDefaultInstance();}
   @Override public boolean acceptsDirectEntity(Entity entity){return entity!=null&&!entity.isRemoved();}
   @Override public EffectReplayPolicy replayPolicy(){return EffectReplayPolicy.CREATE_ONCE;}
   @Override public ComponentExecutionResult execute(SpellExecutionContext context){TeleportationEffect.apply(context);return ComponentExecutionResult.NONE;}
@@ -210,39 +210,39 @@ public final class SpellComponents {
  }
  private static final class ProtectionDefinition extends BaseDefinition {
   ProtectionDefinition(){super(TYPE_PROTECTION,"Protection",false,0,0,List.of(),false,List.of(POTENCE_PROPERTY,PROTECTION_KIND_PROPERTY));}
-  @Override public ItemStack createEditorIcon(){return Items.SHIELD.getDefaultInstance();}
+  @Override public ItemStack createEditorIcon(){return SyntacticWizardry.COMPONENT_ICON_PROTECTION.get().getDefaultInstance();}
   @Override public boolean acceptsDirectEntity(Entity entity){return entity instanceof LivingEntity living&&living.isAlive();}
   @Override public EffectReplayPolicy replayPolicy(){return EffectReplayPolicy.STATEFUL;}
   @Override public ComponentExecutionResult execute(SpellExecutionContext context){ProtectionEffect.apply(context.level(),context.owner(),context.parent(),context.protectionKind(),context.potence(),context.activeDurationTicks(),context.excludeCaster());return ComponentExecutionResult.NONE;}
  }
  private static final class TemporaryBlockDefinition extends BaseDefinition {
   TemporaryBlockDefinition(){super(TYPE_TEMPORARY_BLOCK,"Temporary Block",false,0,0,List.of(),false,List.of());}
-  @Override public ItemStack createEditorIcon(){return SyntacticWizardry.TEMPORARY_BLOCK_ITEM.get().getDefaultInstance();}
+  @Override public ItemStack createEditorIcon(){return SyntacticWizardry.COMPONENT_ICON_TEMPORARY_BLOCK.get().getDefaultInstance();}
   @Override public EffectReplayPolicy replayPolicy(){return EffectReplayPolicy.CREATE_ONCE;}
   @Override public ComponentExecutionResult execute(SpellExecutionContext context){TemporaryBlockEffect.apply(context.level(),context.parent(),context.activeDurationTicks());return ComponentExecutionResult.NONE;}
  }
  private static final class LightDefinition extends BaseDefinition {
   LightDefinition(){super(TYPE_LIGHT,"Light",false,0,0,List.of(),false,List.of());}
-  @Override public ItemStack createEditorIcon(){return MagicLightRegistry.item()==null?Items.GLOWSTONE.getDefaultInstance():MagicLightRegistry.item().getDefaultInstance();}
+  @Override public ItemStack createEditorIcon(){return SyntacticWizardry.COMPONENT_ICON_LIGHT.get().getDefaultInstance();}
   @Override public boolean acceptsDirectEntity(Entity entity){return entity!=null&&!entity.isRemoved();}
   @Override public EffectReplayPolicy replayPolicy(){return EffectReplayPolicy.CREATE_ONCE;}
   @Override public ComponentExecutionResult execute(SpellExecutionContext context){LightEffect.apply(context);return ComponentExecutionResult.NONE;}
  }
  private static final class SelfDefinition extends BaseDefinition {
   SelfDefinition(){super(TYPE_SELF,"Self",true,SpellPresentation.STYLE_DEFAULT,SpellPresentation.VISUAL_DEFAULT,List.of(),false,List.of());}
-  @Override public ItemStack createEditorIcon(){return Items.PLAYER_HEAD.getDefaultInstance();}
+  @Override public ItemStack createEditorIcon(){return SyntacticWizardry.COMPONENT_ICON_SELF.get().getDefaultInstance();}
   @Override public ComponentExecutionResult execute(SpellExecutionContext context){return ComponentExecutionResult.resolved(SelfShape.resolve(context.owner(),context.shapeDirection()));}
  }
 
  private static final class RelativeDefinition extends BaseDefinition {
   RelativeDefinition(){super(TYPE_RELATIVE,"Relative",true,SpellPresentation.STYLE_DEFAULT,SpellPresentation.VISUAL_DEFAULT,List.of(),false,List.of(RELATIVE_DIRECTION_PROPERTY,DISTANCE_PROPERTY));}
-  @Override public ItemStack createEditorIcon(){return Items.COMPASS.getDefaultInstance();}
+  @Override public ItemStack createEditorIcon(){return SyntacticWizardry.COMPONENT_ICON_RELATIVE.get().getDefaultInstance();}
   @Override public ComponentExecutionResult execute(SpellExecutionContext context){return ComponentExecutionResult.resolved(RelativeShape.resolve(context));}
  }
 
  private static final class RuneDefinition extends BaseDefinition {
   RuneDefinition(){super(TYPE_RUNE,"Rune",true,SpellPresentation.STYLE_DEFAULT,SpellPresentation.VISUAL_DEFAULT,List.of(),false,List.of());}
-  @Override public ItemStack createEditorIcon(){return Items.ENCHANTED_BOOK.getDefaultInstance();}
+  @Override public ItemStack createEditorIcon(){return SyntacticWizardry.COMPONENT_ICON_RUNE.get().getDefaultInstance();}
   @Override public ComponentExecutionResult execute(SpellExecutionContext context){
    boolean placed=RuneShape.place(context);
    if(!placed&&context.owner() instanceof net.minecraft.world.entity.player.Player player)player.displayClientMessage(net.minecraft.network.chat.Component.literal("Rune requires a nearby valid surface."),true);
@@ -251,7 +251,7 @@ public final class SpellComponents {
  }
  private static final class ChannelDefinition extends BaseDefinition {
   ChannelDefinition(){super(TYPE_CHANNEL,"Channel",false,0,0,List.of(),false,List.of());}
-  @Override public ItemStack createEditorIcon(){return Items.AMETHYST_SHARD.getDefaultInstance();}
+  @Override public ItemStack createEditorIcon(){return SyntacticWizardry.COMPONENT_ICON_CHANNEL.get().getDefaultInstance();}
   @Override public ComponentExecutionResult execute(SpellExecutionContext context){return ComponentExecutionResult.NONE;}
  }
  private static final class StreamDefinition extends BaseDefinition {
@@ -261,42 +261,42 @@ public final class SpellComponents {
  }
  private static final class DurationDefinition extends BaseDefinition {
   DurationDefinition(){super(TYPE_DURATION,"Duration",false,0,0,List.of(),false,List.of(DURATION_PROPERTY));}
-  @Override public ItemStack createEditorIcon(){return Items.CLOCK.getDefaultInstance();}
+  @Override public ItemStack createEditorIcon(){return SyntacticWizardry.COMPONENT_ICON_DURATION.get().getDefaultInstance();}
   @Override public ComponentExecutionResult execute(SpellExecutionContext context){return ComponentExecutionResult.NONE;}
  }
  private static final class BlockInteractionDefinition extends BaseDefinition {
   BlockInteractionDefinition(){super(TYPE_BLOCK_INTERACTION,"Block Interaction",false,0,0,List.of(),false,List.of());}
-  @Override public ItemStack createEditorIcon(){return Items.IRON_PICKAXE.getDefaultInstance();}
+  @Override public ItemStack createEditorIcon(){return SyntacticWizardry.COMPONENT_ICON_BLOCK_INTERACTION.get().getDefaultInstance();}
   @Override public ComponentExecutionResult execute(SpellExecutionContext context){return ComponentExecutionResult.NONE;}
  }
  private static final class RangeDefinition extends BaseDefinition {
   RangeDefinition(){super(TYPE_RANGE,"Range",false,0,0,List.of(),false,List.of(RANGE_VALUE_PROPERTY));}
-  @Override public ItemStack createEditorIcon(){return Items.SPYGLASS.getDefaultInstance();}
+  @Override public ItemStack createEditorIcon(){return SyntacticWizardry.COMPONENT_ICON_RANGE.get().getDefaultInstance();}
   @Override public ComponentExecutionResult execute(SpellExecutionContext context){return ComponentExecutionResult.NONE;}
  }
  private static final class SplitDefinition extends BaseDefinition {
   SplitDefinition(){super(TYPE_SPLIT,"Split",false,0,0,List.of(),false,List.of(POTENCE_PROPERTY,SPLIT_PATTERN_PROPERTY));}
-  @Override public ItemStack createEditorIcon(){return Items.PRISMARINE_CRYSTALS.getDefaultInstance();}
+  @Override public ItemStack createEditorIcon(){return SyntacticWizardry.COMPONENT_ICON_SPLIT.get().getDefaultInstance();}
   @Override public ComponentExecutionResult execute(SpellExecutionContext context){return ComponentExecutionResult.NONE;}
  }
  private static final class RicochetDefinition extends BaseDefinition {
   RicochetDefinition(){super(TYPE_RICOCHET,"Ricochet",false,0,0,List.of(),false,List.of());}
-  @Override public ItemStack createEditorIcon(){return Items.SLIME_BALL.getDefaultInstance();}
+  @Override public ItemStack createEditorIcon(){return SyntacticWizardry.COMPONENT_ICON_RICOCHET.get().getDefaultInstance();}
   @Override public ComponentExecutionResult execute(SpellExecutionContext context){return ComponentExecutionResult.NONE;}
  }
  private static final class PiercingDefinition extends BaseDefinition {
   PiercingDefinition(){super(TYPE_PIERCING,"Piercing",false,0,0,List.of(),false,List.of());}
-  @Override public ItemStack createEditorIcon(){return Items.ARROW.getDefaultInstance();}
+  @Override public ItemStack createEditorIcon(){return SyntacticWizardry.COMPONENT_ICON_PIERCING.get().getDefaultInstance();}
   @Override public ComponentExecutionResult execute(SpellExecutionContext context){return ComponentExecutionResult.NONE;}
  }
  private static final class HomingDefinition extends BaseDefinition {
   HomingDefinition(){super(TYPE_HOMING,"Homing",false,0,0,List.of(),false,List.of());}
-  @Override public ItemStack createEditorIcon(){return Items.COMPASS.getDefaultInstance();}
+  @Override public ItemStack createEditorIcon(){return SyntacticWizardry.COMPONENT_ICON_HOMING.get().getDefaultInstance();}
   @Override public ComponentExecutionResult execute(SpellExecutionContext context){return ComponentExecutionResult.NONE;}
  }
  private static final class ExcludeCasterDefinition extends BaseDefinition {
   ExcludeCasterDefinition(){super(TYPE_EXCLUDE_CASTER,"Exclude Caster",false,0,0,List.of(),false,List.of());}
-  @Override public ItemStack createEditorIcon(){return Items.BARRIER.getDefaultInstance();}
+  @Override public ItemStack createEditorIcon(){return SyntacticWizardry.COMPONENT_ICON_EXCLUDE_CASTER.get().getDefaultInstance();}
   @Override public ComponentExecutionResult execute(SpellExecutionContext context){return ComponentExecutionResult.NONE;}
  }
 }
