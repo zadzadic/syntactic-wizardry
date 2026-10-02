@@ -4,6 +4,8 @@ import com.proxpero.syntacticwizardry.CarvingStationMenu;
 import com.proxpero.syntacticwizardry.RunestoneItem;
 import com.proxpero.syntacticwizardry.SpellComponentDefinition;
 import com.proxpero.syntacticwizardry.SpellComponents;
+import com.proxpero.syntacticwizardry.SpellPropertyDefinition;
+import com.proxpero.syntacticwizardry.SpellPropertyKey;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -16,6 +18,7 @@ public final class CarvingStationScreen extends AbstractContainerScreen<CarvingS
     private int dragType=0;
     private int dragSourceCell=-1;
     private boolean effects=false;
+    private int selectedCell=-1;
     private Button carveButton,formButton;
 
     public CarvingStationScreen(CarvingStationMenu menu,Inventory inv,Component title){
@@ -38,7 +41,7 @@ public final class CarvingStationScreen extends AbstractContainerScreen<CarvingS
         separator(g,x+96,y+10,y+194);
         panel(g,x+100,y+10,110,184,"Carving Grid");
         separator(g,x+212,y+10,y+194);
-        panel(g,x+216,y+10,94,184,"Components");
+        panel(g,x+216,y+10,94,184,selectedCell>=0?"Properties":"Components");
         g.drawString(font,"Ingredients",x+18,y+49,0xFFE8F2FF,false);
         g.drawString(font,"Any order",x+18,y+91,0xFF9EB7CF,false);
         slotFrame(g,x+19,y+24);
@@ -56,6 +59,7 @@ public final class CarvingStationScreen extends AbstractContainerScreen<CarvingS
             for(int cell=0;cell<slots;cell++){
                 int sx=startX+cell*STEP;
                 gridCell(g,sx,sy);
+                if(cell==selectedCell)g.renderOutline(sx-1,sy-1,CELL+2,CELL+2,0xFFB8E8FF);
                 int type=menu.typeAt(cell);
                 if(type!=0){
                     SpellComponentDefinition d=SpellComponents.byType(type);
@@ -63,15 +67,47 @@ public final class CarvingStationScreen extends AbstractContainerScreen<CarvingS
                 }
             }
         }else g.drawCenteredString(font,"Insert Runestone",x+154,y+92,0xFF9EB7CF);
-        tab(g,x+220,y+30,40,"Shapes",!effects);
-        tab(g,x+264,y+30,40,"Effects",effects);
-        List<SpellComponentDefinition> list=choices();
-        for(int i=0;i<list.size()&&i<20;i++){
-            int col=i%4,row=i/4,sx=x+220+col*21,sy=y+52+row*21;
-            g.fill(sx,sy,sx+16,sy+16,0xFF2A3B55);g.renderItem(list.get(i).createEditorIcon(),sx,sy);
+        if(selectedCell>=0&&selectedCell<slots&&menu.typeAt(selectedCell)!=0){
+            renderProperties(g,x,y);
+        }else{
+            if(selectedCell>=0)selectedCell=-1;
+            tab(g,x+220,y+30,40,"Shapes",!effects);
+            tab(g,x+264,y+30,40,"Effects",effects);
+            List<SpellComponentDefinition> list=choices();
+            for(int i=0;i<list.size()&&i<20;i++){
+                int col=i%4,row=i/4,sx=x+220+col*21,sy=y+52+row*21;
+                g.fill(sx,sy,sx+16,sy+16,0xFF2A3B55);g.renderItem(list.get(i).createEditorIcon(),sx,sy);
+            }
         }
         carveButton.active=slots>0&&!menu.carved();
         formButton.active=menu.runestone().isEmpty();
+    }
+
+    private void renderProperties(GuiGraphics g,int x,int y){
+        SpellComponentDefinition definition=menu.definitionAt(selectedCell);
+        if(definition==null)return;
+        g.fill(x+220,y+30,x+304,y+46,0xB02A3B55);
+        g.drawCenteredString(font,"< Back",x+262,y+34,0xFFE8F2FF);
+        g.drawCenteredString(font,definition.displayName(),x+262,y+51,0xFFB8D7F0);
+        if(definition.settings().isEmpty()){
+            g.drawCenteredString(font,"No properties",x+262,y+76,0xFF9EB7CF);
+            return;
+        }
+        int rowY=y+66;
+        for(SpellPropertyDefinition property:definition.settings()){
+            int value=menu.propertyValue(selectedCell,property.key());
+            g.drawString(font,property.label(),x+220,rowY,0xFFD9E9F7,false);
+            buttonBox(g,x+220,rowY+10,14,14,"<");
+            g.drawCenteredString(font,property.format(value),x+262,rowY+13,0xFFE8F3FF);
+            buttonBox(g,x+290,rowY+10,14,14,">");
+            rowY+=27;
+        }
+    }
+
+    private void buttonBox(GuiGraphics g,int x,int y,int w,int h,String text){
+        g.fill(x,y,x+w,y+h,0xFF30445E);
+        g.renderOutline(x,y,w,h,0xFF5B86B8);
+        g.drawCenteredString(font,text,x+w/2,y+3,0xFFE8F3FF);
     }
 
     private void panel(GuiGraphics g,int x,int y,int w,int h,String title){
@@ -123,23 +159,46 @@ public final class CarvingStationScreen extends AbstractContainerScreen<CarvingS
             int cell=gridCellAt(mx,my);
             if(cell>=0&&!menu.carved()){
                 send(CarvingStationMenu.actionClear(cell));
+                if(selectedCell==cell)selectedCell=-1;
                 return true;
             }
         }
 
         if(button==0){
-            if(my>=y+30&&my<y+46){
-                if(mx>=x+220&&mx<x+260){effects=false;clearDrag();return true;}
-                if(mx>=x+264&&mx<x+304){effects=true;clearDrag();return true;}
-            }
+            if(selectedCell>=0){
+                if(mx>=x+220&&mx<x+304&&my>=y+30&&my<y+46){
+                    selectedCell=-1;clearDrag();return true;
+                }
+                SpellComponentDefinition definition=menu.definitionAt(selectedCell);
+                if(definition!=null&&!menu.carved()){
+                    int rowY=y+66;
+                    for(SpellPropertyDefinition property:definition.settings()){
+                        int current=menu.propertyValue(selectedCell,property.key());
+                        if(mx>=x+220&&mx<x+234&&my>=rowY+10&&my<rowY+24){
+                            send(CarvingStationMenu.actionSetProperty(selectedCell,property.key(),Math.max(property.minValue(),current-1)));
+                            return true;
+                        }
+                        if(mx>=x+290&&mx<x+304&&my>=rowY+10&&my<rowY+24){
+                            send(CarvingStationMenu.actionSetProperty(selectedCell,property.key(),Math.min(property.maxValue(),current+1)));
+                            return true;
+                        }
+                        rowY+=27;
+                    }
+                }
+            }else{
+                if(my>=y+30&&my<y+46){
+                    if(mx>=x+220&&mx<x+260){effects=false;clearDrag();return true;}
+                    if(mx>=x+264&&mx<x+304){effects=true;clearDrag();return true;}
+                }
 
-            List<SpellComponentDefinition> list=choices();
-            for(int i=0;i<list.size()&&i<20;i++){
-                int col=i%4,row=i/4,sx=x+220+col*21,sy=y+52+row*21;
-                if(mx>=sx&&mx<sx+16&&my>=sy&&my<sy+16){
-                    dragType=list.get(i).typeId();
-                    dragSourceCell=-1;
-                    return true;
+                List<SpellComponentDefinition> list=choices();
+                for(int i=0;i<list.size()&&i<20;i++){
+                    int col=i%4,row=i/4,sx=x+220+col*21,sy=y+52+row*21;
+                    if(mx>=sx&&mx<sx+16&&my>=sy&&my<sy+16){
+                        dragType=list.get(i).typeId();
+                        dragSourceCell=-1;
+                        return true;
+                    }
                 }
             }
 
@@ -147,6 +206,7 @@ public final class CarvingStationScreen extends AbstractContainerScreen<CarvingS
             if(cell>=0&&!menu.carved()){
                 int type=menu.typeAt(cell);
                 if(type!=0){
+                    selectedCell=cell;
                     dragType=type;
                     dragSourceCell=cell;
                     return true;
@@ -166,6 +226,7 @@ public final class CarvingStationScreen extends AbstractContainerScreen<CarvingS
                 }else{
                     send(CarvingStationMenu.actionAdd(target,dragType));
                 }
+                selectedCell=target;
             }
             clearDrag();
             return true;
