@@ -33,7 +33,24 @@ var generateModMetadata = tasks.register("generateModMetadata", ProcessResources
 }
 sourceSets.main.resources.srcDir generateModMetadata
 neoForge.ideSyncTask generateModMetadata
-tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }
+tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }\n
+def componentIconAtlasFile = file("$buildDir/generated/component-icons/component_atlas.png")
+tasks.register("generateComponentIconAtlas") {
+ inputs.files((0..3).collect { file("component-icons/atlas_" + it + ".b64") })
+ outputs.file(componentIconAtlasFile)
+ doLast {
+  componentIconAtlasFile.parentFile.mkdirs()
+  def encoded = (0..3).collect { file("component-icons/atlas_" + it + ".b64").text.trim() }.join()
+  componentIconAtlasFile.bytes = encoded.decodeBase64()
+ }
+}
+tasks.named("processResources") {
+ dependsOn "generateComponentIconAtlas"
+ from(componentIconAtlasFile) {
+  into "assets/syntacticwizardry/textures/item/component_icons"
+ }
+}
+
 
 // The Arcane Builder is transplanted byte-for-byte from the proven 0.4.267 implementation.
 sourceSets.main.compileClasspath += files('prebuilt-builder')
