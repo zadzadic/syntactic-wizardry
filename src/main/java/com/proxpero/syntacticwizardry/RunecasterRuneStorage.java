@@ -28,6 +28,7 @@ public final class RunecasterRuneStorage {
         if (runecaster == null || runecaster.isEmpty()) return ItemStack.EMPTY;
         ItemStack firstMounted = ItemStack.EMPTY;
         int[] compiled = new int[RunestoneItem.MAX_CELLS];
+        int[] compiledSettings = RunestoneItem.emptySettings();
         boolean any = false;
 
         for (int slot = 0; slot < RUNE_SLOTS; slot++) {
@@ -38,14 +39,21 @@ public final class RunecasterRuneStorage {
             int capacity = Math.max(1, RunestoneItem.slots(rune));
             int rotation = Math.floorMod(getRotation(runecaster, slot), capacity);
             int[] cells = RunestoneItem.cells(rune);
+            int[] runeSettings = RunestoneItem.settings(rune);
             int type = rotation < cells.length ? cells[rotation] : 0;
             compiled[slot] = type;
-            if (type != 0) any = true;
+            if (type != 0) {
+                SpellComponentDefinition definition = SpellComponents.byType(type);
+                if (definition != null) for (SpellPropertyDefinition property : definition.settings()) {
+                    RunestoneItem.setSetting(compiledSettings, slot, property.key(), RunestoneItem.settingAt(runeSettings, rotation, property.key()));
+                }
+                any = true;
+            }
         }
 
         if (!any || firstMounted.isEmpty()) return ItemStack.EMPTY;
         ItemStack synthetic = new ItemStack(firstMounted.getItem());
-        RunestoneItem.carve(synthetic, compiled);
+        RunestoneItem.carve(synthetic, compiled, compiledSettings);
         synthetic.set(DataComponents.CUSTOM_NAME, Component.literal("Compiled Runestones"));
         return synthetic;
     }
