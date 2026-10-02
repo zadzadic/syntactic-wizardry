@@ -15,10 +15,11 @@ import net.minecraft.world.item.Items;
 
 public final class CarvingStationMenu extends AbstractContainerMenu {
     public static final int WIDTH=320,HEIGHT=232,MAX_CELLS=15;
-    public static final int ACTION_ADD_BASE=100,ACTION_CLEAR_BASE=2000,ACTION_CARVE=3000,ACTION_FORM=3001,ACTION_MOVE_BASE=4000;
-    private static final int ACTION_STRIDE=64;
+    public static final int ACTION_ADD_BASE=100,ACTION_CLEAR_BASE=2000,ACTION_CARVE=3000,ACTION_FORM=3001,ACTION_MOVE_BASE=4000,ACTION_SET_PROPERTY_BASE=10000;
+    private static final int ACTION_STRIDE=64,PROPERTY_CELL_STRIDE=2048,PROPERTY_KEY_STRIDE=64;
+    private static final int SETTINGS_DATA_BASE=MAX_CELLS,DATA_SIZE=SETTINGS_DATA_BASE+MAX_CELLS*SpellPropertyKey.SETTING_COUNT;
     private final Container station=new SimpleContainer(4);
-    private final ContainerData data=new SimpleContainerData(MAX_CELLS);
+    private final ContainerData data=new SimpleContainerData(DATA_SIZE);
 
     public CarvingStationMenu(int id,Inventory inv){
         super(SyntacticWizardry.CARVING_STATION_MENU.get(),id);
@@ -27,16 +28,21 @@ public final class CarvingStationMenu extends AbstractContainerMenu {
         addSlot(new Slot(station,2,44,61){@Override public boolean mayPlace(ItemStack s){return isFormIngredient(s);}});
         addSlot(new Slot(station,3,68,61){@Override public boolean mayPlace(ItemStack s){return isFormIngredient(s);}});
         int sx=80,sy=204;for(int c=0;c<9;c++)addSlot(new Slot(inv,c,sx+c*18,sy));
+        clearAllDefaults();
         addDataSlots(data);
     }
 
     public static int actionAdd(int cell,int type){return ACTION_ADD_BASE+cell*ACTION_STRIDE+type;}
     public static int actionClear(int cell){return ACTION_CLEAR_BASE+cell;}
     public static int actionMove(int from,int to){return ACTION_MOVE_BASE+from*MAX_CELLS+to;}
+    public static int actionSetProperty(int cell,SpellPropertyKey key,int value){return ACTION_SET_PROPERTY_BASE+cell*PROPERTY_CELL_STRIDE+key.id()*PROPERTY_KEY_STRIDE+value;}
     public ItemStack runestone(){return station.getItem(0);}
     public int slots(){return RunestoneItem.slots(runestone());}
     public boolean carved(){return RunestoneItem.isRunestone(runestone())&&RunestoneItem.isCarved(runestone());}
+    private int settingIndex(int cell,SpellPropertyKey key){return SETTINGS_DATA_BASE+cell*SpellPropertyKey.SETTING_COUNT+key.settingIndex();}
     public int typeAt(int cell){return cell>=0&&cell<MAX_CELLS?data.get(cell):0;}
+    public SpellComponentDefinition definitionAt(int cell){return SpellComponents.byType(typeAt(cell));}
+    public int propertyValue(int cell,SpellPropertyKey key){return cell>=0&&cell<MAX_CELLS&&key!=null&&key.isSetting()?SpellPresentation.clampSetting(key,data.get(settingIndex(cell,key))):0;}
     public int activeCells(){return slots();}
     private boolean validCell(int cell){return cell>=0&&cell<activeCells();}
     private boolean editable(){return RunestoneItem.isRunestone(runestone())&&!carved();}
@@ -45,16 +51,23 @@ public final class CarvingStationMenu extends AbstractContainerMenu {
         return definition!=null&&!SpellComponents.isModifier(definition);
     }
     private boolean hasAny(){for(int i=0;i<activeCells();i++)if(data.get(i)!=0)return true;return false;}
+    private void clearAllDefaults(){for(int cell=0;cell<MAX_CELLS;cell++)resetCell(cell);}
+    private void resetCell(int cell){data.set(cell,0);for(SpellPropertyKey key:SpellPropertyKey.values())if(key.isSetting())data.set(settingIndex(cell,key),SpellPresentation.settingDefault(key));}
+    private void setCellType(int cell,int type){resetCell(cell);if(type==0)return;SpellComponentDefinition definition=SpellComponents.byType(type);if(definition==null)return;data.set(cell,type);for(SpellPropertyDefinition property:definition.settings())data.set(settingIndex(cell,property.key()),property.defaultValue());}
+    private boolean supportsSetting(int cell,SpellPropertyKey key){SpellComponentDefinition definition=definitionAt(cell);if(definition==null)return false;for(SpellPropertyDefinition property:definition.settings())if(property.key()==key)return true;return false;}
+    private void setPropertyValue(int cell,SpellPropertyKey key,int value){if(validCell(cell)&&key!=null&&key.isSetting()&&supportsSetting(cell,key))data.set(settingIndex(cell,key),SpellPresentation.clampSetting(key,value));}
+    private void swapCells(int a,int b){int t=data.get(a);data.set(a,data.get(b));data.set(b,t);for(SpellPropertyKey key:SpellPropertyKey.values())if(key.isSetting()){int ia=settingIndex(a,key),ib=settingIndex(b,key),v=data.get(ia);data.set(ia,data.get(ib));data.set(ib,v);}}
+    private int[] snapshotSettings(){int[] out=RunestoneItem.emptySettings();for(int cell=0;cell<MAX_CELLS;cell++)for(SpellPropertyKey key:SpellPropertyKey.values())if(key.isSetting())RunestoneItem.setSetting(out,cell,key,data.get(settingIndex(cell,key)));return out;}
 
     @Override public boolean clickMenuButton(Player player,int id){
         if(id>=ACTION_ADD_BASE&&id<ACTION_CLEAR_BASE){
             int code=id-ACTION_ADD_BASE,cell=code/ACTION_STRIDE,type=code%ACTION_STRIDE;
-            if(editable()&&validCell(cell)&&allowedType(type)){data.set(cell,type);return true;}
+            if(editable()&&validCell(cell)&&allowedType(type)){setCellType(cell,type);return true;}
             return false;
         }
         if(id>=ACTION_CLEAR_BASE&&id<ACTION_CARVE){
             int cell=id-ACTION_CLEAR_BASE;
-            if(editable()&&validCell(cell)){data.set(cell,0);return true;}
+            if(editable()&&validCell(cell)){setCellType(cell,0);return true;}
             return false;
         }
         if(id>=ACTION_MOVE_BASE&&id<ACTION_MOVE_BASE+MAX_CELLS*MAX_CELLS){
@@ -62,17 +75,21 @@ public final class CarvingStationMenu extends AbstractContainerMenu {
             if(editable()&&validCell(from)&&validCell(to)&&from!=to){
                 int moving=data.get(from);
                 if(moving==0)return false;
-                int displaced=data.get(to);
-                data.set(to,moving);
-                data.set(from,displaced);
+                swapCells(from,to);
                 return true;
             }
+            return false;
+        }
+        if(id>=ACTION_SET_PROPERTY_BASE){
+            int code=id-ACTION_SET_PROPERTY_BASE,cell=code/PROPERTY_CELL_STRIDE,rest=code%PROPERTY_CELL_STRIDE;
+            SpellPropertyKey key=SpellPropertyKey.byId(rest/PROPERTY_KEY_STRIDE);int value=rest%PROPERTY_KEY_STRIDE;
+            if(editable()&&validCell(cell)&&key!=null){setPropertyValue(cell,key,value);return true;}
             return false;
         }
         if(id==ACTION_CARVE){
             if(!editable()||!hasAny())return false;
             int[] cells=new int[MAX_CELLS];for(int i=0;i<MAX_CELLS;i++)cells[i]=data.get(i);
-            RunestoneItem.carve(runestone(),cells);station.setChanged();return true;
+            RunestoneItem.carve(runestone(),cells,snapshotSettings());station.setChanged();return true;
         }
         if(id==ACTION_FORM)return formRunestone();
         return false;
