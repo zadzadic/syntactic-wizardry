@@ -4,13 +4,15 @@
   "compatibilityLevel": "JAVA_21",
   "mixins": [
     "PlayerFlightMixin",
-    "LivingEntityFlightMixin"
+    "LivingEntityFlightMixin",
+    "EclipseSkyDarkenMixin"
   ],
   "client": [
     "RunecasterItemRenderMixin",
     "ConduitPlannerBuilderControllerMixin",
     "ConduitPlannerBuilderEditMixin",
-    "ConduitPlannerVolumeMixin"
+    "ConduitPlannerVolumeMixin",
+    "EclipseSkyRenderMixin"
   ],
   "injectors": {
     "defaultRequire": 1

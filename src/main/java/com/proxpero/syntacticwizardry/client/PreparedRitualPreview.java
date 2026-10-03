@@ -2,6 +2,7 @@ package com.proxpero.syntacticwizardry.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.proxpero.syntacticwizardry.EclipseRitualStructure;
 import com.proxpero.syntacticwizardry.RitualDefinition;
 import com.proxpero.syntacticwizardry.RitualStructureRules;
 import com.proxpero.syntacticwizardry.SyntacticWizardry;
@@ -53,6 +54,21 @@ public final class PreparedRitualPreview {
                 RitualStructureRules.Role.CENTER,
                 null,
                 "Mature Crystal"));
+
+        if (definition == RitualDefinition.ECLIPSE) {
+            built.add(new GhostBlock(
+                    center.below(),
+                    RitualStructureRules.Role.STRUCTURAL,
+                    null,
+                    "Obsidian"));
+            for (BlockPos offset : EclipseRitualStructure.runeOffsets()) {
+                built.add(new GhostBlock(
+                        center.offset(offset),
+                        RitualStructureRules.Role.RUNE,
+                        null,
+                        "Chalk Rune"));
+            }
+        }
 
         for (RitualStructureRules.FocusPlacement placement : focusPlan.placements()) {
             built.add(new GhostBlock(
@@ -141,6 +157,12 @@ public final class PreparedRitualPreview {
             return new float[]{0.72F, 0.42F, 1.0F};
         }
 
+        if (ghost.role() == RitualStructureRules.Role.RUNE) {
+            return new float[]{0.72F, 0.42F, 1.0F};
+        }
+        if (ghost.role() == RitualStructureRules.Role.STRUCTURAL) {
+            return new float[]{0.34F, 0.20F, 0.42F};
+        }
         if (ghost.role() != RitualStructureRules.Role.FOCUS || ghost.focusMaterial() == null) {
             return new float[]{0.70F, 0.70F, 0.70F};
         }

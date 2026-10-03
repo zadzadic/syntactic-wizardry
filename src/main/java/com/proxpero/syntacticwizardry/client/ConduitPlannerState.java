@@ -55,6 +55,7 @@ public final class ConduitPlannerState {
     private static RitualDefinition ritual = RitualDefinition.PROTECTION;
     private static AreaShape areaShape = AreaShape.BOX;
     private static int listScroll;
+    private static int ritualPotence = 1;
     private static int activeScroll;
     private static boolean leftWasDown;
     private static boolean rightWasDown;
@@ -123,6 +124,7 @@ public final class ConduitPlannerState {
         areaShape = AreaShape.BOX;
         viewMode = ViewMode.MANAGEMENT;
         listScroll = 0;
+        ritualPotence = 1;
         activeScroll = 0;
         leftWasDown = false;
         rightWasDown = false;
@@ -362,6 +364,16 @@ public final class ConduitPlannerState {
             clearSelection();
             return;
         }
+        if (ritual != RitualDefinition.PERMANENCY) {
+            if (inside(mouseX, mouseY, width - 178, height - 72, 20, 18)) {
+                ritualPotence = Math.max(1, ritualPotence - 1);
+                return;
+            }
+            if (inside(mouseX, mouseY, width - 28, height - 72, 20, 18)) {
+                ritualPotence = Math.min(32, ritualPotence + 1);
+                return;
+            }
+        }
         if (inside(mouseX, mouseY, width - 178, height - 38, 170, 22)) {
             PreparedRitualPreview.prepare(ritual, conduitPos, requestedRitualPotence());
             return;
@@ -371,6 +383,7 @@ public final class ConduitPlannerState {
         if (clicked != null) {
             if (clicked != ritual) {
                 ritual = clicked;
+                ritualPotence = 1;
                 permanentSpellEditor.close();
                 clearSelection();
                 movingArea = false;
@@ -570,17 +583,17 @@ public final class ConduitPlannerState {
         int rowY = activeRowY(height, entry);
         if (rightPressed) {
             mc.setScreen(new ArmillaryRenameScreen(null, entry.name(),
-                    value -> ActiveRitualClientRegistry.rename(entry.id(), value)));
+                    value -> RitualClientControl.rename(entry.id(), value)));
             return;
         }
 
         if (!leftPressed) return;
         if (inside(mouseX, mouseY, PANEL_X + 196, rowY + 4, 52, 18)) {
-            ActiveRitualClientRegistry.setPaused(entry.id(), !entry.paused());
+            RitualClientControl.pause(entry.id(), !entry.paused());
             return;
         }
         if (inside(mouseX, mouseY, PANEL_X + 252, rowY + 4, 48, 18)) {
-            ActiveRitualClientRegistry.stop(entry.id());
+            RitualClientControl.stop(entry.id());
             return;
         }
 
@@ -592,6 +605,7 @@ public final class ConduitPlannerState {
         ritual = RitualDefinition.PROTECTION;
         areaShape = AreaShape.BOX;
         listScroll = 0;
+        ritualPotence = 1;
         clearSelection();
         movingArea = false;
         rotatingFacing = false;
@@ -693,7 +707,16 @@ public final class ConduitPlannerState {
     private static void renderPlannerControls(GuiGraphics graphics, Minecraft mc, int width, int height) {
         int potence = requestedRitualPotence();
         RitualStructureRules.FocusPlan focus = RitualStructureRules.focusPlan(potence);
-        String focusText = "Focus P" + potence + ": " + focus.summary();
+
+        if (ritual == RitualDefinition.PERMANENCY) {
+            graphics.drawCenteredString(mc.font, "Potence " + potence + " (Permanent Spell)", width - 93, height - 68, 0xFFDCE6F3);
+        } else {
+            drawButton(graphics, mc, width - 178, height - 72, 20, 18, "<", false);
+            graphics.drawCenteredString(mc.font, "Potence " + potence, width - 93, height - 68, 0xFFDCE6F3);
+            drawButton(graphics, mc, width - 28, height - 72, 20, 18, ">", false);
+        }
+
+        String focusText = "Focus: " + focus.summary();
         String shown = mc.font.plainSubstrByWidth(focusText, 170);
         graphics.drawString(mc.font, shown, width - 178, height - 50, 0xFFB9C5D6, false);
 
@@ -702,7 +725,7 @@ public final class ConduitPlannerState {
     }
 
     private static int requestedRitualPotence() {
-        if (ritual != RitualDefinition.PERMANENCY) return 1;
+        if (ritual != RitualDefinition.PERMANENCY) return ritualPotence;
 
         int[] plan = permanentSpellEditor.snapshotPlan();
         int[] settings = permanentSpellEditor.snapshotSettings();
@@ -1010,7 +1033,7 @@ public final class ConduitPlannerState {
         if (inside(mouseX, mouseY, PANEL_X, PANEL_Y, PANEL_W, height - 16)) return true;
         if (inside(mouseX, mouseY, width - 178, 8, 170, ritual.variableArea() ? 92 : 50)) return true;
         if (inside(mouseX, mouseY, PANEL_X + 7, height - 38, 72, 22)) return true;
-        if (inside(mouseX, mouseY, width - 178, height - 38, 170, 22)) return true;
+        if (inside(mouseX, mouseY, width - 178, height - 76, 170, 60)) return true;
         return ritual == RitualDefinition.PERMANENCY
                 && inside(mouseX, mouseY, width - 178, 104, 170, 72);
     }

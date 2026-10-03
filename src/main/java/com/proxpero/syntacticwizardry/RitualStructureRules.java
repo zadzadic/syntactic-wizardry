@@ -216,6 +216,26 @@ public final class RitualStructureRules {
         return buildPlan(target, candidates.get(0));
     }
 
+    public static List<BlockPos> focusSlots() {
+        return List.of(
+                new BlockPos(3, 0, 0),
+                new BlockPos(2, 0, 2),
+                new BlockPos(0, 0, 3),
+                new BlockPos(-2, 0, 2),
+                new BlockPos(-3, 0, 0),
+                new BlockPos(-2, 0, -2),
+                new BlockPos(0, 0, -3),
+                new BlockPos(2, 0, -2));
+    }
+
+    public static FocusMaterial focusMaterial(BlockState state) {
+        if (state == null) return null;
+        for (FocusMaterial material : FocusMaterial.values()) {
+            if (material.matches(state)) return material;
+        }
+        return null;
+    }
+
     public static FocusMaterial requiredTier(int requestedPotence) {
         int target = Math.max(1, requestedPotence);
         if (target <= 4) return FocusMaterial.IRON;

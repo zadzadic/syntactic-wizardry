@@ -80,6 +80,10 @@ public final class ActiveRitualClientRegistry {
         ENTRIES.removeIf(entry -> entry.id.equals(id));
     }
 
+    public static void clearRitual(RitualDefinition ritual) {
+        ENTRIES.removeIf(entry -> entry.ritual == ritual);
+    }
+
     public static void clear() {
         ENTRIES.clear();
     }
