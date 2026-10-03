@@ -890,7 +890,12 @@ public final class ConduitPlannerState {
     }
 
     private static void normalizeShapeBounds(int[] before, int[] after) {
-        if (after == null || areaShape == AreaShape.BOX) return;
+        if (after == null) return;
+        if (areaShape == AreaShape.BOX) {
+            int[] constrained = constrainEffectOrigin(after);
+            if (!Arrays.equals(after, constrained)) setBounds(constrained);
+            return;
+        }
         int[] normalized = Arrays.copyOf(after, after.length);
         int sx = size(after, 0);
         int sy = size(after, 1);
