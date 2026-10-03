@@ -1,0 +1,21 @@
+{
+  "replace": false,
+  "values": [
+    "syntacticwizardry:chalk",
+    "syntacticwizardry:orange_chalk",
+    "syntacticwizardry:magenta_chalk",
+    "syntacticwizardry:light_blue_chalk",
+    "syntacticwizardry:yellow_chalk",
+    "syntacticwizardry:lime_chalk",
+    "syntacticwizardry:pink_chalk",
+    "syntacticwizardry:gray_chalk",
+    "syntacticwizardry:light_gray_chalk",
+    "syntacticwizardry:cyan_chalk",
+    "syntacticwizardry:purple_chalk",
+    "syntacticwizardry:blue_chalk",
+    "syntacticwizardry:brown_chalk",
+    "syntacticwizardry:green_chalk",
+    "syntacticwizardry:red_chalk",
+    "syntacticwizardry:black_chalk"
+  ]
+}

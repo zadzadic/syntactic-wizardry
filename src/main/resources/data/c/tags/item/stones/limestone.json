@@ -1,0 +1,13 @@
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "create:limestone",
+      "required": false
+    },
+    {
+      "id": "create:cut_limestone",
+      "required": false
+    }
+  ]
+}

@@ -63,5 +63,22 @@
   "item.syntacticwizardry.iron_runecaster": "Iron Runecaster",
   "item.syntacticwizardry.diamond_runecaster": "Diamond Runecaster",
   "item.syntacticwizardry.netherite_runecaster": "Netherite Runecaster",
-  "menu.syntacticwizardry.runecaster": "Runecaster"
+  "menu.syntacticwizardry.runecaster": "Runecaster",
+  "block.syntacticwizardry.chalk_rune": "Chalk Rune",
+  "item.syntacticwizardry.chalk": "Chalk",
+  "item.syntacticwizardry.orange_chalk": "Orange Chalk",
+  "item.syntacticwizardry.magenta_chalk": "Magenta Chalk",
+  "item.syntacticwizardry.light_blue_chalk": "Light Blue Chalk",
+  "item.syntacticwizardry.yellow_chalk": "Yellow Chalk",
+  "item.syntacticwizardry.lime_chalk": "Lime Chalk",
+  "item.syntacticwizardry.pink_chalk": "Pink Chalk",
+  "item.syntacticwizardry.gray_chalk": "Gray Chalk",
+  "item.syntacticwizardry.light_gray_chalk": "Light Gray Chalk",
+  "item.syntacticwizardry.cyan_chalk": "Cyan Chalk",
+  "item.syntacticwizardry.purple_chalk": "Purple Chalk",
+  "item.syntacticwizardry.blue_chalk": "Blue Chalk",
+  "item.syntacticwizardry.brown_chalk": "Brown Chalk",
+  "item.syntacticwizardry.green_chalk": "Green Chalk",
+  "item.syntacticwizardry.red_chalk": "Red Chalk",
+  "item.syntacticwizardry.black_chalk": "Black Chalk"
 }
