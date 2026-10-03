@@ -1,116 +1,116 @@
 {
   "variants": {
     "facing=north,glyph=0": {
-      "model": "syntacticwizardry:block/chalk_rune_symbol_0"
-    },
-    "facing=north,glyph=1": {
-      "model": "syntacticwizardry:block/chalk_rune_symbol_1"
-    },
-    "facing=north,glyph=2": {
-      "model": "syntacticwizardry:block/chalk_rune_symbol_2"
-    },
-    "facing=north,glyph=3": {
-      "model": "syntacticwizardry:block/chalk_rune_symbol_3"
-    },
-    "facing=north,glyph=4": {
-      "model": "syntacticwizardry:block/chalk_rune_symbol_4"
-    },
-    "facing=north,glyph=5": {
-      "model": "syntacticwizardry:block/chalk_rune_symbol_5"
-    },
-    "facing=north,glyph=6": {
-      "model": "syntacticwizardry:block/chalk_rune_symbol_6"
-    },
-    "facing=north,glyph=7": {
-      "model": "syntacticwizardry:block/chalk_rune_symbol_7"
-    },
-    "facing=north,glyph=8": {
-      "model": "syntacticwizardry:block/chalk_rune_symbol_8"
-    },
-    "facing=north,glyph=9": {
-      "model": "syntacticwizardry:block/chalk_rune_symbol_9"
-    },
-    "facing=north,glyph=10": {
-      "model": "syntacticwizardry:block/chalk_rune_symbol_10"
-    },
-    "facing=north,glyph=11": {
-      "model": "syntacticwizardry:block/chalk_rune_symbol_11"
-    },
-    "facing=north,glyph=12": {
-      "model": "syntacticwizardry:block/chalk_rune_symbol_12"
-    },
-    "facing=north,glyph=13": {
-      "model": "syntacticwizardry:block/chalk_rune_symbol_13"
-    },
-    "facing=north,glyph=14": {
-      "model": "syntacticwizardry:block/chalk_rune_symbol_14"
-    },
-    "facing=north,glyph=15": {
-      "model": "syntacticwizardry:block/chalk_rune_symbol_15"
-    },
-    "facing=south,glyph=0": {
       "model": "syntacticwizardry:block/chalk_rune_symbol_0",
       "y": 180
     },
-    "facing=south,glyph=1": {
+    "facing=north,glyph=1": {
       "model": "syntacticwizardry:block/chalk_rune_symbol_1",
       "y": 180
     },
-    "facing=south,glyph=2": {
+    "facing=north,glyph=2": {
       "model": "syntacticwizardry:block/chalk_rune_symbol_2",
       "y": 180
     },
-    "facing=south,glyph=3": {
+    "facing=north,glyph=3": {
       "model": "syntacticwizardry:block/chalk_rune_symbol_3",
       "y": 180
     },
-    "facing=south,glyph=4": {
+    "facing=north,glyph=4": {
       "model": "syntacticwizardry:block/chalk_rune_symbol_4",
       "y": 180
     },
-    "facing=south,glyph=5": {
+    "facing=north,glyph=5": {
       "model": "syntacticwizardry:block/chalk_rune_symbol_5",
       "y": 180
     },
-    "facing=south,glyph=6": {
+    "facing=north,glyph=6": {
       "model": "syntacticwizardry:block/chalk_rune_symbol_6",
       "y": 180
     },
-    "facing=south,glyph=7": {
+    "facing=north,glyph=7": {
       "model": "syntacticwizardry:block/chalk_rune_symbol_7",
       "y": 180
     },
-    "facing=south,glyph=8": {
+    "facing=north,glyph=8": {
       "model": "syntacticwizardry:block/chalk_rune_symbol_8",
       "y": 180
     },
-    "facing=south,glyph=9": {
+    "facing=north,glyph=9": {
       "model": "syntacticwizardry:block/chalk_rune_symbol_9",
       "y": 180
     },
-    "facing=south,glyph=10": {
+    "facing=north,glyph=10": {
       "model": "syntacticwizardry:block/chalk_rune_symbol_10",
       "y": 180
     },
-    "facing=south,glyph=11": {
+    "facing=north,glyph=11": {
       "model": "syntacticwizardry:block/chalk_rune_symbol_11",
       "y": 180
     },
-    "facing=south,glyph=12": {
+    "facing=north,glyph=12": {
       "model": "syntacticwizardry:block/chalk_rune_symbol_12",
       "y": 180
     },
-    "facing=south,glyph=13": {
+    "facing=north,glyph=13": {
       "model": "syntacticwizardry:block/chalk_rune_symbol_13",
       "y": 180
     },
-    "facing=south,glyph=14": {
+    "facing=north,glyph=14": {
       "model": "syntacticwizardry:block/chalk_rune_symbol_14",
       "y": 180
     },
-    "facing=south,glyph=15": {
+    "facing=north,glyph=15": {
       "model": "syntacticwizardry:block/chalk_rune_symbol_15",
       "y": 180
+    },
+    "facing=south,glyph=0": {
+      "model": "syntacticwizardry:block/chalk_rune_symbol_0"
+    },
+    "facing=south,glyph=1": {
+      "model": "syntacticwizardry:block/chalk_rune_symbol_1"
+    },
+    "facing=south,glyph=2": {
+      "model": "syntacticwizardry:block/chalk_rune_symbol_2"
+    },
+    "facing=south,glyph=3": {
+      "model": "syntacticwizardry:block/chalk_rune_symbol_3"
+    },
+    "facing=south,glyph=4": {
+      "model": "syntacticwizardry:block/chalk_rune_symbol_4"
+    },
+    "facing=south,glyph=5": {
+      "model": "syntacticwizardry:block/chalk_rune_symbol_5"
+    },
+    "facing=south,glyph=6": {
+      "model": "syntacticwizardry:block/chalk_rune_symbol_6"
+    },
+    "facing=south,glyph=7": {
+      "model": "syntacticwizardry:block/chalk_rune_symbol_7"
+    },
+    "facing=south,glyph=8": {
+      "model": "syntacticwizardry:block/chalk_rune_symbol_8"
+    },
+    "facing=south,glyph=9": {
+      "model": "syntacticwizardry:block/chalk_rune_symbol_9"
+    },
+    "facing=south,glyph=10": {
+      "model": "syntacticwizardry:block/chalk_rune_symbol_10"
+    },
+    "facing=south,glyph=11": {
+      "model": "syntacticwizardry:block/chalk_rune_symbol_11"
+    },
+    "facing=south,glyph=12": {
+      "model": "syntacticwizardry:block/chalk_rune_symbol_12"
+    },
+    "facing=south,glyph=13": {
+      "model": "syntacticwizardry:block/chalk_rune_symbol_13"
+    },
+    "facing=south,glyph=14": {
+      "model": "syntacticwizardry:block/chalk_rune_symbol_14"
+    },
+    "facing=south,glyph=15": {
+      "model": "syntacticwizardry:block/chalk_rune_symbol_15"
     },
     "facing=east,glyph=0": {
       "model": "syntacticwizardry:block/chalk_rune_symbol_0",

@@ -2,7 +2,7 @@
   "render_type": "minecraft:cutout",
   "ambientocclusion": false,
   "textures": {
-    "rune": "syntacticwizardry:block/chalk_runes"
+    "rune": "syntacticwizardry:block/chalk_rune_4"
   },
   "elements": [
     {
@@ -21,19 +21,19 @@
         "north": {
           "uv": [
             0,
-            4,
-            4,
-            8
+            0,
+            16,
+            16
           ],
           "texture": "#rune",
           "tintindex": 0
         },
         "south": {
           "uv": [
-            4,
-            4,
+            16,
             0,
-            8
+            0,
+            16
           ],
           "texture": "#rune",
           "tintindex": 0
