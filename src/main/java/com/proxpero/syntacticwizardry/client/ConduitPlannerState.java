@@ -553,6 +553,13 @@ public final class ConduitPlannerState {
             return;
         }
 
+        if (leftPressed
+                && PreparedRitualPreview.prepared()
+                && inside(mouseX, mouseY, width - 138, 80, 126, 22)) {
+            PreparedRitualPreview.clear();
+            return;
+        }
+
         ActiveRitualClientRegistry.Entry entry = activeRitualAt(height, mouseX, mouseY);
         if (entry == null) return;
 
@@ -647,9 +654,11 @@ public final class ConduitPlannerState {
             String prepared = "Prepared: " + PreparedRitualPreview.ritual().displayName();
             int tx = width - 146;
             int ty = 54;
-            int tw = Math.min(138, mc.font.width(prepared) + 12);
-            graphics.fill(tx, ty, tx + tw, ty + 20, 0xA0182232);
-            graphics.drawString(mc.font, prepared, tx + 6, ty + 6, 0xFFD2B7FF, false);
+            graphics.fill(tx, ty, width - 8, 108, 0xC0182232);
+            graphics.renderOutline(tx, ty, 138, 54, 0xFF8E72C7);
+            String shown = mc.font.plainSubstrByWidth(prepared, 126);
+            graphics.drawString(mc.font, shown, tx + 6, ty + 7, 0xFFD2B7FF, false);
+            drawButton(graphics, mc, width - 138, 80, 126, 22, "Cancel Prepared Ritual", false);
         }
 
         String help = "Click a ritual to focus it. Right-click to rename it.";
