@@ -43,6 +43,19 @@ final class ConduitAreaRender {
         return true;
     }
 
+    static void renderGizmos(RenderLevelStageEvent event, int[] bounds, boolean showFacingGizmo, float facingYaw, float facingPitch) {
+        if (bounds == null || event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES) return;
+        Minecraft mc = Minecraft.getInstance();
+        PoseStack pose = event.getPoseStack();
+        Vec3 camera = event.getCamera().getPosition();
+        MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
+        RenderType lines = RenderType.lines();
+        VertexConsumer consumer = buffers.getBuffer(lines);
+        renderMoveGizmo(pose, consumer, camera, bounds);
+        if (showFacingGizmo) renderFacingGizmo(pose, consumer, camera, bounds, facingYaw, facingPitch);
+        buffers.endBatch(lines);
+    }
+
     private static void renderShapeBlocks(PoseStack pose, VertexConsumer consumer, Vec3 camera,
                                           ConduitPlannerState.AreaShape shape, int[] b) {
         long volume = (long)(b[3] - b[0] + 1) * (b[4] - b[1] + 1) * (b[5] - b[2] + 1);
