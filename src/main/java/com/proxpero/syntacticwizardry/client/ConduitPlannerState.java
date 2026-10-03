@@ -7,6 +7,10 @@ import com.arcane.magic.client.ArcaneBuilderEditEvents;
 import com.proxpero.syntacticwizardry.RitualDefinition;
 import com.proxpero.syntacticwizardry.SpellComponentDefinition;
 import com.proxpero.syntacticwizardry.SpellComponents;
+import com.proxpero.syntacticwizardry.SpellPresentation;
+import com.proxpero.syntacticwizardry.SpellPropertyDefinition;
+import com.proxpero.syntacticwizardry.SpellPropertyKey;
+import com.proxpero.syntacticwizardry.RitualStructureRules;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.core.BlockPos;
@@ -359,7 +363,7 @@ public final class ConduitPlannerState {
             return;
         }
         if (inside(mouseX, mouseY, width - 178, height - 38, 170, 22)) {
-            PreparedRitualPreview.prepare(ritual, conduitPos);
+            PreparedRitualPreview.prepare(ritual, conduitPos, requestedRitualPotence());
             return;
         }
 
@@ -687,8 +691,35 @@ public final class ConduitPlannerState {
     }
 
     private static void renderPlannerControls(GuiGraphics graphics, Minecraft mc, int width, int height) {
+        int potence = requestedRitualPotence();
+        RitualStructureRules.FocusPlan focus = RitualStructureRules.focusPlan(potence);
+        String focusText = "Focus P" + potence + ": " + focus.summary();
+        String shown = mc.font.plainSubstrByWidth(focusText, 170);
+        graphics.drawString(mc.font, shown, width - 178, height - 50, 0xFFB9C5D6, false);
+
         drawButton(graphics, mc, PANEL_X + 7, height - 38, 72, 22, "Back", false);
         drawButton(graphics, mc, width - 178, height - 38, 170, 22, "Prepare Ritual", false);
+    }
+
+    private static int requestedRitualPotence() {
+        if (ritual != RitualDefinition.PERMANENCY) return 1;
+
+        int[] plan = permanentSpellEditor.snapshotPlan();
+        int[] settings = permanentSpellEditor.snapshotSettings();
+        int result = 1;
+
+        for (int cell = 0; cell < SpellPresentation.CELLS; cell++) {
+            SpellComponentDefinition definition = SpellComponents.byType(SpellPresentation.typeAt(plan, cell));
+            if (definition == null) continue;
+
+            for (SpellPropertyDefinition property : definition.settings()) {
+                if (property.key() != SpellPropertyKey.POTENCE) continue;
+                result = Math.max(result, SpellPresentation.potenceAt(settings, cell));
+                break;
+            }
+        }
+
+        return result;
     }
 
     private static boolean handleGizmos(Minecraft mc, boolean leftDown, boolean justPressed,
@@ -915,15 +946,53 @@ public final class ConduitPlannerState {
 
     private static void setBounds(int[] b) {
         try {
-            intField("minX").setInt(null, b[0]);
-            intField("minY").setInt(null, b[1]);
-            intField("minZ").setInt(null, b[2]);
-            intField("maxX").setInt(null, b[3]);
-            intField("maxY").setInt(null, b[4]);
-            intField("maxZ").setInt(null, b[5]);
+            int[] constrained = constrainEffectOrigin(b);
+            intField("minX").setInt(null, constrained[0]);
+            intField("minY").setInt(null, constrained[1]);
+            intField("minZ").setInt(null, constrained[2]);
+            intField("maxX").setInt(null, constrained[3]);
+            intField("maxY").setInt(null, constrained[4]);
+            intField("maxZ").setInt(null, constrained[5]);
             commitVirtualBounds();
         } catch (Throwable ignored) {
         }
+    }
+
+    private static int[] constrainEffectOrigin(int[] source) {
+        if (source == null || source.length < 6) return source;
+
+        int[] b = Arrays.copyOf(source, source.length);
+        double cx = (b[0] + b[3] + 1.0D) * 0.5D;
+        double cy = (b[1] + b[4] + 1.0D) * 0.5D;
+        double cz = (b[2] + b[5] + 1.0D) * 0.5D;
+
+        double centerX = conduitPos.getX() + 0.5D;
+        double centerY = conduitPos.getY() + 0.5D;
+        double centerZ = conduitPos.getZ() + 0.5D;
+
+        double dx = cx - centerX;
+        double dy = cy - centerY;
+        double dz = cz - centerZ;
+        double distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        double max = RitualStructureRules.EFFECT_ORIGIN_MAX_DISTANCE;
+        if (distance <= max || distance < 1.0E-8D) return b;
+
+        double scale = max / distance;
+        double targetX = centerX + dx * scale;
+        double targetY = centerY + dy * scale;
+        double targetZ = centerZ + dz * scale;
+
+        int shiftX = (int)Math.round(targetX - cx);
+        int shiftY = (int)Math.round(targetY - cy);
+        int shiftZ = (int)Math.round(targetZ - cz);
+
+        b[0] += shiftX;
+        b[3] += shiftX;
+        b[1] += shiftY;
+        b[4] += shiftY;
+        b[2] += shiftZ;
+        b[5] += shiftZ;
+        return b;
     }
 
     private static void addCorner(Set<Long> selected, int x, int y, int z) {
