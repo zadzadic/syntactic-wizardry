@@ -9,7 +9,8 @@
   "client": [
     "RunecasterItemRenderMixin",
     "ConduitPlannerBuilderControllerMixin",
-    "ConduitPlannerBuilderEditMixin"
+    "ConduitPlannerBuilderEditMixin",
+    "ConduitPlannerVolumeMixin"
   ],
   "injectors": {
     "defaultRequire": 1
