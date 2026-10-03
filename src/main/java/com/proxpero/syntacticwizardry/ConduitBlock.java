@@ -1,5 +1,6 @@
 package com.proxpero.syntacticwizardry;
 
+import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -12,6 +13,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 
 public final class ConduitBlock extends Block {
+    public static final MapCodec<ConduitBlock> CODEC = simpleCodec(ConduitBlock::new);
     static final String SEAT_TAG = "syntactic_conduit_seat";
     static final String SEAT_ID = "syntactic_conduit_seat_id";
     static final String X_TAG = "syntactic_conduit_x";
@@ -20,6 +22,11 @@ public final class ConduitBlock extends Block {
 
     public ConduitBlock(Properties properties) {
         super(properties);
+    }
+
+    @Override
+    protected MapCodec<? extends Block> codec() {
+        return CODEC;
     }
 
     @Override
