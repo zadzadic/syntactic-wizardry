@@ -3,6 +3,7 @@ package com.proxpero.syntacticwizardry.client;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.proxpero.syntacticwizardry.RitualDefinition;
+import com.proxpero.syntacticwizardry.RitualStructureRules;
 import com.proxpero.syntacticwizardry.SyntacticWizardry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
@@ -22,20 +23,45 @@ import java.util.List;
 
 @EventBusSubscriber(modid = SyntacticWizardry.MOD_ID, bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)
 public final class PreparedRitualPreview {
-    public record GhostBlock(BlockPos pos, String role) {}
+    public record GhostBlock(
+            BlockPos pos,
+            RitualStructureRules.Role role,
+            RitualStructureRules.FocusMaterial focusMaterial,
+            String label) {}
 
     private static RitualDefinition ritual;
     private static BlockPos center;
+    private static int requestedPotence;
+    private static RitualStructureRules.FocusPlan focusPlan;
     private static List<GhostBlock> ghosts = List.of();
 
     private PreparedRitualPreview() {}
 
     public static void prepare(RitualDefinition definition, BlockPos ritualCenter) {
+        prepare(definition, ritualCenter, 1);
+    }
+
+    public static void prepare(RitualDefinition definition, BlockPos ritualCenter, int potence) {
         ritual = definition;
         center = ritualCenter == null ? BlockPos.ZERO : ritualCenter.immutable();
+        requestedPotence = Math.max(1, potence);
+        focusPlan = RitualStructureRules.focusPlan(requestedPotence);
 
         List<GhostBlock> built = new ArrayList<>();
-        built.add(new GhostBlock(center, "Mature Crystal"));
+        built.add(new GhostBlock(
+                center,
+                RitualStructureRules.Role.CENTER,
+                null,
+                "Mature Crystal"));
+
+        for (RitualStructureRules.FocusPlacement placement : focusPlan.placements()) {
+            built.add(new GhostBlock(
+                    placement.position(center),
+                    RitualStructureRules.Role.FOCUS,
+                    placement.material(),
+                    placement.material().displayName() + " Focus"));
+        }
+
         ghosts = Collections.unmodifiableList(built);
     }
 
@@ -51,6 +77,14 @@ public final class PreparedRitualPreview {
         return center;
     }
 
+    public static int requestedPotence() {
+        return requestedPotence;
+    }
+
+    public static RitualStructureRules.FocusPlan focusPlan() {
+        return focusPlan;
+    }
+
     public static List<GhostBlock> ghosts() {
         return ghosts;
     }
@@ -58,6 +92,8 @@ public final class PreparedRitualPreview {
     public static void clear() {
         ritual = null;
         center = null;
+        requestedPotence = 0;
+        focusPlan = null;
         ghosts = List.of();
     }
 
@@ -82,7 +118,10 @@ public final class PreparedRitualPreview {
 
         for (GhostBlock ghost : ghosts) {
             BlockPos pos = ghost.pos();
-            double pulse = 0.03D + 0.015D * Math.sin((mc.level.getGameTime() + event.getPartialTick().getGameTimeDeltaPartialTick(false)) * 0.14D);
+            double pulse = 0.03D + 0.015D * Math.sin(
+                    (mc.level.getGameTime() + event.getPartialTick().getGameTimeDeltaPartialTick(false)) * 0.14D);
+
+            float[] color = colorFor(ghost);
             LevelRenderer.renderLineBox(
                     pose, consumer,
                     pos.getX() - camera.x - pulse,
@@ -91,9 +130,26 @@ public final class PreparedRitualPreview {
                     pos.getX() - camera.x + 1.0D + pulse,
                     pos.getY() - camera.y + 1.0D + pulse,
                     pos.getZ() - camera.z + 1.0D + pulse,
-                    0.72F, 0.42F, 1.0F, 0.95F);
+                    color[0], color[1], color[2], 0.95F);
         }
 
         buffers.endBatch(lines);
+    }
+
+    private static float[] colorFor(GhostBlock ghost) {
+        if (ghost.role() == RitualStructureRules.Role.CENTER) {
+            return new float[]{0.72F, 0.42F, 1.0F};
+        }
+
+        if (ghost.role() != RitualStructureRules.Role.FOCUS || ghost.focusMaterial() == null) {
+            return new float[]{0.70F, 0.70F, 0.70F};
+        }
+
+        return switch (ghost.focusMaterial()) {
+            case IRON -> new float[]{0.78F, 0.78F, 0.82F};
+            case GOLD -> new float[]{1.00F, 0.78F, 0.18F};
+            case EMERALD -> new float[]{0.18F, 0.90F, 0.38F};
+            case DIAMOND -> new float[]{0.28F, 0.92F, 1.00F};
+        };
     }
 }
