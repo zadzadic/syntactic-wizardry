@@ -62,6 +62,7 @@ public final class ConduitPlannerState {
 
     private static final LinkedHashSet<Integer> permanentEffects = new LinkedHashSet<>();
     private static final LinkedHashSet<Integer> permanentModifiers = new LinkedHashSet<>();
+    private static PermanentSpellEditor permanentSpellEditor = new PermanentSpellEditor();
 
     private static Method enterMethod;
     private static Method exitMethod;
@@ -117,6 +118,7 @@ public final class ConduitPlannerState {
         facingPitch = 0.0F;
         permanentEffects.clear();
         permanentModifiers.clear();
+        permanentSpellEditor = new PermanentSpellEditor();
         conduitPos = pos.immutable();
 
         try {
@@ -142,6 +144,13 @@ public final class ConduitPlannerState {
 
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.level == null || mc.screen != null) return;
+
+        if (permanentSpellEditor.isOpen()) {
+            permanentSpellEditor.tick(mc);
+            long editorWindow = mc.getWindow().getWindow();
+            leftWasDown = GLFW.glfwGetMouseButton(editorWindow, GLFW.GLFW_MOUSE_BUTTON_LEFT) == GLFW.GLFW_PRESS;
+            return;
+        }
 
         long window = mc.getWindow().getWindow();
         boolean leftDown = GLFW.glfwGetMouseButton(window, GLFW.GLFW_MOUSE_BUTTON_LEFT) == GLFW.GLFW_PRESS;
@@ -223,11 +232,13 @@ public final class ConduitPlannerState {
             renderPermanencyPanel(graphics, mc, width, height, mouseX, mouseY);
         }
         renderInstructions(graphics, mc, width, height);
+        if (permanentSpellEditor.isOpen()) permanentSpellEditor.render(graphics, mc);
     }
 
     public static boolean scrollRitualList(double delta) {
         if (!active || delta == 0.0D) return false;
         Minecraft mc = Minecraft.getInstance();
+        if (permanentSpellEditor.isOpen() && permanentSpellEditor.scroll(mc, delta)) return true;
         double mouseX = guiMouseX(mc);
         double mouseY = guiMouseY(mc);
         int height = mc.getWindow().getGuiScaledHeight();
@@ -304,6 +315,7 @@ public final class ConduitPlannerState {
         if (clicked != null) {
             if (clicked != ritual) {
                 ritual = clicked;
+                permanentSpellEditor.close();
                 clearSelection();
                 movingArea = false;
                 rotatingFacing = false;
@@ -396,31 +408,14 @@ public final class ConduitPlannerState {
         int x = width - 178;
         int y = 104;
         int w = 170;
-        int h = Math.max(116, Math.min(130, height - y - 8));
+        int h = 72;
         graphics.fill(x, y, x + w, y + h, 0xC0182232);
         graphics.renderOutline(x, y, w, h, 0xFF8E72C7);
         graphics.drawString(mc.font, "Permanent Spell", x + 7, y + 6, 0xFFF0E8FF, false);
-
-        List<SpellComponentDefinition> effects = SpellComponents.effects();
-        List<SpellComponentDefinition> modifiers = SpellComponents.modifiers();
-        int gridX = x + 7;
-        int effectY = y + 20;
-        graphics.drawString(mc.font, "Effects", gridX, effectY, 0xFFB9C5D6, false);
-        int effectGridY = effectY + 10;
-        renderComponentGrid(graphics, mc, effects, permanentEffects, gridX, effectGridY, mouseX, mouseY);
-
-        int effectRows = (effects.size() + 6) / 7;
-        int modLabelY = effectGridY + effectRows * 22 + 2;
-        graphics.drawString(mc.font, "Modifiers", gridX, modLabelY, 0xFFB9C5D6, false);
-        int modGridY = modLabelY + 10;
-        renderComponentGrid(graphics, mc, modifiers, permanentModifiers, gridX, modGridY, mouseX, mouseY);
-
-        int modifierRows = (modifiers.size() + 6) / 7;
-        int facingY = modGridY + modifierRows * 22 + 1;
-        if (permanencyUsesFacing() && facingY + 9 < y + h) {
-            graphics.drawString(mc.font,
-                    "Facing " + Math.round(facingYaw) + " / " + Math.round(facingPitch),
-                    gridX, facingY, 0xFFFFD88A, false);
+        graphics.drawString(mc.font, "Effects + Modifiers", x + 7, y + 23, 0xFFB9C5D6, false);
+        drawButton(graphics, mc, x + 7, y + 40, 156, 20, "Edit Permanent Spell", false);
+        if (permanencyUsesFacing()) {
+            graphics.drawString(mc.font, "Facing uses the gold world gizmo.", x + 7, y + 62, 0xFFFFD88A, false);
         }
     }
 
@@ -448,22 +443,9 @@ public final class ConduitPlannerState {
         int width = mc.getWindow().getGuiScaledWidth();
         int x = width - 178;
         int y = 104;
-        int gridX = x + 7;
-        List<SpellComponentDefinition> effects = SpellComponents.effects();
-        List<SpellComponentDefinition> modifiers = SpellComponents.modifiers();
-        int effectGridY = y + 30;
-
-        SpellComponentDefinition effect = componentAt(effects, gridX, effectGridY, mouseX, mouseY);
-        if (effect != null) {
-            toggle(permanentEffects, effect.typeId());
-            if (!permanencyUsesFacing()) rotatingFacing = false;
-            return;
+        if (inside(mouseX, mouseY, x + 7, y + 40, 156, 20)) {
+            permanentSpellEditor.open();
         }
-
-        int effectRows = (effects.size() + 6) / 7;
-        int modGridY = effectGridY + effectRows * 22 + 12;
-        SpellComponentDefinition modifier = componentAt(modifiers, gridX, modGridY, mouseX, mouseY);
-        if (modifier != null) toggle(permanentModifiers, modifier.typeId());
     }
 
     private static SpellComponentDefinition componentAt(List<SpellComponentDefinition> definitions,
@@ -482,8 +464,8 @@ public final class ConduitPlannerState {
 
     private static boolean permanencyUsesFacing() {
         return ritual == RitualDefinition.PERMANENCY
-                && (permanentEffects.contains(SpellComponents.TYPE_MOVE)
-                || permanentEffects.contains(SpellComponents.TYPE_TELEPORTATION));
+                && (permanentSpellEditor.hasType(SpellComponents.TYPE_MOVE)
+                || permanentSpellEditor.hasType(SpellComponents.TYPE_TELEPORTATION));
     }
 
     private static void renderInstructions(GuiGraphics graphics, Minecraft mc, int width, int height) {
