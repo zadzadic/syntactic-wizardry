@@ -80,5 +80,6 @@
   "item.syntacticwizardry.brown_chalk": "Brown Chalk",
   "item.syntacticwizardry.green_chalk": "Green Chalk",
   "item.syntacticwizardry.red_chalk": "Red Chalk",
-  "item.syntacticwizardry.black_chalk": "Black Chalk"
+  "item.syntacticwizardry.black_chalk": "Black Chalk",
+  "block.syntacticwizardry.conduit": "Conduit"
 }
