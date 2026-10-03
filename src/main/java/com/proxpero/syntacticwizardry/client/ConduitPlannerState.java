@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Set;
 
 public final class ConduitPlannerState {
+    private enum ViewMode { MANAGEMENT, PLANNER }
+
     public enum AreaShape {
         BOX("Box"),
         SPHERE("Sphere"),
@@ -37,14 +39,21 @@ public final class ConduitPlannerState {
     private static final int PANEL_W = 176;
     private static final int ENTRY_H = 14;
     private static final int LIST_TOP = 28;
-    private static final int LIST_BOTTOM_MARGIN = 28;
+    private static final int LIST_BOTTOM_MARGIN = 52;
+    private static final int MANAGEMENT_PANEL_W = 310;
+    private static final int ACTIVE_LIST_TOP = 34;
+    private static final int ACTIVE_ROW_H = 26;
+    private static final int ACTIVE_BOTTOM_MARGIN = 18;
 
     private static boolean active;
+    private static ViewMode viewMode = ViewMode.MANAGEMENT;
     private static BlockPos conduitPos = BlockPos.ZERO;
     private static RitualDefinition ritual = RitualDefinition.PROTECTION;
     private static AreaShape areaShape = AreaShape.BOX;
     private static int listScroll;
+    private static int activeScroll;
     private static boolean leftWasDown;
+    private static boolean rightWasDown;
     private static boolean uiConsumed;
 
     private static boolean movingArea;
@@ -108,8 +117,11 @@ public final class ConduitPlannerState {
         forceBuilderSelectionMode();
         ritual = RitualDefinition.PROTECTION;
         areaShape = AreaShape.BOX;
+        viewMode = ViewMode.MANAGEMENT;
         listScroll = 0;
+        activeScroll = 0;
         leftWasDown = false;
+        rightWasDown = false;
         uiConsumed = false;
         movingArea = false;
         rotatingFacing = false;
@@ -149,16 +161,26 @@ public final class ConduitPlannerState {
             permanentSpellEditor.tick(mc);
             long editorWindow = mc.getWindow().getWindow();
             leftWasDown = GLFW.glfwGetMouseButton(editorWindow, GLFW.GLFW_MOUSE_BUTTON_LEFT) == GLFW.GLFW_PRESS;
+            rightWasDown = GLFW.glfwGetMouseButton(editorWindow, GLFW.GLFW_MOUSE_BUTTON_RIGHT) == GLFW.GLFW_PRESS;
             return;
         }
 
         long window = mc.getWindow().getWindow();
         boolean leftDown = GLFW.glfwGetMouseButton(window, GLFW.GLFW_MOUSE_BUTTON_LEFT) == GLFW.GLFW_PRESS;
+        boolean rightDown = GLFW.glfwGetMouseButton(window, GLFW.GLFW_MOUSE_BUTTON_RIGHT) == GLFW.GLFW_PRESS;
         boolean justPressed = leftDown && !leftWasDown;
+        boolean rightJustPressed = rightDown && !rightWasDown;
         double rawX = mc.mouseHandler.xpos();
         double rawY = mc.mouseHandler.ypos();
         double mouseX = guiMouseX(mc);
         double mouseY = guiMouseY(mc);
+
+        if (viewMode == ViewMode.MANAGEMENT) {
+            tickManagement(mc, justPressed, rightJustPressed, mouseX, mouseY);
+            leftWasDown = leftDown;
+            rightWasDown = rightDown;
+            return;
+        }
 
         if (justPressed && overPlannerUi(mc, mouseX, mouseY)) {
             uiConsumed = true;
@@ -187,6 +209,7 @@ public final class ConduitPlannerState {
             moveAxis = -1;
         }
         leftWasDown = leftDown;
+        rightWasDown = rightDown;
     }
 
     public static void render(GuiGraphics graphics) {
@@ -196,6 +219,11 @@ public final class ConduitPlannerState {
         int height = mc.getWindow().getGuiScaledHeight();
         int mouseX = (int) guiMouseX(mc);
         int mouseY = (int) guiMouseY(mc);
+
+        if (viewMode == ViewMode.MANAGEMENT) {
+            renderManagement(graphics, mc, width, height, mouseX, mouseY);
+            return;
+        }
 
         int bottom = height - 8;
         graphics.fill(PANEL_X, PANEL_Y, PANEL_X + PANEL_W, bottom, 0xC0182232);
@@ -231,6 +259,7 @@ public final class ConduitPlannerState {
         if (ritual == RitualDefinition.PERMANENCY) {
             renderPermanencyPanel(graphics, mc, width, height, mouseX, mouseY);
         }
+        renderPlannerControls(graphics, mc, width, height);
         renderInstructions(graphics, mc, width, height);
         if (permanentSpellEditor.isOpen()) permanentSpellEditor.render(graphics, mc);
     }
@@ -243,6 +272,15 @@ public final class ConduitPlannerState {
         double mouseY = guiMouseY(mc);
         int height = mc.getWindow().getGuiScaledHeight();
 
+        if (viewMode == ViewMode.MANAGEMENT) {
+            if (!inside(mouseX, mouseY, PANEL_X, PANEL_Y, MANAGEMENT_PANEL_W, height - 16)) return false;
+            int max = Math.max(0, ActiveRitualClientRegistry.entries().size() - activeVisibleRows(height));
+            if (delta > 0.0D) activeScroll--;
+            else activeScroll++;
+            activeScroll = Math.max(0, Math.min(max, activeScroll));
+            return max > 0;
+        }
+
         if (!inside(mouseX, mouseY, PANEL_X, PANEL_Y, PANEL_W, height - 16)) return false;
         if (net.minecraft.client.gui.screens.Screen.hasControlDown()) return false;
 
@@ -254,7 +292,7 @@ public final class ConduitPlannerState {
     }
 
     public static boolean renderBuilderSelection(Object renderEvent) {
-        if (!active || !ritual.variableArea()) return false;
+        if (!active || viewMode != ViewMode.PLANNER || !ritual.variableArea()) return false;
         int[] b = bounds();
         if (b == null) return false;
         if (!(renderEvent instanceof net.neoforged.neoforge.client.event.RenderLevelStageEvent event)) return false;
@@ -311,6 +349,20 @@ public final class ConduitPlannerState {
     }
 
     private static void handleUiClick(Minecraft mc, double mouseX, double mouseY) {
+        int width = mc.getWindow().getGuiScaledWidth();
+        int height = mc.getWindow().getGuiScaledHeight();
+
+        if (inside(mouseX, mouseY, PANEL_X + 7, height - 38, 72, 22)) {
+            viewMode = ViewMode.MANAGEMENT;
+            permanentSpellEditor.close();
+            clearSelection();
+            return;
+        }
+        if (inside(mouseX, mouseY, width - 178, height - 38, 170, 22)) {
+            PreparedRitualPreview.prepare(ritual, conduitPos);
+            return;
+        }
+
         RitualDefinition clicked = ritualAt(mc, mouseX, mouseY);
         if (clicked != null) {
             if (clicked != ritual) {
@@ -323,8 +375,10 @@ public final class ConduitPlannerState {
             return;
         }
 
-        if (!ritual.variableArea()) return;
-        int width = mc.getWindow().getGuiScaledWidth();
+        if (!ritual.variableArea()) {
+            if (ritual == RitualDefinition.PERMANENCY) handlePermanencyClick(mc, mouseX, mouseY);
+            return;
+        }
         int x = width - 178;
         int y = 8;
 
@@ -487,6 +541,145 @@ public final class ConduitPlannerState {
         graphics.fill(x, y, x + w, y + h, selected ? 0xD05D4A86 : 0xB02B3548);
         graphics.renderOutline(x, y, w, h, selected ? 0xFFD2B7FF : 0xFF66738A);
         graphics.drawCenteredString(mc.font, label, x + w / 2, y + 5, 0xFFFFFFFF);
+    }
+
+    private static void tickManagement(Minecraft mc, boolean leftPressed, boolean rightPressed,
+                                       double mouseX, double mouseY) {
+        int width = mc.getWindow().getGuiScaledWidth();
+        int height = mc.getWindow().getGuiScaledHeight();
+
+        if (leftPressed && inside(mouseX, mouseY, width - 138, 12, 126, 24)) {
+            enterPlanner();
+            return;
+        }
+
+        ActiveRitualClientRegistry.Entry entry = activeRitualAt(height, mouseX, mouseY);
+        if (entry == null) return;
+
+        int rowY = activeRowY(height, entry);
+        if (rightPressed) {
+            mc.setScreen(new ArmillaryRenameScreen(null, entry.name(),
+                    value -> ActiveRitualClientRegistry.rename(entry.id(), value)));
+            return;
+        }
+
+        if (!leftPressed) return;
+        if (inside(mouseX, mouseY, PANEL_X + 196, rowY + 4, 52, 18)) {
+            ActiveRitualClientRegistry.setPaused(entry.id(), !entry.paused());
+            return;
+        }
+        if (inside(mouseX, mouseY, PANEL_X + 252, rowY + 4, 48, 18)) {
+            ActiveRitualClientRegistry.stop(entry.id());
+            return;
+        }
+
+        focusCamera(entry.center());
+    }
+
+    private static void enterPlanner() {
+        viewMode = ViewMode.PLANNER;
+        ritual = RitualDefinition.PROTECTION;
+        areaShape = AreaShape.BOX;
+        listScroll = 0;
+        clearSelection();
+        movingArea = false;
+        rotatingFacing = false;
+        moveAxis = -1;
+        permanentSpellEditor.close();
+        focusCamera(conduitPos);
+    }
+
+    private static void focusCamera(BlockPos center) {
+        if (center == null) return;
+        ArcaneBuilderClientEvents.targetX = center.getX() + 0.5D;
+        ArcaneBuilderClientEvents.targetY = center.getY() + 0.5D;
+        ArcaneBuilderClientEvents.targetZ = center.getZ() + 0.5D;
+    }
+
+    private static void renderManagement(GuiGraphics graphics, Minecraft mc, int width, int height,
+                                         int mouseX, int mouseY) {
+        int bottom = height - 8;
+        graphics.fill(PANEL_X, PANEL_Y, PANEL_X + MANAGEMENT_PANEL_W, bottom, 0xC0182232);
+        graphics.renderOutline(PANEL_X, PANEL_Y, MANAGEMENT_PANEL_W, bottom - PANEL_Y, 0xFF8E72C7);
+        graphics.drawString(mc.font, "Active Rituals", PANEL_X + 8, PANEL_Y + 8, 0xFFF0E8FF, false);
+
+        List<ActiveRitualClientRegistry.Entry> entries = ActiveRitualClientRegistry.entries();
+        int visible = activeVisibleRows(height);
+        int maxScroll = Math.max(0, entries.size() - visible);
+        activeScroll = Math.max(0, Math.min(maxScroll, activeScroll));
+
+        if (entries.isEmpty()) {
+            graphics.drawString(mc.font, "No active rituals.", PANEL_X + 10, ACTIVE_LIST_TOP + 8, 0xFF9FAEC4, false);
+        }
+
+        for (int row = 0; row < visible; row++) {
+            int index = activeScroll + row;
+            if (index >= entries.size()) break;
+            ActiveRitualClientRegistry.Entry entry = entries.get(index);
+            int y = ACTIVE_LIST_TOP + row * ACTIVE_ROW_H;
+            boolean hovered = inside(mouseX, mouseY, PANEL_X + 4, y, MANAGEMENT_PANEL_W - 12, ACTIVE_ROW_H - 2);
+            graphics.fill(PANEL_X + 4, y, PANEL_X + MANAGEMENT_PANEL_W - 8, y + ACTIVE_ROW_H - 2,
+                    hovered ? 0xB03B465D : 0x90252F42);
+            String name = mc.font.plainSubstrByWidth(entry.name(), 174);
+            graphics.drawString(mc.font, name, PANEL_X + 9, y + 5, 0xFFFFFFFF, false);
+            graphics.drawString(mc.font, entry.paused() ? "Paused" : entry.ritual().displayName(),
+                    PANEL_X + 9, y + 15, entry.paused() ? 0xFFFFD88A : 0xFF9FAEC4, false);
+            drawButton(graphics, mc, PANEL_X + 196, y + 4, 52, 18, entry.paused() ? "Resume" : "Pause", false);
+            drawButton(graphics, mc, PANEL_X + 252, y + 4, 48, 18, "Stop", false);
+        }
+
+        if (maxScroll > 0) {
+            int trackX = PANEL_X + MANAGEMENT_PANEL_W - 7;
+            int trackY = ACTIVE_LIST_TOP;
+            int trackH = Math.max(24, visible * ACTIVE_ROW_H - 2);
+            graphics.fill(trackX, trackY, trackX + 4, trackY + trackH, 0xFF1C293A);
+            int thumbH = Math.max(12, trackH * visible / Math.max(visible + maxScroll, 1));
+            int travel = Math.max(1, trackH - thumbH);
+            int thumbY = trackY + (maxScroll == 0 ? 0 : travel * activeScroll / maxScroll);
+            graphics.fill(trackX, thumbY, trackX + 4, thumbY + thumbH, 0xFF7C67A3);
+        }
+
+        graphics.fill(width - 146, 8, width - 8, 46, 0xC0182232);
+        graphics.renderOutline(width - 146, 8, 138, 38, 0xFF8E72C7);
+        drawButton(graphics, mc, width - 138, 12, 126, 24, "New Ritual", false);
+
+        if (PreparedRitualPreview.prepared()) {
+            String prepared = "Prepared: " + PreparedRitualPreview.ritual().displayName();
+            int tx = width - 146;
+            int ty = 54;
+            int tw = Math.min(138, mc.font.width(prepared) + 12);
+            graphics.fill(tx, ty, tx + tw, ty + 20, 0xA0182232);
+            graphics.drawString(mc.font, prepared, tx + 6, ty + 6, 0xFFD2B7FF, false);
+        }
+
+        String help = "Click a ritual to focus it. Right-click to rename it.";
+        graphics.drawString(mc.font, help, PANEL_X + 8, bottom - 14, 0xFF9FAEC4, false);
+    }
+
+    private static ActiveRitualClientRegistry.Entry activeRitualAt(int height, double mouseX, double mouseY) {
+        if (mouseX < PANEL_X + 4 || mouseX >= PANEL_X + MANAGEMENT_PANEL_W - 8) return null;
+        int visible = activeVisibleRows(height);
+        if (mouseY < ACTIVE_LIST_TOP || mouseY >= ACTIVE_LIST_TOP + visible * ACTIVE_ROW_H) return null;
+        int row = (int)((mouseY - ACTIVE_LIST_TOP) / ACTIVE_ROW_H);
+        int index = activeScroll + row;
+        List<ActiveRitualClientRegistry.Entry> entries = ActiveRitualClientRegistry.entries();
+        return index >= 0 && index < entries.size() ? entries.get(index) : null;
+    }
+
+    private static int activeRowY(int height, ActiveRitualClientRegistry.Entry target) {
+        List<ActiveRitualClientRegistry.Entry> entries = ActiveRitualClientRegistry.entries();
+        int index = entries.indexOf(target);
+        if (index < activeScroll || index >= activeScroll + activeVisibleRows(height)) return -1000;
+        return ACTIVE_LIST_TOP + (index - activeScroll) * ACTIVE_ROW_H;
+    }
+
+    private static int activeVisibleRows(int height) {
+        return Math.max(3, (height - ACTIVE_LIST_TOP - ACTIVE_BOTTOM_MARGIN) / ACTIVE_ROW_H);
+    }
+
+    private static void renderPlannerControls(GuiGraphics graphics, Minecraft mc, int width, int height) {
+        drawButton(graphics, mc, PANEL_X + 7, height - 38, 72, 22, "Back", false);
+        drawButton(graphics, mc, width - 178, height - 38, 170, 22, "Prepare Ritual", false);
     }
 
     private static boolean handleGizmos(Minecraft mc, boolean leftDown, boolean justPressed,
@@ -733,8 +926,10 @@ public final class ConduitPlannerState {
         int height = mc.getWindow().getGuiScaledHeight();
         if (inside(mouseX, mouseY, PANEL_X, PANEL_Y, PANEL_W, height - 16)) return true;
         if (inside(mouseX, mouseY, width - 178, 8, 170, ritual.variableArea() ? 92 : 50)) return true;
+        if (inside(mouseX, mouseY, PANEL_X + 7, height - 38, 72, 22)) return true;
+        if (inside(mouseX, mouseY, width - 178, height - 38, 170, 22)) return true;
         return ritual == RitualDefinition.PERMANENCY
-                && inside(mouseX, mouseY, width - 178, 104, 170, Math.max(116, Math.min(130, height - 112)));
+                && inside(mouseX, mouseY, width - 178, 104, 170, 72);
     }
 
     private static int visibleRows(int height) {
@@ -857,7 +1052,9 @@ public final class ConduitPlannerState {
         }
 
         active = false;
+        viewMode = ViewMode.MANAGEMENT;
         leftWasDown = false;
+        rightWasDown = false;
         uiConsumed = false;
         movingArea = false;
         rotatingFacing = false;
