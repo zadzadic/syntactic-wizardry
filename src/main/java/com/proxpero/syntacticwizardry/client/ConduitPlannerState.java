@@ -244,8 +244,12 @@ public final class ConduitPlannerState {
         if (!active || !ritual.variableArea()) return false;
         int[] b = bounds();
         if (b == null) return false;
-        if (areaShape == AreaShape.BOX) return BuilderVolumeSupport.renderSelection(renderEvent);
         if (!(renderEvent instanceof net.neoforged.neoforge.client.event.RenderLevelStageEvent event)) return false;
+        if (areaShape == AreaShape.BOX) {
+            boolean rendered = BuilderVolumeSupport.renderSelection(renderEvent);
+            ConduitAreaRender.renderGizmos(event, b, permanencyUsesFacing(), facingYaw, facingPitch);
+            return rendered;
+        }
         return ConduitAreaRender.render(event, areaShape, b, true, permanencyUsesFacing(), facingYaw, facingPitch);
     }
 
