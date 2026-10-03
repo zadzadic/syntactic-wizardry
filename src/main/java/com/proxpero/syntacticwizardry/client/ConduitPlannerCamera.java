@@ -97,7 +97,7 @@ final class ConduitPlannerCamera {
     static void zoom(double wheel) {
         if (!entered || wheel == 0.0D) return;
         try {
-            Field field = height();
+            Field field = heightField();
             double next = clamp(field.getDouble(null) - wheel * 2.0D, 5.0D, 80.0D);
             field.setDouble(null, next);
             update();
@@ -123,7 +123,7 @@ final class ConduitPlannerCamera {
 
     private static double height() {
         try {
-            return height().getDouble(null);
+            return heightField().getDouble(null);
         } catch (Throwable ignored) {
             return 20.0D;
         }
@@ -144,7 +144,7 @@ final class ConduitPlannerCamera {
         return method;
     }
 
-    private static Field height() throws Exception {
+    private static Field heightField() throws Exception {
         if (heightField == null) {
             heightField = ArcaneBuilderClientEvents.class.getDeclaredField("height");
             heightField.setAccessible(true);
