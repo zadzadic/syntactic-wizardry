@@ -66,6 +66,7 @@ public final class ConduitPlannerState {
     private static Method enterMethod;
     private static Method exitMethod;
     private static Method cursorRayMethod;
+    private static Method handleHitMethod;
     private static Field selectedField;
     private static Field modeField;
     private static Field selectedIdField;
@@ -162,7 +163,8 @@ public final class ConduitPlannerState {
 
         if (!ritual.variableArea()) {
             if (!selection().isEmpty()) clearSelection();
-        } else if (!uiConsumed && !gizmoConsumed) {
+        } else if (!uiConsumed && !gizmoConsumed
+                && shouldRunBuilderVolume(mc, leftDown, justPressed, rawX, rawY)) {
             int[] before = bounds();
             BuilderVolumeSupport.clientTick(event);
             int[] after = bounds();
@@ -562,6 +564,36 @@ public final class ConduitPlannerState {
             return true;
         }
         return false;
+    }
+
+    private static boolean shouldRunBuilderVolume(Minecraft mc, boolean leftDown, boolean justPressed,
+                                                  double rawX, double rawY) {
+        if (bounds() == null) return true;
+
+        try {
+            if (boolField("selecting").getBoolean(null) || boolField("resizing").getBoolean(null)) {
+                return true;
+            }
+        } catch (Throwable ignored) {
+        }
+
+        if (!leftDown) return true;
+        if (!justPressed) return false;
+        return builderResizeHandleHit(mc, rawX, rawY);
+    }
+
+    private static boolean builderResizeHandleHit(Minecraft mc, double rawX, double rawY) {
+        try {
+            if (handleHitMethod == null) {
+                handleHitMethod = BuilderVolumeSupport.class.getDeclaredMethod(
+                        "handleHit", Object.class, double.class, double.class);
+                handleHitMethod.setAccessible(true);
+            }
+            Object hit = handleHitMethod.invoke(null, mc, rawX, rawY);
+            return hit instanceof Number number && number.intValue() >= 0;
+        } catch (Throwable ignored) {
+            return false;
+        }
     }
 
     private static int moveAxisHit(RayData ray, double[] center) {
