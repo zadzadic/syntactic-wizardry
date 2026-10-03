@@ -7,7 +7,9 @@
     "LivingEntityFlightMixin"
   ],
   "client": [
-    "RunecasterItemRenderMixin"
+    "RunecasterItemRenderMixin",
+    "ConduitPlannerBuilderControllerMixin",
+    "ConduitPlannerBuilderEditMixin"
   ],
   "injectors": {
     "defaultRequire": 1

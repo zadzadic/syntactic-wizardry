@@ -34,7 +34,7 @@ public final class ConduitRegistry {
         ResourceLocation id = ResourceLocation.fromNamespaceAndPath(SyntacticWizardry.MOD_ID, "conduit");
 
         event.register(Registries.BLOCK, id, () -> {
-            BLOCK = new Block(BlockBehaviour.Properties.ofFullCopy(Blocks.AMETHYST_BLOCK));
+            BLOCK = new ConduitBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.AMETHYST_BLOCK));
             return BLOCK;
         });
 
