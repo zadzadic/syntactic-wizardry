@@ -123,7 +123,10 @@ public final class ProtectionRitualEvents {
         for (ProtectionRitualData.Entry entry : ProtectionRitualData.get(level).entries()) {
             entries.add(new ProtectionSyncPayload.Entry(
                     entry.id(), entry.name(), entry.center().asLong(), entry.effectTicks(),
-                    entry.paused(), entry.powered(), entry.stopping()));
+                    entry.paused(), entry.powered(), entry.stopping(),
+                    entry.customArea(), entry.shape().ordinal(),
+                    entry.minX(), entry.minY(), entry.minZ(),
+                    entry.maxX(), entry.maxY(), entry.maxZ()));
         }
         return new ProtectionSyncPayload(level.getGameTime(), List.copyOf(entries));
     }
