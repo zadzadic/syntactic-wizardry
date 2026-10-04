@@ -156,7 +156,12 @@ public final class EclipseRitualData extends SavedData {
                 continue;
             }
 
-            if (time % 20L == 0L) {
+            if (entry.paused) {
+                if (entry.powered) {
+                    entry.powered = false;
+                    syncChanged = true;
+                }
+            } else if (time % 20L == 0L) {
                 boolean powered = RitualManaSupport.tryConsumeUpkeep(level, entry.center, 1.0D);
                 if (powered != entry.powered) {
                     entry.powered = powered;
