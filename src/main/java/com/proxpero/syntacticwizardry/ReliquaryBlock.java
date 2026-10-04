@@ -27,7 +27,7 @@ public final class ReliquaryBlock extends HorizontalDirectionalBlock implements 
     }
 
     @Override
-    protected MapCodec<? extends Block> codec() {
+    protected MapCodec<? extends HorizontalDirectionalBlock> codec() {
         return CODEC;
     }
 
