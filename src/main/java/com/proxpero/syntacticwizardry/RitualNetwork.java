@@ -80,6 +80,7 @@ public final class RitualNetwork {
                 SummoningRitualEvents.handleControl(player, payload);
                 BindingRitualEvents.handleControl(player, payload);
                 ProtectionRitualEvents.handleControl(player, payload);
+                PermanencyRitualEvents.handleControl(player, payload);
             }
         }
     }

@@ -117,6 +117,26 @@ public final class ConduitPlannerState {
         return areaShape;
     }
 
+    public static BlockPos ritualCenter() {
+        return ritualCenter;
+    }
+
+    public static float facingYaw() {
+        return facingYaw;
+    }
+
+    public static float facingPitch() {
+        return facingPitch;
+    }
+
+    public static int[] permanencyPlan() {
+        return permanentSpellEditor.snapshotPlan();
+    }
+
+    public static int[] permanencySettings() {
+        return permanentSpellEditor.snapshotSettings();
+    }
+
     public static BlockPos conduitPos() {
         return conduitPos;
     }
@@ -236,6 +256,7 @@ public final class ConduitPlannerState {
             int[] after = bounds();
             if (after != null && !Arrays.equals(before, after)) {
                 if (ritual == RitualDefinition.PROTECTION) ProtectionAreaClientBridge.areaChanged();
+                if (ritual == RitualDefinition.PERMANENCY) PermanencyClientBridge.areaChanged();
                 normalizeShapeBounds(before, after);
             }
         }
@@ -495,6 +516,14 @@ public final class ConduitPlannerState {
                 placingRitualCenter = true;
                 return;
             }
+            if (ritual == RitualDefinition.PERMANENCY && !PermanencyClientBridge.commitCurrentConfig()) {
+                if (mc.player != null) {
+                    mc.player.displayClientMessage(
+                            Component.literal("Permanency requires a selected area and at least one Effect."),
+                            true);
+                }
+                return;
+            }
             PreparedRitualPreview.prepare(
                     ritual,
                     ritualCenter,
@@ -509,6 +538,9 @@ public final class ConduitPlannerState {
             if (clicked != ritual) {
                 if (ritual == RitualDefinition.PROTECTION && clicked != RitualDefinition.PROTECTION) {
                     ProtectionAreaClientBridge.clearPrepared();
+                }
+                if (ritual == RitualDefinition.PERMANENCY && clicked != RitualDefinition.PERMANENCY) {
+                    PermanencyClientBridge.clearPrepared();
                 }
                 ritual = clicked;
                 ritualPotence = 1;
@@ -557,6 +589,7 @@ public final class ConduitPlannerState {
         }
         if (inside(mouseX, mouseY, x + 7, y + 47, 70, 18)) {
             if (ritual == RitualDefinition.PROTECTION) ProtectionAreaClientBridge.areaChanged();
+            if (ritual == RitualDefinition.PERMANENCY) PermanencyClientBridge.areaChanged();
             clearSelection();
             return;
         }
@@ -567,6 +600,7 @@ public final class ConduitPlannerState {
     private static void setAreaShape(AreaShape shape) {
         areaShape = shape;
         ProtectionAreaClientBridge.areaChanged();
+        if (ritual == RitualDefinition.PERMANENCY) PermanencyClientBridge.areaChanged();
         int[] b = bounds();
         if (b != null) normalizeShapeBounds(null, b);
     }
@@ -674,6 +708,7 @@ public final class ConduitPlannerState {
         int x = width - 178;
         int y = 104;
         if (inside(mouseX, mouseY, x + 7, y + 40, 156, 20)) {
+            PermanencyClientBridge.areaChanged();
             permanentSpellEditor.open();
         }
     }
@@ -1023,6 +1058,7 @@ public final class ConduitPlannerState {
 
         if (rotatingFacing) {
             if (!leftDown) return true;
+            PermanencyClientBridge.areaChanged();
             facingYaw = wrapDegrees(facingStartYaw + (float)((rawX - facingDragStartX) * 0.45D));
             facingPitch = clamp(facingStartPitch + (float)((rawY - facingDragStartY) * 0.45D), -89.0F, 89.0F);
             return true;
@@ -1199,6 +1235,7 @@ public final class ConduitPlannerState {
     private static void normalizeShapeBounds(int[] before, int[] after) {
         if (after == null) return;
         if (ritual == RitualDefinition.PROTECTION) ProtectionAreaClientBridge.areaChanged();
+        if (ritual == RitualDefinition.PERMANENCY) PermanencyClientBridge.areaChanged();
         if (areaShape == AreaShape.BOX) {
             int[] constrained = constrainEffectOrigin(after);
             if (!Arrays.equals(after, constrained)) setBounds(constrained);
@@ -1260,6 +1297,7 @@ public final class ConduitPlannerState {
     private static void setBounds(int[] b) {
         try {
             if (ritual == RitualDefinition.PROTECTION) ProtectionAreaClientBridge.areaChanged();
+            if (ritual == RitualDefinition.PERMANENCY) PermanencyClientBridge.areaChanged();
             int[] constrained = constrainEffectOrigin(b);
             intField("minX").setInt(null, constrained[0]);
             intField("minY").setInt(null, constrained[1]);

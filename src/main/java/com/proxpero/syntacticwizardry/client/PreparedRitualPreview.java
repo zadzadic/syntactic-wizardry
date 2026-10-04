@@ -9,6 +9,7 @@ import com.proxpero.syntacticwizardry.EclipseRitualStructure;
 import com.proxpero.syntacticwizardry.MagicLightRegistry;
 import com.proxpero.syntacticwizardry.MooncallPhase;
 import com.proxpero.syntacticwizardry.MooncallRitualStructure;
+import com.proxpero.syntacticwizardry.PermanencyRitualStructure;
 import com.proxpero.syntacticwizardry.RitualDefinition;
 import com.proxpero.syntacticwizardry.RitualStructureRules;
 import com.proxpero.syntacticwizardry.SummoningRitualStructure;
@@ -91,7 +92,9 @@ public final class PreparedRitualPreview {
             focusPlan = null;
         } else {
             requestedPotence = Math.max(1, potence);
-            focusPlan = RitualStructureRules.focusPlan(requestedPotence);
+            focusPlan = definition == RitualDefinition.PERMANENCY
+                    ? null
+                    : RitualStructureRules.focusPlan(requestedPotence);
         }
 
         ghosts = previewGhosts(definition, center, requestedPotence, mooncallPhase, catchTimeSetting);
@@ -127,6 +130,7 @@ public final class PreparedRitualPreview {
                         || definition == RitualDefinition.SUMMONING
                         || definition == RitualDefinition.BINDING
                         || definition == RitualDefinition.PROTECTION
+                        || definition == RitualDefinition.PERMANENCY
                         ? null
                         : RitualStructureRules.focusPlan(Math.max(1, potence));
         List<GhostBlock> built = new ArrayList<>();
@@ -137,7 +141,46 @@ public final class PreparedRitualPreview {
                 null,
                 "Mature Crystal"));
 
-        if (definition == RitualDefinition.ECLIPSE) {
+        if (definition == RitualDefinition.PERMANENCY) {
+            built.add(new GhostBlock(
+                    previewCenter.offset(PermanencyRitualStructure.GOLD_OFFSET),
+                    RitualStructureRules.Role.SPECIFIC,
+                    null,
+                    "Gold Block",
+                    Blocks.GOLD_BLOCK.defaultBlockState()));
+
+            for (BlockPos offset : PermanencyRitualStructure.diamondOffsets()) {
+                built.add(new GhostBlock(
+                        previewCenter.offset(offset),
+                        RitualStructureRules.Role.SPECIFIC,
+                        null,
+                        "Diamond Block",
+                        Blocks.DIAMOND_BLOCK.defaultBlockState()));
+            }
+
+            for (BlockPos offset : PermanencyRitualStructure.structuralOffsets()) {
+                built.add(new GhostBlock(
+                        previewCenter.offset(offset),
+                        RitualStructureRules.Role.STRUCTURAL,
+                        null,
+                        "Structural Block",
+                        Blocks.NETHER_BRICKS.defaultBlockState()));
+            }
+
+            if (ChalkRegistry.block() != null) {
+                for (PermanencyRitualStructure.RunePlacement placement : PermanencyRitualStructure.runes()) {
+                    BlockState runeState = ChalkRegistry.block().defaultBlockState()
+                            .setValue(ChalkRuneBlock.FACING, Direction.UP)
+                            .setValue(ChalkRuneBlock.GLYPH, placement.glyph());
+                    built.add(new GhostBlock(
+                            previewCenter.offset(placement.offset()),
+                            RitualStructureRules.Role.RUNE,
+                            null,
+                            "Chalk Rune " + placement.glyph(),
+                            runeState));
+                }
+            }
+        } else if (definition == RitualDefinition.ECLIPSE) {
             built.add(new GhostBlock(
                     previewCenter.below(),
                     RitualStructureRules.Role.STRUCTURAL,
