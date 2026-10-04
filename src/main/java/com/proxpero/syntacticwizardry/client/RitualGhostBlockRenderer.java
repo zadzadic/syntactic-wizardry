@@ -65,6 +65,8 @@ final class RitualGhostBlockRenderer {
     }
 
     private static BlockState stateFor(PreparedRitualPreview.GhostBlock ghost) {
+        if (ghost.previewState() != null) return ghost.previewState();
+
         if (ghost.role() == RitualStructureRules.Role.CENTER) {
             return SyntacticWizardry.MATURE_CRYSTAL.get().defaultBlockState();
         }
