@@ -19,7 +19,10 @@ public record PermanencySyncPayload(long syncGameTime, List<Entry> entries) impl
             int effectTicks,
             boolean paused,
             boolean powered,
-            boolean stopping) {}
+            boolean stopping,
+            int shape,
+            int minX, int minY, int minZ,
+            int maxX, int maxY, int maxZ) {}
 
     public static final Type<PermanencySyncPayload> TYPE =
             new Type<>(ResourceLocation.fromNamespaceAndPath(
@@ -42,7 +45,10 @@ public record PermanencySyncPayload(long syncGameTime, List<Entry> entries) impl
                                 raw.readVarInt(),
                                 raw.readBoolean(),
                                 raw.readBoolean(),
-                                raw.readBoolean()));
+                                raw.readBoolean(),
+                                raw.readVarInt(),
+                                raw.readInt(), raw.readInt(), raw.readInt(),
+                                raw.readInt(), raw.readInt(), raw.readInt()));
                     }
                     return new PermanencySyncPayload(syncTime, List.copyOf(entries));
                 }
@@ -61,6 +67,13 @@ public record PermanencySyncPayload(long syncGameTime, List<Entry> entries) impl
                         raw.writeBoolean(entry.paused());
                         raw.writeBoolean(entry.powered());
                         raw.writeBoolean(entry.stopping());
+                        raw.writeVarInt(entry.shape());
+                        raw.writeInt(entry.minX());
+                        raw.writeInt(entry.minY());
+                        raw.writeInt(entry.minZ());
+                        raw.writeInt(entry.maxX());
+                        raw.writeInt(entry.maxY());
+                        raw.writeInt(entry.maxZ());
                     }
                 }
             };
