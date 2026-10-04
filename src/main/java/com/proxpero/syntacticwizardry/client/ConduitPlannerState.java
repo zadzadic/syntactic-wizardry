@@ -337,7 +337,11 @@ public final class ConduitPlannerState {
         if (previewCenter != null) {
             PreparedRitualPreview.renderGhosts(
                     event,
-                    PreparedRitualPreview.previewGhosts(ritual, previewCenter, requestedRitualPotence()),
+                    PreparedRitualPreview.previewGhosts(
+                            ritual,
+                            previewCenter,
+                            requestedRitualPotence(),
+                            mooncallPhase),
                     placingRitualCenter ? 0.55F : 0.90F);
         }
 
