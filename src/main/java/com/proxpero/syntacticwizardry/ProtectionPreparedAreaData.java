@@ -90,43 +90,24 @@ public final class ProtectionPreparedAreaData extends SavedData {
         if (configs.removeIf(existing -> existing.ownerId().equals(ownerId))) setDirty();
     }
 
-    public Config consume(UUID ownerId, BlockPos center) {
-        if (ownerId == null || center == null) return null;
+    public boolean hasOwner(UUID ownerId) {
+        if (ownerId == null) return false;
+        for (Config config : configs) {
+            if (config.ownerId().equals(ownerId)) return true;
+        }
+        return false;
+    }
 
-        // Prefer the exact planned ritual center.
+    public Config consume(UUID ownerId) {
+        if (ownerId == null) return null;
         Iterator<Config> iterator = configs.iterator();
         while (iterator.hasNext()) {
             Config config = iterator.next();
-            if (config.ownerId().equals(ownerId) && config.ritualCenter().equals(center)) {
-                iterator.remove();
-                setDirty();
-                return config;
-            }
-        }
-
-        // Builder placement and physical block placement can disagree by a block or two
-        // about the selected center. Accept the owner's current prepared Protection ritual
-        // when its planned center is still within the normal ritual-origin tolerance.
-        Config nearest = null;
-        long nearestDistanceSquared = Long.MAX_VALUE;
-        long maxDistance = (long)Math.ceil(RitualStructureRules.EFFECT_ORIGIN_MAX_DISTANCE);
-        long maxDistanceSquared = maxDistance * maxDistance;
-        for (Config config : configs) {
             if (!config.ownerId().equals(ownerId)) continue;
-            long dx = (long)config.ritualCenter().getX() - center.getX();
-            long dy = (long)config.ritualCenter().getY() - center.getY();
-            long dz = (long)config.ritualCenter().getZ() - center.getZ();
-            long distanceSquared = dx * dx + dy * dy + dz * dz;
-            if (distanceSquared <= maxDistanceSquared && distanceSquared < nearestDistanceSquared) {
-                nearest = config;
-                nearestDistanceSquared = distanceSquared;
-            }
-        }
-
-        if (nearest != null) {
-            configs.remove(nearest);
+            iterator.remove();
             setDirty();
+            return config;
         }
-        return nearest;
+        return null;
     }
 }
