@@ -68,6 +68,7 @@ public final class RitualNetwork {
                 MooncallRitualEvents.handleControl(player, payload);
                 SummoningRitualEvents.handleControl(player, payload);
                 BindingRitualEvents.handleControl(player, payload);
+                ProtectionRitualEvents.handleControl(player, payload);
             }
         }
     }
