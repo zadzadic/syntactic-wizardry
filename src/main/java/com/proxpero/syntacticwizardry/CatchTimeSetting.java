@@ -2,11 +2,15 @@ package com.proxpero.syntacticwizardry;
 
 import net.minecraft.core.BlockPos;
 
+/**
+ * Catch Time settings. Gold offsets are fixed positions relative to the
+ * Mature Crystal activation center. The Lapis Block is directly below it.
+ */
 public enum CatchTimeSetting {
-    DAWN("Dawn", 0L, new BlockPos(1, 0, 0)),
-    NOON("Noon", 6000L, new BlockPos(0, 0, 1)),
-    TWILIGHT("Twilight", 12000L, new BlockPos(-1, 0, 0)),
-    MIDNIGHT("Midnight", 18000L, new BlockPos(0, 0, -1));
+    DAWN("Dawn", 0L, new BlockPos(1, -1, 0)),
+    NOON("Noon", 6000L, new BlockPos(0, -1, 1)),
+    TWILIGHT("Twilight", 12000L, new BlockPos(-1, -1, 0)),
+    MIDNIGHT("Midnight", 18000L, new BlockPos(0, -1, -1));
 
     private final String displayName;
     private final long dayTime;
@@ -26,6 +30,7 @@ public enum CatchTimeSetting {
         return dayTime;
     }
 
+    /** Fixed Gold Block position relative to the Mature Crystal. */
     public BlockPos goldOffset() {
         return goldOffset;
     }
