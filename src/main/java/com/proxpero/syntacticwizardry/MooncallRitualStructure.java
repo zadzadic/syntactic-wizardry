@@ -1,7 +1,7 @@
 package com.proxpero.syntacticwizardry;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerLevel;\nimport net.minecraft.world.level.block.Blocks;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,16 +39,17 @@ public final class MooncallRitualStructure {
 
         MooncallPhase found = null;
         for (MooncallPhase phase : MooncallPhase.values()) {
-            BlockPos pos = center.offset(obsidianOffset(phase));
-            if (!RitualStructureRules.isValidForRole(level, pos, RitualStructureRules.Role.STRUCTURAL)) continue;
+            RitualStructureRules.PatternSlot marker = RitualStructureRules.PatternSlot.specific(
+                    obsidianOffset(phase), Blocks.OBSIDIAN);
+            if (!RitualStructureRules.detectPattern(level, center, List.of(marker)).valid()) continue;
             if (found != null) {
-                return invalid("Mooncall requires exactly one phase-marker Structural Block.");
+                return invalid("Mooncall requires exactly one Obsidian phase marker.");
             }
             found = phase;
         }
 
         if (found == null) {
-            return invalid("Mooncall requires one phase-marker Structural Block two blocks from the Center.");
+            return invalid("Mooncall requires one Obsidian phase marker two blocks from the Center.");
         }
 
         return new Detection(true, "", found);
@@ -56,8 +57,9 @@ public final class MooncallRitualStructure {
 
     public static boolean hasPhaseMarker(ServerLevel level, BlockPos center) {
         for (MooncallPhase phase : MooncallPhase.values()) {
-            BlockPos pos = center.offset(obsidianOffset(phase));
-            if (RitualStructureRules.isValidForRole(level, pos, RitualStructureRules.Role.STRUCTURAL)) return true;
+            RitualStructureRules.PatternSlot marker = RitualStructureRules.PatternSlot.specific(
+                    obsidianOffset(phase), Blocks.OBSIDIAN);
+            if (RitualStructureRules.detectPattern(level, center, List.of(marker)).valid()) return true;
         }
         return false;
     }
@@ -65,10 +67,10 @@ public final class MooncallRitualStructure {
     public static boolean activeStructureValid(ServerLevel level, BlockPos center, MooncallPhase phase) {
         if (phase == null) return false;
         if (!RitualStructureRules.detectPattern(level, center, RUNE_PATTERN).valid()) return false;
-        return RitualStructureRules.isValidForRole(
+        return RitualStructureRules.detectPattern(
                 level,
-                center.offset(obsidianOffset(phase)),
-                RitualStructureRules.Role.STRUCTURAL);
+                center,
+                List.of(RitualStructureRules.PatternSlot.specific(obsidianOffset(phase), Blocks.OBSIDIAN))).valid();
     }
 
     private static List<RitualStructureRules.PatternSlot> buildRunePattern() {
