@@ -81,7 +81,6 @@ public final class PreparedRitualPreview {
         }
 
         ghosts = previewGhosts(definition, center, requestedPotence, mooncallPhase);
-        ProtectionAreaClientBridge.onPrepared(definition, ritualCenter);
     }
 
     public static List<GhostBlock> previewGhosts(
