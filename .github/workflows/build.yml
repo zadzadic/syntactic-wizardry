@@ -2,7 +2,7 @@ name: Build Syntactic Wizardry
 on:
   workflow_dispatch:
   push:
-    branches: [ main, chatgpt-luminal-v0.2.28-build, chatgpt-luminal-v0.2.29-render, chatgpt-luminal-v0.2.30-los, chatgpt-luminal-v0.2.31-color, chatgpt-luminal-v0.2.32-remote-world, chatgpt-luminal-v0.2.33-load-safety ]
+    branches: [ main, chatgpt-luminal-v0.2.28-build, chatgpt-luminal-v0.2.29-render, chatgpt-luminal-v0.2.30-los, chatgpt-luminal-v0.2.31-color, chatgpt-luminal-v0.2.32-remote-world, chatgpt-luminal-v0.2.33-load-safety, chatgpt-luminal-v0.2.34-portal-transform ]
   pull_request:
     branches: [ main ]
 jobs:
@@ -44,6 +44,11 @@ jobs:
         run: |
           base64 -d .build/luminal-v0.2.33-load-safety.patch.gz.b64 | gzip -d > /tmp/luminal-v0.2.33-load-safety.patch
           git apply /tmp/luminal-v0.2.33-load-safety.patch
+      - name: Apply v0.2.34 portal transform patch
+        if: ${{ hashFiles('.build/luminal-v0.2.34-portal-transform.patch.gz.b64') != '' }}
+        run: |
+          base64 -d .build/luminal-v0.2.34-portal-transform.patch.gz.b64 | gzip -d > /tmp/luminal-v0.2.34-portal-transform.patch
+          git apply /tmp/luminal-v0.2.34-portal-transform.patch
       - name: Read mod version
         run: echo "MOD_VERSION=$(grep '^mod_version=' gradle.properties | cut -d= -f2)" >> "$GITHUB_ENV"
       - name: Install Gradle 9.2.1
