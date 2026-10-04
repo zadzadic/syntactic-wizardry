@@ -32,15 +32,15 @@ public final class CatchTimeRitualEvents {
 
         if (!held.is(SyntacticWizardry.WAND.get())) return;
         if (!level.getBlockState(center).is(SyntacticWizardry.MATURE_CRYSTAL.get())) return;
-        if (!(level instanceof ServerLevel server)) return;
-        if (!(event.getEntity() instanceof ServerPlayer player)) return;
+        if (!level.getBlockState(center.offset(CatchTimeRitualStructure.LAPIS_OFFSET)).is(Blocks.LAPIS_BLOCK)) return;
 
-        // Lapis directly beneath the crystal identifies Catch Time strongly enough to run
-        // the full validator. Do not hide validation failures behind a heuristic match count.
-        if (!server.getBlockState(center.below()).is(Blocks.LAPIS_BLOCK)) return;
-
+        // Match the working Eclipse/Mooncall activation flow: claim the click on
+        // both sides before server-only validation and activation.
         event.setCanceled(true);
-        event.setCancellationResult(InteractionResult.SUCCESS);
+        event.setCancellationResult(InteractionResult.sidedSuccess(level.isClientSide()));
+
+        if (!(level instanceof ServerLevel server)
+                || !(event.getEntity() instanceof ServerPlayer player)) return;
 
         if (WandBindingService.get(held) != null) {
             player.displayClientMessage(Component.literal("The Wand must be empty to activate a Ritual."), true);
@@ -55,6 +55,7 @@ public final class CatchTimeRitualEvents {
 
         CatchTimeRitualData.Entry entry = CatchTimeRitualData.get(server).activate(
                 server, center, detection.setting());
+
         server.setBlock(center, Blocks.AIR.defaultBlockState(), 3);
         syncLevel(server);
 
@@ -112,7 +113,9 @@ public final class CatchTimeRitualEvents {
 
     public static void syncLevel(ServerLevel level) {
         CatchTimeSyncPayload payload = payload(level);
-        for (ServerPlayer player : level.players()) PacketDistributor.sendToPlayer(player, payload);
+        for (ServerPlayer player : level.players()) {
+            PacketDistributor.sendToPlayer(player, payload);
+        }
     }
 
     private static CatchTimeSyncPayload payload(ServerLevel level) {
