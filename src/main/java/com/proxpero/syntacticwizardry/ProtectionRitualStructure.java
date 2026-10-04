@@ -1,7 +1,7 @@
 package com.proxpero.syntacticwizardry;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerLevel;\nimport net.minecraft.world.level.block.Blocks;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -65,9 +65,9 @@ public final class ProtectionRitualStructure {
 
     private static List<RitualStructureRules.PatternSlot> buildActivePattern() {
         List<RitualStructureRules.PatternSlot> slots = new ArrayList<>();
-        slots.add(new RitualStructureRules.PatternSlot(CENTER_IRON, RitualStructureRules.Role.STRUCTURAL));
+        slots.add(RitualStructureRules.PatternSlot.specific(CENTER_IRON, Blocks.IRON_BLOCK));
         for (BlockPos offset : FOUNDATION_IRON) {
-            slots.add(new RitualStructureRules.PatternSlot(offset, RitualStructureRules.Role.STRUCTURAL));
+            slots.add(RitualStructureRules.PatternSlot.specific(offset, Blocks.IRON_BLOCK));
         }
         for (RunePlacement placement : RUNES) {
             slots.add(new RitualStructureRules.PatternSlot(placement.offset(), RitualStructureRules.Role.RUNE));

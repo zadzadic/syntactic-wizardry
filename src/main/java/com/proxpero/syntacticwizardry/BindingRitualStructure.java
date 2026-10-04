@@ -20,7 +20,7 @@ public final class BindingRitualStructure {
             new RunePlacement(new BlockPos(2, 0, 2), 15),
             new RunePlacement(new BlockPos(0, 0, 3), 5));
 
-    /** Previewed as Magic Light, but any valid Structural Block is accepted here. */
+    /** Binding-specific blocks: these positions require Magic Light exactly. */
     private static final List<BlockPos> LIGHTS = List.of(
             new BlockPos(-1, 0, -2),
             new BlockPos(1, 0, -2),
@@ -62,7 +62,7 @@ public final class BindingRitualStructure {
             slots.add(new RitualStructureRules.PatternSlot(placement.offset(), RitualStructureRules.Role.RUNE));
         }
         for (BlockPos offset : LIGHTS) {
-            slots.add(new RitualStructureRules.PatternSlot(offset, RitualStructureRules.Role.STRUCTURAL));
+            slots.add(RitualStructureRules.PatternSlot.specific(offset, MagicLightRegistry::block));
         }
         return List.copyOf(slots);
     }

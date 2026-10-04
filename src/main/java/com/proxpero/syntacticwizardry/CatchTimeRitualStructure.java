@@ -73,13 +73,11 @@ public final class CatchTimeRitualStructure {
             return invalid("The Catch Time ritual pattern is incomplete or incorrect.");
         }
 
-        if (!level.getBlockState(center.offset(LAPIS_OFFSET)).is(Blocks.LAPIS_BLOCK)) {
-            return invalid("Catch Time requires a Lapis Block directly below the Mature Crystal.");
-        }
-
         CatchTimeSetting found = null;
         for (CatchTimeSetting setting : CatchTimeSetting.values()) {
-            if (!level.getBlockState(center.offset(setting.goldOffset())).is(Blocks.GOLD_BLOCK)) continue;
+            RitualStructureRules.PatternSlot gold = RitualStructureRules.PatternSlot.specific(
+                    setting.goldOffset(), Blocks.GOLD_BLOCK);
+            if (!RitualStructureRules.detectPattern(level, center, List.of(gold)).valid()) continue;
             if (found != null) {
                 return invalid("Catch Time requires exactly one Gold Block next to the Lapis Block.");
             }
@@ -96,10 +94,11 @@ public final class CatchTimeRitualStructure {
     public static boolean activeStructureValid(ServerLevel level, BlockPos center, CatchTimeSetting expected) {
         if (expected == null) return false;
         if (!RitualStructureRules.detectPattern(level, center, ACTIVE_PATTERN).valid()) return false;
-        if (!level.getBlockState(center.offset(LAPIS_OFFSET)).is(Blocks.LAPIS_BLOCK)) return false;
 
         for (CatchTimeSetting setting : CatchTimeSetting.values()) {
-            boolean gold = level.getBlockState(center.offset(setting.goldOffset())).is(Blocks.GOLD_BLOCK);
+            boolean gold = RitualStructureRules.detectPattern(
+                    level, center,
+                    List.of(RitualStructureRules.PatternSlot.specific(setting.goldOffset(), Blocks.GOLD_BLOCK))).valid();
             if (setting == expected) {
                 if (!gold) return false;
             } else if (gold) {
@@ -111,6 +110,7 @@ public final class CatchTimeRitualStructure {
 
     private static List<RitualStructureRules.PatternSlot> buildActivePattern() {
         List<RitualStructureRules.PatternSlot> slots = new ArrayList<>();
+        slots.add(RitualStructureRules.PatternSlot.specific(LAPIS_OFFSET, Blocks.LAPIS_BLOCK));
         for (BlockPos offset : STRUCTURAL_OFFSETS) {
             slots.add(new RitualStructureRules.PatternSlot(offset, RitualStructureRules.Role.STRUCTURAL));
         }
