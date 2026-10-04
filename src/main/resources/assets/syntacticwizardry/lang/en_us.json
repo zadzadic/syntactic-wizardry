@@ -82,5 +82,8 @@
   "item.syntacticwizardry.red_chalk": "Red Chalk",
   "item.syntacticwizardry.black_chalk": "Black Chalk",
   "block.syntacticwizardry.conduit": "Armillary",
-  "item.syntacticwizardry.structure_debug_tool": "Structure Debug Tool"
+  "item.syntacticwizardry.structure_debug_tool": "Structure Debug Tool",
+  "item.syntacticwizardry.location_codex": "Location Codex",
+  "block.syntacticwizardry.reliquary": "Reliquary",
+  "item.syntacticwizardry.reliquary": "Reliquary"
 }
