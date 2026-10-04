@@ -43,42 +43,54 @@ public final class PreparedRitualPreview {
     }
 
     public static void prepare(RitualDefinition definition, BlockPos ritualCenter, int potence) {
+        if (definition == null || ritualCenter == null) return;
         ritual = definition;
-        center = ritualCenter == null ? BlockPos.ZERO : ritualCenter.immutable();
+        center = ritualCenter.immutable();
         requestedPotence = Math.max(1, potence);
         focusPlan = RitualStructureRules.focusPlan(requestedPotence);
+        ghosts = previewGhosts(definition, center, requestedPotence);
+    }
 
+    public static List<GhostBlock> previewGhosts(
+            RitualDefinition definition,
+            BlockPos ritualCenter,
+            int potence) {
+        if (definition == null || ritualCenter == null) return List.of();
+
+        BlockPos previewCenter = ritualCenter.immutable();
+        RitualStructureRules.FocusPlan previewFocus = RitualStructureRules.focusPlan(Math.max(1, potence));
         List<GhostBlock> built = new ArrayList<>();
+
         built.add(new GhostBlock(
-                center,
+                previewCenter,
                 RitualStructureRules.Role.CENTER,
                 null,
                 "Mature Crystal"));
 
         if (definition == RitualDefinition.ECLIPSE) {
             built.add(new GhostBlock(
-                    center.below(),
+                    previewCenter.below(),
                     RitualStructureRules.Role.STRUCTURAL,
                     null,
                     "Obsidian"));
             for (BlockPos offset : EclipseRitualStructure.runeOffsets()) {
                 built.add(new GhostBlock(
-                        center.offset(offset),
+                        previewCenter.offset(offset),
                         RitualStructureRules.Role.RUNE,
                         null,
                         "Chalk Rune"));
             }
         }
 
-        for (RitualStructureRules.FocusPlacement placement : focusPlan.placements()) {
+        for (RitualStructureRules.FocusPlacement placement : previewFocus.placements()) {
             built.add(new GhostBlock(
-                    placement.position(center),
+                    placement.position(previewCenter),
                     RitualStructureRules.Role.FOCUS,
                     placement.material(),
                     placement.material().displayName() + " Focus"));
         }
 
-        ghosts = Collections.unmodifiableList(built);
+        return Collections.unmodifiableList(built);
     }
 
     public static boolean prepared() {
@@ -121,7 +133,13 @@ public final class PreparedRitualPreview {
 
     @SubscribeEvent
     public static void render(RenderLevelStageEvent event) {
-        if (!prepared() || event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES) return;
+        if (!prepared()) return;
+        renderGhosts(event, ghosts, 0.95F);
+    }
+
+    public static void renderGhosts(RenderLevelStageEvent event, List<GhostBlock> blocks, float alpha) {
+        if (event == null || blocks == null || blocks.isEmpty()
+                || event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES) return;
 
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null) return;
@@ -132,7 +150,7 @@ public final class PreparedRitualPreview {
         RenderType lines = RenderType.lines();
         VertexConsumer consumer = buffers.getBuffer(lines);
 
-        for (GhostBlock ghost : ghosts) {
+        for (GhostBlock ghost : blocks) {
             BlockPos pos = ghost.pos();
             double pulse = 0.03D + 0.015D * Math.sin(
                     (mc.level.getGameTime() + event.getPartialTick().getGameTimeDeltaPartialTick(false)) * 0.14D);
@@ -146,7 +164,7 @@ public final class PreparedRitualPreview {
                     pos.getX() - camera.x + 1.0D + pulse,
                     pos.getY() - camera.y + 1.0D + pulse,
                     pos.getZ() - camera.z + 1.0D + pulse,
-                    color[0], color[1], color[2], 0.95F);
+                    color[0], color[1], color[2], Math.max(0.10F, Math.min(1.0F, alpha)));
         }
 
         buffers.endBatch(lines);
