@@ -3,6 +3,8 @@ on:
   workflow_dispatch:
   push:
     branches: [ main, chatgpt-luminal-v0.2.28-build ]
+  pull_request:
+    branches: [ main ]
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -13,7 +15,7 @@ jobs:
           distribution: temurin
           java-version: '21'
       - name: Apply v0.2.28 working patch
-        if: github.ref_name == 'chatgpt-luminal-v0.2.28-build'
+        if: ${{ hashFiles('.build/luminal-v0.2.28.patch.gz.b64') != '' }}
         run: |
           base64 -d .build/luminal-v0.2.28.patch.gz.b64 | gzip -d > /tmp/luminal-v0.2.28.patch
           git apply /tmp/luminal-v0.2.28.patch
