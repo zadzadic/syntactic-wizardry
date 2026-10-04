@@ -20,6 +20,6 @@ public abstract class EclipseSkyRenderMixin {
             boolean isFoggy,
             Runnable skyFogSetup,
             CallbackInfo ci) {
-        EclipseSkyRenderer.render(partialTick);
+        EclipseSkyRenderer.render(frustumMatrix, partialTick);
     }
 }
