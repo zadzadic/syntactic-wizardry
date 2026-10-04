@@ -292,6 +292,8 @@ public final class ConduitPlannerState {
             renderMooncallPanel(graphics, mc, width);
         } else if (ritual == RitualDefinition.SUMMONING) {
             renderNoPotencePanel(graphics, mc, width, "Summoning");
+        } else if (ritual == RitualDefinition.BINDING) {
+            renderNoPotencePanel(graphics, mc, width, "Binding");
         } else if (ritual != RitualDefinition.PERMANENCY) {
             renderRitualStrengthPanel(graphics, mc, width);
         }
@@ -431,7 +433,7 @@ public final class ConduitPlannerState {
                 clearSelection();
                 return;
             }
-        } else if (ritual == RitualDefinition.SUMMONING) {
+        } else if (ritual == RitualDefinition.SUMMONING || ritual == RitualDefinition.BINDING) {
             if (inside(mouseX, mouseY, width - 171, 110, 156, 18)) {
                 ritualCenter = null;
                 ritualHoverCenter = null;
@@ -904,7 +906,9 @@ public final class ConduitPlannerState {
     }
 
     private static int requestedRitualPotence() {
-        if (ritual == RitualDefinition.MOONCALL || ritual == RitualDefinition.SUMMONING) return 0;
+        if (ritual == RitualDefinition.MOONCALL
+                || ritual == RitualDefinition.SUMMONING
+                || ritual == RitualDefinition.BINDING) return 0;
         if (ritual != RitualDefinition.PERMANENCY) return ritualPotence;
 
         int[] plan = permanentSpellEditor.snapshotPlan();
@@ -1229,7 +1233,9 @@ public final class ConduitPlannerState {
         int height = mc.getWindow().getGuiScaledHeight();
         if (inside(mouseX, mouseY, PANEL_X, PANEL_Y, PANEL_W, height - 16)) return true;
         if (inside(mouseX, mouseY, width - 178, 8, 170, ritual.variableArea() ? 92 : 50)) return true;
-        if (ritual == RitualDefinition.MOONCALL || ritual == RitualDefinition.SUMMONING) {
+        if (ritual == RitualDefinition.MOONCALL
+                || ritual == RitualDefinition.SUMMONING
+                || ritual == RitualDefinition.BINDING) {
             if (inside(mouseX, mouseY, width - 178, 66, 170, 68)) return true;
         } else if (ritual != RitualDefinition.PERMANENCY) {
             int strengthY = ritual.variableArea() ? 108 : 66;
