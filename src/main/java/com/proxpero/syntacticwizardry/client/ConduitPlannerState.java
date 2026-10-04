@@ -45,7 +45,7 @@ public final class ConduitPlannerState {
     private static final int LIST_TOP = 28;
     private static final int LIST_BOTTOM_MARGIN = 52;
     private static final int MANAGEMENT_PANEL_W = 310;
-    private static final int ACTIVE_LIST_TOP = 34;
+    private static final int ACTIVE_LIST_TOP = 44;
     private static final int ACTIVE_ROW_H = 26;
     private static final int ACTIVE_BOTTOM_MARGIN = 18;
 
@@ -684,6 +684,9 @@ public final class ConduitPlannerState {
         graphics.fill(PANEL_X, PANEL_Y, PANEL_X + MANAGEMENT_PANEL_W, bottom, 0xC0182232);
         graphics.renderOutline(PANEL_X, PANEL_Y, MANAGEMENT_PANEL_W, bottom - PANEL_Y, 0xFF8E72C7);
         graphics.drawString(mc.font, "Active Rituals", PANEL_X + 8, PANEL_Y + 8, 0xFFF0E8FF, false);
+        double ritualMana = ActiveRitualClientRegistry.totalManaDrawPerSecond();
+        String manaText = String.format(java.util.Locale.ROOT, "Mana to Rituals: %.1f/s", ritualMana);
+        graphics.drawString(mc.font, manaText, PANEL_X + 8, PANEL_Y + 21, 0xFF8FD8FF, false);
 
         List<ActiveRitualClientRegistry.Entry> entries = ActiveRitualClientRegistry.entries();
         int visible = activeVisibleRows(height);
@@ -704,8 +707,13 @@ public final class ConduitPlannerState {
                     hovered ? 0xB03B465D : 0x90252F42);
             String name = mc.font.plainSubstrByWidth(entry.name(), 174);
             graphics.drawString(mc.font, name, PANEL_X + 9, y + 5, 0xFFFFFFFF, false);
-            graphics.drawString(mc.font, entry.paused() ? "Paused" : entry.ritual().displayName(),
-                    PANEL_X + 9, y + 15, entry.paused() ? 0xFFFFD88A : 0xFF9FAEC4, false);
+            String status = entry.paused()
+                    ? "Paused"
+                    : !entry.powered()
+                    ? "Dormant"
+                    : entry.ritual().displayName();
+            int statusColor = entry.paused() ? 0xFFFFD88A : !entry.powered() ? 0xFFFF9E80 : 0xFF9FAEC4;
+            graphics.drawString(mc.font, status, PANEL_X + 9, y + 15, statusColor, false);
             drawButton(graphics, mc, PANEL_X + 196, y + 4, 52, 18, entry.paused() ? "Resume" : "Pause", false);
             drawButton(graphics, mc, PANEL_X + 252, y + 4, 48, 18, "Stop", false);
         }
