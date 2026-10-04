@@ -1,5 +1,6 @@
 package com.proxpero.syntacticwizardry;
 
+import com.proxpero.syntacticwizardry.client.BindingClientState;
 import com.proxpero.syntacticwizardry.client.EclipseClientState;
 import com.proxpero.syntacticwizardry.client.MooncallClientState;
 import com.proxpero.syntacticwizardry.client.SummoningClientState;
@@ -16,6 +17,7 @@ public final class RitualNetwork {
     private static final IPayloadHandler<EclipseSyncPayload> ECLIPSE_SYNC_HANDLER = new EclipseSyncHandler();
     private static final IPayloadHandler<MooncallSyncPayload> MOONCALL_SYNC_HANDLER = new MooncallSyncHandler();
     private static final IPayloadHandler<SummoningSyncPayload> SUMMONING_SYNC_HANDLER = new SummoningSyncHandler();
+    private static final IPayloadHandler<BindingSyncPayload> BINDING_SYNC_HANDLER = new BindingSyncHandler();
     private static final IPayloadHandler<RitualControlPayload> CONTROL_HANDLER = new RitualControlHandler();
 
     private RitualNetwork() {}
@@ -26,6 +28,7 @@ public final class RitualNetwork {
         registrar.playToClient(EclipseSyncPayload.TYPE, EclipseSyncPayload.STREAM_CODEC, ECLIPSE_SYNC_HANDLER);
         registrar.playToClient(MooncallSyncPayload.TYPE, MooncallSyncPayload.STREAM_CODEC, MOONCALL_SYNC_HANDLER);
         registrar.playToClient(SummoningSyncPayload.TYPE, SummoningSyncPayload.STREAM_CODEC, SUMMONING_SYNC_HANDLER);
+        registrar.playToClient(BindingSyncPayload.TYPE, BindingSyncPayload.STREAM_CODEC, BINDING_SYNC_HANDLER);
         registrar.playToServer(RitualControlPayload.TYPE, RitualControlPayload.STREAM_CODEC, CONTROL_HANDLER);
     }
 
@@ -50,6 +53,13 @@ public final class RitualNetwork {
         }
     }
 
+    private static final class BindingSyncHandler implements IPayloadHandler<BindingSyncPayload> {
+        @Override
+        public void handle(BindingSyncPayload payload, IPayloadContext context) {
+            BindingClientState.apply(payload);
+        }
+    }
+
     private static final class RitualControlHandler implements IPayloadHandler<RitualControlPayload> {
         @Override
         public void handle(RitualControlPayload payload, IPayloadContext context) {
@@ -57,6 +67,7 @@ public final class RitualNetwork {
                 EclipseRitualEvents.handleControl(player, payload);
                 MooncallRitualEvents.handleControl(player, payload);
                 SummoningRitualEvents.handleControl(player, payload);
+                BindingRitualEvents.handleControl(player, payload);
             }
         }
     }
