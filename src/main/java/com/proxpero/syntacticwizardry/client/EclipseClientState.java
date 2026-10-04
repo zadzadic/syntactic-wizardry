@@ -21,6 +21,12 @@ public final class EclipseClientState {
         ActiveRitualClientRegistry.clearRitual(RitualDefinition.ECLIPSE);
         for (EclipseSyncPayload.Entry entry : payload.entries()) {
             next.add(new Entry(entry, payload.syncGameTime()));
+            if (PreparedRitualPreview.prepared()
+                    && PreparedRitualPreview.ritual() == RitualDefinition.ECLIPSE
+                    && PreparedRitualPreview.center() != null
+                    && PreparedRitualPreview.center().asLong() == entry.center()) {
+                PreparedRitualPreview.clear();
+            }
             ActiveRitualClientRegistry.register(
                     entry.id(),
                     entry.name(),
