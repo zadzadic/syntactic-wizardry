@@ -2,6 +2,7 @@ package com.proxpero.syntacticwizardry.client;
 
 import com.proxpero.syntacticwizardry.EclipseRitualStructure;
 import com.proxpero.syntacticwizardry.MooncallPhase;
+import com.proxpero.syntacticwizardry.MooncallRitualStructure;
 import com.proxpero.syntacticwizardry.RitualDefinition;
 import com.proxpero.syntacticwizardry.RitualStructureRules;
 import com.proxpero.syntacticwizardry.SyntacticWizardry;
@@ -59,13 +60,21 @@ public final class PreparedRitualPreview {
             focusPlan = RitualStructureRules.focusPlan(requestedPotence);
         }
 
-        ghosts = previewGhosts(definition, center, requestedPotence);
+        ghosts = previewGhosts(definition, center, requestedPotence, mooncallPhase);
     }
 
     public static List<GhostBlock> previewGhosts(
             RitualDefinition definition,
             BlockPos ritualCenter,
             int potence) {
+        return previewGhosts(definition, ritualCenter, potence, MooncallPhase.FULL_MOON);
+    }
+
+    public static List<GhostBlock> previewGhosts(
+            RitualDefinition definition,
+            BlockPos ritualCenter,
+            int potence,
+            MooncallPhase selectedMoonPhase) {
         if (definition == null || ritualCenter == null) return List.of();
 
         BlockPos previewCenter = ritualCenter.immutable();
@@ -86,6 +95,22 @@ public final class PreparedRitualPreview {
                     RitualStructureRules.Role.STRUCTURAL,
                     null,
                     "Obsidian"));
+            for (BlockPos offset : EclipseRitualStructure.runeOffsets()) {
+                built.add(new GhostBlock(
+                        previewCenter.offset(offset),
+                        RitualStructureRules.Role.RUNE,
+                        null,
+                        "Chalk Rune"));
+            }
+        } else if (definition == RitualDefinition.MOONCALL) {
+            MooncallPhase phase = selectedMoonPhase == null
+                    ? MooncallPhase.FULL_MOON
+                    : selectedMoonPhase;
+            built.add(new GhostBlock(
+                    previewCenter.offset(MooncallRitualStructure.obsidianOffset(phase)),
+                    RitualStructureRules.Role.STRUCTURAL,
+                    null,
+                    "Obsidian - " + phase.displayName()));
             for (BlockPos offset : EclipseRitualStructure.runeOffsets()) {
                 built.add(new GhostBlock(
                         previewCenter.offset(offset),
