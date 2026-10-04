@@ -1,27 +1,27 @@
 package com.proxpero.syntacticwizardry;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.state.BlockState;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Exact Catch Time structure.
+ * Catch Time structure.
  *
- * Every offset is relative directly to the clicked Mature Crystal, matching
- * the structure-validation model used by Protection and Binding.
+ * Common ritual roles are validated exclusively through RitualStructureRules.
+ * Lapis and Gold are ritual-specific semantic blocks and are checked separately.
  */
 public final class CatchTimeRitualStructure {
+    /** Glyph is retained only as an Armillary preview suggestion. It is never validated. */
     public record RunePlacement(BlockPos offset, int glyph) {}
     public record Detection(boolean valid, String error, CatchTimeSetting setting) {}
 
     public static final BlockPos LAPIS_OFFSET = new BlockPos(0, -1, 0);
 
-    private static final List<BlockPos> STONE_BRICKS = List.of(
+    /** Previewed as Stone Bricks, but any valid Structural Block is accepted. */
+    private static final List<BlockPos> STRUCTURAL_OFFSETS = List.of(
             new BlockPos(-2, -2, -2),
             new BlockPos(2, -2, -2),
             new BlockPos(-2, -2, 2),
@@ -45,10 +45,13 @@ public final class CatchTimeRitualStructure {
             new RunePlacement(new BlockPos(-1, -1, 4), 7),
             new RunePlacement(new BlockPos(1, -1, 4), 4));
 
+    private static final List<RitualStructureRules.PatternSlot> ACTIVE_PATTERN = buildActivePattern();
+    private static final List<RitualStructureRules.PatternSlot> DETECTION_PATTERN = withCenter(ACTIVE_PATTERN);
+
     private CatchTimeRitualStructure() {}
 
     public static List<BlockPos> stoneBrickOffsets() {
-        return STONE_BRICKS;
+        return STRUCTURAL_OFFSETS;
     }
 
     public static List<RunePlacement> runes() {
@@ -65,16 +68,13 @@ public final class CatchTimeRitualStructure {
     }
 
     public static Detection detect(ServerLevel level, BlockPos center) {
-        if (!RitualStructureRules.isValidCenter(level.getBlockState(center))) {
-            return invalid("The Center must be a Mature Crystal.");
+        RitualStructureRules.PatternMatch common = RitualStructureRules.detectPattern(level, center, DETECTION_PATTERN);
+        if (!common.valid()) {
+            return invalid("The Catch Time ritual pattern is incomplete or incorrect.");
         }
 
         if (!level.getBlockState(center.offset(LAPIS_OFFSET)).is(Blocks.LAPIS_BLOCK)) {
             return invalid("Catch Time requires a Lapis Block directly below the Mature Crystal.");
-        }
-
-        if (!basePatternValid(level, center)) {
-            return invalid("The Catch Time ritual pattern is incomplete or incorrect.");
         }
 
         CatchTimeSetting found = null;
@@ -95,8 +95,8 @@ public final class CatchTimeRitualStructure {
 
     public static boolean activeStructureValid(ServerLevel level, BlockPos center, CatchTimeSetting expected) {
         if (expected == null) return false;
+        if (!RitualStructureRules.detectPattern(level, center, ACTIVE_PATTERN).valid()) return false;
         if (!level.getBlockState(center.offset(LAPIS_OFFSET)).is(Blocks.LAPIS_BLOCK)) return false;
-        if (!basePatternValid(level, center)) return false;
 
         for (CatchTimeSetting setting : CatchTimeSetting.values()) {
             boolean gold = level.getBlockState(center.offset(setting.goldOffset())).is(Blocks.GOLD_BLOCK);
@@ -106,27 +106,25 @@ public final class CatchTimeRitualStructure {
                 return false;
             }
         }
-
         return true;
     }
 
-    private static boolean basePatternValid(ServerLevel level, BlockPos center) {
-        for (BlockPos offset : STONE_BRICKS) {
-            if (!level.getBlockState(center.offset(offset)).is(Blocks.STONE_BRICKS)) return false;
+    private static List<RitualStructureRules.PatternSlot> buildActivePattern() {
+        List<RitualStructureRules.PatternSlot> slots = new ArrayList<>();
+        for (BlockPos offset : STRUCTURAL_OFFSETS) {
+            slots.add(new RitualStructureRules.PatternSlot(offset, RitualStructureRules.Role.STRUCTURAL));
         }
-
-        ChalkRuneBlock runeBlock = ChalkRegistry.block();
-        if (runeBlock == null) return false;
-
         for (RunePlacement placement : RUNES) {
-            BlockState state = level.getBlockState(center.offset(placement.offset()));
-            if (!state.is(runeBlock)) return false;
-            if (state.getValue(ChalkRuneBlock.FACING) != Direction.UP) return false;
-            if (state.getValue(ChalkRuneBlock.COLOR) != DyeColor.BLACK) return false;
-            if (state.getValue(ChalkRuneBlock.GLYPH) != placement.glyph()) return false;
+            slots.add(new RitualStructureRules.PatternSlot(placement.offset(), RitualStructureRules.Role.RUNE));
         }
+        return List.copyOf(slots);
+    }
 
-        return true;
+    private static List<RitualStructureRules.PatternSlot> withCenter(List<RitualStructureRules.PatternSlot> active) {
+        List<RitualStructureRules.PatternSlot> slots = new ArrayList<>();
+        slots.add(new RitualStructureRules.PatternSlot(BlockPos.ZERO, RitualStructureRules.Role.CENTER));
+        slots.addAll(active);
+        return List.copyOf(slots);
     }
 
     private static Detection invalid(String error) {
