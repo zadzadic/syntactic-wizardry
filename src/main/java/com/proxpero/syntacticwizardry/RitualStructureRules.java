@@ -3,13 +3,13 @@ package com.proxpero.syntacticwizardry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.LevelReader;
-import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.Block;\nimport net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.List;
+import java.util.List;\nimport java.util.function.Supplier;
 
 /**
  * Shared physical rules for every ritual structure.
@@ -23,13 +23,35 @@ public final class RitualStructureRules {
         CENTER,
         RUNE,
         STRUCTURAL,
-        FOCUS
+        FOCUS,
+        SPECIFIC
     }
 
-    /** A ritual-relative block requirement. The role defines what matters; material identity does not. */
-    public record PatternSlot(BlockPos offset, Role role) {
+    /**
+     * A ritual-relative block requirement.
+     *
+     * CENTER/RUNE/STRUCTURAL/FOCUS use the shared role rules. SPECIFIC requires
+     * the exact supplied Block identity but ignores that block's state properties.
+     */
+    public record PatternSlot(BlockPos offset, Role role, Supplier<? extends Block> specificBlock) {
         public PatternSlot {
             if (offset == null || role == null) throw new IllegalArgumentException("Ritual pattern slots require an offset and role.");
+            if (role == Role.SPECIFIC && specificBlock == null) {
+                throw new IllegalArgumentException("Specific ritual slots require a block supplier.");
+            }
+        }
+
+        public PatternSlot(BlockPos offset, Role role) {
+            this(offset, role, null);
+        }
+
+        public static PatternSlot specific(BlockPos offset, Block block) {
+            if (block == null) throw new IllegalArgumentException("Specific ritual slots require a block.");
+            return new PatternSlot(offset, Role.SPECIFIC, () -> block);
+        }
+
+        public static PatternSlot specific(BlockPos offset, Supplier<? extends Block> blockSupplier) {
+            return new PatternSlot(offset, Role.SPECIFIC, blockSupplier);
         }
 
         public BlockPos position(BlockPos center) {
@@ -189,7 +211,16 @@ public final class RitualStructureRules {
             case RUNE -> isValidRune(state);
             case STRUCTURAL -> isValidStructural(level, pos);
             case FOCUS -> isValidFocus(state);
+            case SPECIFIC -> false;
         };
+    }
+
+    public static boolean isValidForSlot(LevelReader level, BlockPos center, PatternSlot slot) {
+        if (level == null || center == null || slot == null) return false;
+        BlockPos pos = slot.position(center);
+        if (slot.role() != Role.SPECIFIC) return isValidForRole(level, pos, slot.role());
+        Block expected = slot.specificBlock() == null ? null : slot.specificBlock().get();
+        return expected != null && level.getBlockState(pos).is(expected);
     }
 
     /** Backward-compatible exact-Focus overload for UI/planning code. */
@@ -222,7 +253,7 @@ public final class RitualStructureRules {
         List<PatternSlot> slots = requiredSlots == null ? List.of() : requiredSlots;
         for (PatternSlot slot : slots) {
             BlockPos pos = slot.position(center);
-            if (!isValidForRole(level, pos, slot.role())) {
+            if (!isValidForSlot(level, center, slot)) {
                 return new PatternMatch(false, slot.role(), pos.immutable(), List.of());
             }
         }
@@ -254,7 +285,7 @@ public final class RitualStructureRules {
         if (level == null || center == null || requiredSlots == null) return 0;
         int matches = 0;
         for (PatternSlot slot : requiredSlots) {
-            if (slot != null && isValidForRole(level, slot.position(center), slot.role())) matches++;
+            if (slot != null && isValidForSlot(level, center, slot)) matches++;
         }
         return matches;
     }
