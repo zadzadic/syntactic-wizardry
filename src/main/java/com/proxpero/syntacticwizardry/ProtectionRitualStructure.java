@@ -1,7 +1,8 @@
 package com.proxpero.syntacticwizardry;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.server.level.ServerLevel;\nimport net.minecraft.world.level.block.Blocks;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.block.Blocks;
 
 import java.util.ArrayList;
 import java.util.List;
