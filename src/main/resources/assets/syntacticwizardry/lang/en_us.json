@@ -85,5 +85,6 @@
   "item.syntacticwizardry.structure_debug_tool": "Structure Debug Tool",
   "item.syntacticwizardry.location_codex": "Location Codex",
   "block.syntacticwizardry.reliquary": "Reliquary",
-  "item.syntacticwizardry.reliquary": "Reliquary"
+  "item.syntacticwizardry.reliquary": "Reliquary",
+  "block.syntacticwizardry.luminal_portal": "Luminal Bridge"
 }

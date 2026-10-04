@@ -319,6 +319,8 @@ public final class ConduitPlannerState {
             renderMooncallPanel(graphics, mc, width);
         } else if (ritual == RitualDefinition.CATCH_TIME) {
             renderCatchTimePanel(graphics, mc, width);
+        } else if (ritual == RitualDefinition.LUMINAL_BRIDGE) {
+            renderNoPotencePanel(graphics, mc, width, "Luminal Bridge");
         } else if (ritual == RitualDefinition.SUMMONING) {
             renderNoPotencePanel(graphics, mc, width, "Summoning");
         } else if (ritual == RitualDefinition.BINDING) {
@@ -1027,7 +1029,8 @@ public final class ConduitPlannerState {
     }
 
     private static int requestedRitualPotence() {
-        if (ritual == RitualDefinition.MOONCALL
+        if (ritual == RitualDefinition.LUMINAL_BRIDGE
+                || ritual == RitualDefinition.MOONCALL
                 || ritual == RitualDefinition.CATCH_TIME
                 || ritual == RitualDefinition.SUMMONING
                 || ritual == RitualDefinition.BINDING
@@ -1363,7 +1366,8 @@ public final class ConduitPlannerState {
                 ? 116
                 : ritual.variableArea() ? 92 : 50;
         if (inside(mouseX, mouseY, width - 178, 8, 170, areaPanelH)) return true;
-        if (ritual == RitualDefinition.MOONCALL
+        if (ritual == RitualDefinition.LUMINAL_BRIDGE
+                || ritual == RitualDefinition.MOONCALL
                 || ritual == RitualDefinition.CATCH_TIME
                 || ritual == RitualDefinition.SUMMONING
                 || ritual == RitualDefinition.BINDING) {

@@ -81,6 +81,7 @@ public final class RitualNetwork {
                 BindingRitualEvents.handleControl(player, payload);
                 ProtectionRitualEvents.handleControl(player, payload);
                 PermanencyRitualEvents.handleControl(player, payload);
+                LuminalBridgeRitualEvents.handleControl(player, payload);
             }
         }
     }
