@@ -149,7 +149,10 @@ public final class PermanencyRitualEvents {
                     entry.effectTicks(),
                     entry.paused(),
                     entry.powered(),
-                    entry.stopping()));
+                    entry.stopping(),
+                    entry.shape().ordinal(),
+                    entry.minX(), entry.minY(), entry.minZ(),
+                    entry.maxX(), entry.maxY(), entry.maxZ()));
         }
         return new PermanencySyncPayload(level.getGameTime(), List.copyOf(entries));
     }
