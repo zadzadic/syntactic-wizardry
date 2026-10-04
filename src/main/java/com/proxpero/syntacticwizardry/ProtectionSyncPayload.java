@@ -12,7 +12,9 @@ import java.util.UUID;
 
 public record ProtectionSyncPayload(long syncGameTime, List<Entry> entries) implements CustomPacketPayload {
     public record Entry(UUID id, String name, long center, int effectTicks,
-                        boolean paused, boolean powered, boolean stopping) {}
+                        boolean paused, boolean powered, boolean stopping,
+                        boolean customArea, int shape,
+                        int minX, int minY, int minZ, int maxX, int maxY, int maxZ) {}
 
     public static final Type<ProtectionSyncPayload> TYPE =
             new Type<>(ResourceLocation.fromNamespaceAndPath(SyntacticWizardry.MOD_ID, "protection_sync"));
@@ -27,7 +29,10 @@ public record ProtectionSyncPayload(long syncGameTime, List<Entry> entries) impl
             for (int i = 0; i < count; i++) {
                 entries.add(new Entry(
                         raw.readUUID(), raw.readUtf(32), raw.readLong(), raw.readVarInt(),
-                        raw.readBoolean(), raw.readBoolean(), raw.readBoolean()));
+                        raw.readBoolean(), raw.readBoolean(), raw.readBoolean(),
+                        raw.readBoolean(), raw.readVarInt(),
+                        raw.readInt(), raw.readInt(), raw.readInt(),
+                        raw.readInt(), raw.readInt(), raw.readInt()));
             }
             return new ProtectionSyncPayload(syncTime, List.copyOf(entries));
         }
@@ -45,6 +50,14 @@ public record ProtectionSyncPayload(long syncGameTime, List<Entry> entries) impl
                 raw.writeBoolean(entry.paused());
                 raw.writeBoolean(entry.powered());
                 raw.writeBoolean(entry.stopping());
+                raw.writeBoolean(entry.customArea());
+                raw.writeVarInt(entry.shape());
+                raw.writeInt(entry.minX());
+                raw.writeInt(entry.minY());
+                raw.writeInt(entry.minZ());
+                raw.writeInt(entry.maxX());
+                raw.writeInt(entry.maxY());
+                raw.writeInt(entry.maxZ());
             }
         }
     };
