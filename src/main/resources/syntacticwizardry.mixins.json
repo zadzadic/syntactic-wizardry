@@ -12,7 +12,8 @@
     "ConduitPlannerBuilderControllerMixin",
     "ConduitPlannerBuilderEditMixin",
     "ConduitPlannerVolumeMixin",
-    "EclipseSkyRenderMixin"
+    "EclipseSkyRenderMixin",
+    "EclipseClientSkyDarkenMixin"
   ],
   "injectors": {
     "defaultRequire": 1
