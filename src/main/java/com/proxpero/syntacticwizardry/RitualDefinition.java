@@ -10,7 +10,7 @@ public enum RitualDefinition {
     BINDING("Binding", false),
     PROTECTION("Protection", true),
     ECLIPSE("Eclipse", false),
-    SUN_LORD("Sun-Lord", false),
+    CATCH_TIME("Catch Time", false),
     CLEAR_SKIES("Clear Skies", false),
     STORMLORD("Stormlord", false),
     ICE_CROWN("Ice Crown", false),
