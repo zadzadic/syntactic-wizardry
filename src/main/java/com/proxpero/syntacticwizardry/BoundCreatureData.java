@@ -70,6 +70,9 @@ public final class BoundCreatureData extends SavedData {
         private String anchorDimension;
 
         private transient UUID commandTarget;
+        private transient UUID ownerAssistTarget;
+        private transient int ownerLastHurtMobTimestamp;
+        private transient boolean ownerAttackTimestampInitialized;
         private transient UUID allowedTarget;
         private transient int attackCooldown;
 
@@ -187,6 +190,8 @@ public final class BoundCreatureData extends SavedData {
 
         entry.mode = entry.mode.next();
         entry.commandTarget = null;
+        entry.ownerAssistTarget = null;
+        entry.ownerAttackTimestampInitialized = false;
         entry.allowedTarget = null;
         entry.anchor = mob.blockPosition().immutable();
         entry.anchorDimension = mob.level().dimension().location().toString();
@@ -268,8 +273,12 @@ public final class BoundCreatureData extends SavedData {
         }
 
         LivingEntity target = resolveCommandTarget(level, entry);
-        if (target == null) target = recentAttacker(mob, entry.ownerId);
+        if (target == null) {
+            target = recentAttacker(mob, entry.ownerId);
+            if (target != null) entry.commandTarget = target.getUUID();
+        }
         if (target == null) target = recentAttacker(owner, entry.ownerId);
+        if (target == null) target = resolveOwnerAssistTarget(level, owner, entry);
 
         if (target != null) {
             combat(level, mob, entry, target);
@@ -371,6 +380,35 @@ public final class BoundCreatureData extends SavedData {
         if (defended.tickCount - defended.getLastHurtByMobTimestamp() > 100) return null;
         if (isAllied(ownerId, attacker)) return null;
         return attacker;
+    }
+
+    private LivingEntity resolveOwnerAssistTarget(ServerLevel level, ServerPlayer owner, Entry entry) {
+        int attackTimestamp = owner.getLastHurtMobTimestamp();
+
+        if (!entry.ownerAttackTimestampInitialized) {
+            entry.ownerLastHurtMobTimestamp = attackTimestamp;
+            entry.ownerAttackTimestampInitialized = true;
+        } else if (attackTimestamp != entry.ownerLastHurtMobTimestamp) {
+            entry.ownerLastHurtMobTimestamp = attackTimestamp;
+            LivingEntity attacked = owner.getLastHurtMob();
+            entry.ownerAssistTarget = attacked != null
+                    && attacked.isAlive()
+                    && !isAllied(entry.ownerId, attacked)
+                    ? attacked.getUUID()
+                    : null;
+        }
+
+        if (entry.ownerAssistTarget == null) return null;
+
+        Entity target = level.getEntity(entry.ownerAssistTarget);
+        if (!(target instanceof LivingEntity living)
+                || !living.isAlive()
+                || isAllied(entry.ownerId, living)) {
+            entry.ownerAssistTarget = null;
+            return null;
+        }
+
+        return living;
     }
 
     private LivingEntity nearestGuardTarget(ServerLevel level, Mob mob, Entry entry) {

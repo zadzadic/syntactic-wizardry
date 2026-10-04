@@ -294,6 +294,8 @@ public final class ConduitPlannerState {
             renderNoPotencePanel(graphics, mc, width, "Summoning");
         } else if (ritual == RitualDefinition.BINDING) {
             renderNoPotencePanel(graphics, mc, width, "Binding");
+        } else if (ritual == RitualDefinition.PROTECTION) {
+            renderNoPotencePanel(graphics, mc, width, "Protection");
         } else if (ritual != RitualDefinition.PERMANENCY) {
             renderRitualStrengthPanel(graphics, mc, width);
         }
@@ -433,8 +435,11 @@ public final class ConduitPlannerState {
                 clearSelection();
                 return;
             }
-        } else if (ritual == RitualDefinition.SUMMONING || ritual == RitualDefinition.BINDING) {
-            if (inside(mouseX, mouseY, width - 171, 110, 156, 18)) {
+        } else if (ritual == RitualDefinition.SUMMONING
+                || ritual == RitualDefinition.BINDING
+                || ritual == RitualDefinition.PROTECTION) {
+            int noPotenceY = ritual.variableArea() ? 108 : 66;
+            if (inside(mouseX, mouseY, width - 171, noPotenceY + 44, 156, 18)) {
                 ritualCenter = null;
                 ritualHoverCenter = null;
                 placingRitualCenter = true;
@@ -670,6 +675,9 @@ public final class ConduitPlannerState {
         if (leftPressed
                 && PreparedRitualPreview.prepared()
                 && inside(mouseX, mouseY, width - 138, 80, 126, 22)) {
+            if (PreparedRitualPreview.ritual() == RitualDefinition.PROTECTION) {
+                ProtectionAreaClientBridge.clearPrepared();
+            }
             PreparedRitualPreview.clear();
             return;
         }
@@ -826,7 +834,7 @@ public final class ConduitPlannerState {
 
     private static void renderMooncallPanel(GuiGraphics graphics, Minecraft mc, int width) {
         int x = width - 178;
-        int y = 66;
+        int y = ritual.variableArea() ? 108 : 66;
         int w = 170;
         int h = 68;
 
@@ -908,7 +916,8 @@ public final class ConduitPlannerState {
     private static int requestedRitualPotence() {
         if (ritual == RitualDefinition.MOONCALL
                 || ritual == RitualDefinition.SUMMONING
-                || ritual == RitualDefinition.BINDING) return 0;
+                || ritual == RitualDefinition.BINDING
+                || ritual == RitualDefinition.PROTECTION) return 0;
         if (ritual != RitualDefinition.PERMANENCY) return ritualPotence;
 
         int[] plan = permanentSpellEditor.snapshotPlan();
@@ -989,396 +998,3 @@ public final class ConduitPlannerState {
     }
 
     private static boolean shouldRunBuilderVolume(Minecraft mc, boolean leftDown, boolean justPressed,
-                                                  double rawX, double rawY) {
-        if (bounds() == null) return true;
-
-        try {
-            if (boolField("selecting").getBoolean(null) || boolField("resizing").getBoolean(null)) {
-                return true;
-            }
-        } catch (Throwable ignored) {
-        }
-
-        if (!leftDown) return true;
-        if (!justPressed) return false;
-        return builderResizeHandleHit(mc, rawX, rawY);
-    }
-
-    private static boolean builderResizeHandleHit(Minecraft mc, double rawX, double rawY) {
-        try {
-            if (handleHitMethod == null) {
-                handleHitMethod = BuilderVolumeSupport.class.getDeclaredMethod(
-                        "handleHit", Object.class, double.class, double.class);
-                handleHitMethod.setAccessible(true);
-            }
-            Object hit = handleHitMethod.invoke(null, mc, rawX, rawY);
-            return hit instanceof Number number && number.intValue() >= 0;
-        } catch (Throwable ignored) {
-            return false;
-        }
-    }
-
-    private static int moveAxisHit(RayData ray, double[] center) {
-        for (int axis = 0; axis < 3; axis++) {
-            double x2 = center[0] + (axis == 0 ? 1.65D : 0.0D);
-            double y2 = center[1] + (axis == 1 ? 1.65D : 0.0D);
-            double z2 = center[2] + (axis == 2 ? 1.65D : 0.0D);
-            if (distanceRaySegment(ray, center[0], center[1], center[2], x2, y2, z2) < 0.22D) return axis;
-        }
-        return -1;
-    }
-
-    private static double axisParam(RayData ray, double[] center, int axis) {
-        double ax = axis == 0 ? 1.0D : 0.0D;
-        double ay = axis == 1 ? 1.0D : 0.0D;
-        double az = axis == 2 ? 1.0D : 0.0D;
-        double wx = ray.ox - center[0];
-        double wy = ray.oy - center[1];
-        double wz = ray.oz - center[2];
-        double b = ray.dx * ax + ray.dy * ay + ray.dz * az;
-        double dW = ray.dx * wx + ray.dy * wy + ray.dz * wz;
-        double aW = ax * wx + ay * wy + az * wz;
-        double denom = 1.0D - b * b;
-        if (Math.abs(denom) < 1.0E-5D) return axis == 0 ? wx : axis == 1 ? wy : wz;
-        return (aW - b * dW) / denom;
-    }
-
-    private static double distanceRaySegment(RayData ray,
-                                             double ax, double ay, double az,
-                                             double bx, double by, double bz) {
-        double best = Double.POSITIVE_INFINITY;
-        for (int i = 0; i <= 32; i++) {
-            double u = i / 32.0D;
-            double px = ax + (bx - ax) * u;
-            double py = ay + (by - ay) * u;
-            double pz = az + (bz - az) * u;
-            double vx = px - ray.ox;
-            double vy = py - ray.oy;
-            double vz = pz - ray.oz;
-            double t = vx * ray.dx + vy * ray.dy + vz * ray.dz;
-            if (t < 0.0D) t = 0.0D;
-            double rx = ray.ox + ray.dx * t;
-            double ry = ray.oy + ray.dy * t;
-            double rz = ray.oz + ray.dz * t;
-            double dx = px - rx;
-            double dy = py - ry;
-            double dz = pz - rz;
-            best = Math.min(best, Math.sqrt(dx * dx + dy * dy + dz * dz));
-        }
-        return best;
-    }
-
-    private static BlockPos builderPlacementTarget(Minecraft mc, double rawX, double rawY) {
-        try {
-            if (placementTargetMethod == null) {
-                placementTargetMethod = BuilderInventoryPanel.class.getDeclaredMethod(
-                        "placementTarget", Object.class, double.class, double.class);
-                placementTargetMethod.setAccessible(true);
-            }
-            Object result = placementTargetMethod.invoke(null, mc, rawX, rawY);
-            if (!(result instanceof int[] xyz) || xyz.length < 3) return null;
-            return new BlockPos(xyz[0], xyz[1], xyz[2]);
-        } catch (Throwable ignored) {
-            return null;
-        }
-    }
-
-    private static RayData cursorRay(Minecraft mc, double rawX, double rawY) {
-        try {
-            if (cursorRayMethod == null) {
-                cursorRayMethod = ArcaneBuilderEditEvents.class.getDeclaredMethod(
-                        "cursorRay", Object.class, double.class, double.class);
-                cursorRayMethod.setAccessible(true);
-            }
-            Object ray = cursorRayMethod.invoke(null, mc, rawX, rawY);
-            if (ray == null) return null;
-            Class<?> type = ray.getClass();
-            return new RayData(
-                    rayField(type, "ox").getDouble(ray),
-                    rayField(type, "oy").getDouble(ray),
-                    rayField(type, "oz").getDouble(ray),
-                    rayField(type, "dx").getDouble(ray),
-                    rayField(type, "dy").getDouble(ray),
-                    rayField(type, "dz").getDouble(ray));
-        } catch (Throwable ignored) {
-            return null;
-        }
-    }
-
-    private static Field rayField(Class<?> type, String name) throws Exception {
-        Field field = type.getDeclaredField(name);
-        field.setAccessible(true);
-        return field;
-    }
-
-    private static void normalizeShapeBounds(int[] before, int[] after) {
-        if (after == null) return;
-        if (areaShape == AreaShape.BOX) {
-            int[] constrained = constrainEffectOrigin(after);
-            if (!Arrays.equals(after, constrained)) setBounds(constrained);
-            return;
-        }
-        int[] normalized = Arrays.copyOf(after, after.length);
-        int sx = size(after, 0);
-        int sy = size(after, 1);
-        int sz = size(after, 2);
-
-        if (areaShape == AreaShape.SPHERE) {
-            int changed = changedAxis(before, after);
-            int diameter = changed >= 0 ? size(after, changed) : Math.max(sx, Math.max(sy, sz));
-            for (int axis = 0; axis < 3; axis++) {
-                if (axis == changed) continue;
-                centerAxis(normalized, axis, diameter);
-            }
-        } else if (areaShape == AreaShape.CYLINDER) {
-            int changed = changedHorizontalAxis(before, after);
-            int diameter = changed >= 0 ? size(after, changed) : Math.max(sx, sz);
-            if (changed != 0) centerAxis(normalized, 0, diameter);
-            if (changed != 2) centerAxis(normalized, 2, diameter);
-        }
-
-        if (!Arrays.equals(after, normalized)) setBounds(normalized);
-    }
-
-    private static int changedAxis(int[] before, int[] after) {
-        if (before == null) return -1;
-        int found = -1;
-        for (int axis = 0; axis < 3; axis++) {
-            if (size(before, axis) != size(after, axis)) {
-                if (found >= 0) return -1;
-                found = axis;
-            }
-        }
-        return found;
-    }
-
-    private static int changedHorizontalAxis(int[] before, int[] after) {
-        if (before == null) return -1;
-        boolean x = size(before, 0) != size(after, 0);
-        boolean z = size(before, 2) != size(after, 2);
-        if (x == z) return -1;
-        return x ? 0 : 2;
-    }
-
-    private static int size(int[] b, int axis) {
-        return b[axis + 3] - b[axis] + 1;
-    }
-
-    private static void centerAxis(int[] b, int axis, int size) {
-        double center = (b[axis] + b[axis + 3] + 1.0D) * 0.5D;
-        int min = (int)Math.floor(center - size * 0.5D);
-        b[axis] = min;
-        b[axis + 3] = min + size - 1;
-    }
-
-    private static void setBounds(int[] b) {
-        try {
-            int[] constrained = constrainEffectOrigin(b);
-            intField("minX").setInt(null, constrained[0]);
-            intField("minY").setInt(null, constrained[1]);
-            intField("minZ").setInt(null, constrained[2]);
-            intField("maxX").setInt(null, constrained[3]);
-            intField("maxY").setInt(null, constrained[4]);
-            intField("maxZ").setInt(null, constrained[5]);
-            commitVirtualBounds();
-        } catch (Throwable ignored) {
-        }
-    }
-
-    private static int[] constrainEffectOrigin(int[] source) {
-        if (source == null || source.length < 6) return source;
-
-        int[] b = Arrays.copyOf(source, source.length);
-        double cx = (b[0] + b[3] + 1.0D) * 0.5D;
-        double cy = (b[1] + b[4] + 1.0D) * 0.5D;
-        double cz = (b[2] + b[5] + 1.0D) * 0.5D;
-
-        if (ritualCenter == null) return b;
-
-        double centerX = ritualCenter.getX() + 0.5D;
-        double centerY = ritualCenter.getY() + 0.5D;
-        double centerZ = ritualCenter.getZ() + 0.5D;
-
-        double dx = cx - centerX;
-        double dy = cy - centerY;
-        double dz = cz - centerZ;
-        double distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
-        double max = RitualStructureRules.EFFECT_ORIGIN_MAX_DISTANCE;
-        if (distance <= max || distance < 1.0E-8D) return b;
-
-        double scale = max / distance;
-        double targetX = centerX + dx * scale;
-        double targetY = centerY + dy * scale;
-        double targetZ = centerZ + dz * scale;
-
-        int shiftX = (int)Math.round(targetX - cx);
-        int shiftY = (int)Math.round(targetY - cy);
-        int shiftZ = (int)Math.round(targetZ - cz);
-
-        b[0] += shiftX;
-        b[3] += shiftX;
-        b[1] += shiftY;
-        b[4] += shiftY;
-        b[2] += shiftZ;
-        b[5] += shiftZ;
-        return b;
-    }
-
-    private static void addCorner(Set<Long> selected, int x, int y, int z) {
-        selected.add(new BlockPos(x, y, z).asLong());
-    }
-
-    private static boolean overPlannerUi(Minecraft mc, double mouseX, double mouseY) {
-        int width = mc.getWindow().getGuiScaledWidth();
-        int height = mc.getWindow().getGuiScaledHeight();
-        if (inside(mouseX, mouseY, PANEL_X, PANEL_Y, PANEL_W, height - 16)) return true;
-        if (inside(mouseX, mouseY, width - 178, 8, 170, ritual.variableArea() ? 92 : 50)) return true;
-        if (ritual == RitualDefinition.MOONCALL
-                || ritual == RitualDefinition.SUMMONING
-                || ritual == RitualDefinition.BINDING) {
-            if (inside(mouseX, mouseY, width - 178, 66, 170, 68)) return true;
-        } else if (ritual != RitualDefinition.PERMANENCY) {
-            int strengthY = ritual.variableArea() ? 108 : 66;
-            if (inside(mouseX, mouseY, width - 178, strengthY, 170, 68)) return true;
-        }
-        if (inside(mouseX, mouseY, PANEL_X + 7, height - 38, 72, 22)) return true;
-        if (inside(mouseX, mouseY, width - 178, height - 58, 170, 42)) return true;
-        return ritual == RitualDefinition.PERMANENCY
-                && inside(mouseX, mouseY, width - 178, 104, 170, 72);
-    }
-
-    private static int visibleRows(int height) {
-        return Math.max(5, (height - LIST_TOP - LIST_BOTTOM_MARGIN) / ENTRY_H);
-    }
-
-    private static boolean inside(double mouseX, double mouseY, int x, int y, int w, int h) {
-        return mouseX >= x && mouseX < x + w && mouseY >= y && mouseY < y + h;
-    }
-
-    private static double guiMouseX(Minecraft mc) {
-        double screenWidth = Math.max(1.0D, mc.getWindow().getScreenWidth());
-        return mc.mouseHandler.xpos() * mc.getWindow().getGuiScaledWidth() / screenWidth;
-    }
-
-    private static double guiMouseY(Minecraft mc) {
-        double screenHeight = Math.max(1.0D, mc.getWindow().getScreenHeight());
-        return mc.mouseHandler.ypos() * mc.getWindow().getGuiScaledHeight() / screenHeight;
-    }
-
-    @SuppressWarnings("unchecked")
-    private static Set<Long> selection() {
-        try {
-            if (selectedField == null) {
-                selectedField = ArcaneBuilderEditEvents.class.getDeclaredField("SELECTED");
-                selectedField.setAccessible(true);
-            }
-            return (Set<Long>) selectedField.get(null);
-        } catch (Throwable ignored) {
-            return java.util.Collections.emptySet();
-        }
-    }
-
-    private static void clearSelection() {
-        try {
-            selection().clear();
-            boolField("boxActive").setBoolean(null, false);
-            boolField("selecting").setBoolean(null, false);
-            boolField("resizing").setBoolean(null, false);
-        } catch (Throwable ignored) {
-        }
-    }
-
-    private static void forceBuilderSelectionMode() {
-        try {
-            if (modeField == null) {
-                modeField = ArcaneBuilderEditEvents.class.getDeclaredField("mode");
-                modeField.setAccessible(true);
-            }
-            modeField.setInt(null, 0);
-
-            if (selectedIdField == null) {
-                selectedIdField = BuilderInventoryPanel.class.getDeclaredField("selectedId");
-                selectedIdField.setAccessible(true);
-            }
-            selectedIdField.set(null, null);
-        } catch (Throwable ignored) {
-        }
-    }
-
-    private static Field intField(String name) throws Exception {
-        Field existing = switch (name) {
-            case "minX" -> minXField;
-            case "minY" -> minYField;
-            case "minZ" -> minZField;
-            case "maxX" -> maxXField;
-            case "maxY" -> maxYField;
-            case "maxZ" -> maxZField;
-            default -> null;
-        };
-        if (existing != null) return existing;
-
-        Field field = BuilderVolumeSupport.class.getDeclaredField(name);
-        field.setAccessible(true);
-        switch (name) {
-            case "minX" -> minXField = field;
-            case "minY" -> minYField = field;
-            case "minZ" -> minZField = field;
-            case "maxX" -> maxXField = field;
-            case "maxY" -> maxYField = field;
-            case "maxZ" -> maxZField = field;
-        }
-        return field;
-    }
-
-    private static Field boolField(String name) throws Exception {
-        if ("boxActive".equals(name) && boxActiveField != null) return boxActiveField;
-        if ("selecting".equals(name) && selectingField != null) return selectingField;
-        if ("resizing".equals(name) && resizingField != null) return resizingField;
-
-        Field field = BuilderVolumeSupport.class.getDeclaredField(name);
-        field.setAccessible(true);
-        if ("boxActive".equals(name)) boxActiveField = field;
-        else if ("selecting".equals(name)) selectingField = field;
-        else if ("resizing".equals(name)) resizingField = field;
-        return field;
-    }
-
-    private static float wrapDegrees(float value) {
-        float result = value % 360.0F;
-        if (result >= 180.0F) result -= 360.0F;
-        if (result < -180.0F) result += 360.0F;
-        return result;
-    }
-
-    private static float clamp(float value, float min, float max) {
-        return Math.max(min, Math.min(max, value));
-    }
-
-    private static void deactivate(boolean callBuilderExit) {
-        if (callBuilderExit && ArcaneBuilderClientEvents.active) {
-            try {
-                if (exitMethod == null) {
-                    exitMethod = ArcaneBuilderClientEvents.class.getDeclaredMethod("exit");
-                    exitMethod.setAccessible(true);
-                }
-                exitMethod.invoke(null);
-            } catch (Throwable ignored) {
-            }
-        }
-
-        active = false;
-        viewMode = ViewMode.MANAGEMENT;
-        ritualCenter = null;
-        ritualHoverCenter = null;
-        placingRitualCenter = false;
-        leftWasDown = false;
-        rightWasDown = false;
-        uiConsumed = false;
-        movingArea = false;
-        rotatingFacing = false;
-        moveAxis = -1;
-        clearSelection();
-    }
-
-    private record RayData(double ox, double oy, double oz, double dx, double dy, double dz) {}
-}
