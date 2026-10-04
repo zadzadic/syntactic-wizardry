@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(BlockAndTintGetter.class)
-public abstract class EclipseRawBrightnessMixin {
+public interface EclipseRawBrightnessMixin {
     @Inject(method = "getRawBrightness", at = @At("RETURN"), cancellable = true)
     private void syntacticwizardry$eclipseRawBrightness(
             BlockPos pos,
