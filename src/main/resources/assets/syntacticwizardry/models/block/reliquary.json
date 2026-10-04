@@ -1,0 +1,57 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "diamond": "minecraft:block/diamond_block",
+    "slot": "minecraft:block/black_concrete",
+    "particle": "#diamond"
+  },
+  "elements": [
+    {
+      "from": [0, 0, 1],
+      "to": [16, 16, 16],
+      "faces": {
+        "north": { "texture": "#slot" },
+        "east": { "texture": "#diamond", "cullface": "east" },
+        "south": { "texture": "#diamond", "cullface": "south" },
+        "west": { "texture": "#diamond", "cullface": "west" },
+        "up": { "texture": "#diamond", "cullface": "up" },
+        "down": { "texture": "#diamond", "cullface": "down" }
+      }
+    },
+    {
+      "from": [0, 12, 0],
+      "to": [16, 16, 1],
+      "faces": { "north": { "texture": "#diamond" }, "east": { "texture": "#diamond" }, "west": { "texture": "#diamond" }, "up": { "texture": "#diamond" }, "down": { "texture": "#diamond" } }
+    },
+    {
+      "from": [0, 7, 0],
+      "to": [16, 9, 1],
+      "faces": { "north": { "texture": "#diamond" }, "east": { "texture": "#diamond" }, "west": { "texture": "#diamond" }, "up": { "texture": "#diamond" }, "down": { "texture": "#diamond" } }
+    },
+    {
+      "from": [0, 0, 0],
+      "to": [16, 4, 1],
+      "faces": { "north": { "texture": "#diamond" }, "east": { "texture": "#diamond" }, "west": { "texture": "#diamond" }, "up": { "texture": "#diamond" } }
+    },
+    {
+      "from": [0, 4, 0],
+      "to": [2, 12, 1],
+      "faces": { "north": { "texture": "#diamond" }, "east": { "texture": "#diamond" }, "up": { "texture": "#diamond" }, "down": { "texture": "#diamond" } }
+    },
+    {
+      "from": [5, 4, 0],
+      "to": [6, 12, 1],
+      "faces": { "north": { "texture": "#diamond" }, "east": { "texture": "#diamond" }, "west": { "texture": "#diamond" }, "up": { "texture": "#diamond" }, "down": { "texture": "#diamond" } }
+    },
+    {
+      "from": [10, 4, 0],
+      "to": [11, 12, 1],
+      "faces": { "north": { "texture": "#diamond" }, "east": { "texture": "#diamond" }, "west": { "texture": "#diamond" }, "up": { "texture": "#diamond" }, "down": { "texture": "#diamond" } }
+    },
+    {
+      "from": [14, 4, 0],
+      "to": [16, 12, 1],
+      "faces": { "north": { "texture": "#diamond" }, "west": { "texture": "#diamond" }, "up": { "texture": "#diamond" }, "down": { "texture": "#diamond" } }
+    }
+  ]
+}
