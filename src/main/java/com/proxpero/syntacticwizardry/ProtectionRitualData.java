@@ -2,13 +2,17 @@ package com.proxpero.syntacticwizardry;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
-import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.TagKey;
 import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.saveddata.SavedData;
@@ -29,8 +33,9 @@ public final class ProtectionRitualData extends SavedData {
     public static final String DATA_NAME = "syntacticwizardry_protection_rituals_v1";
     public static final double DEFAULT_RADIUS = 20.0D;
     private static final double QUERY_MARGIN = 4.0D;
-    private static final int BORDER_INTERVAL_TICKS = 5;
-    private static final int BORDER_SAMPLES = 96;
+    public static final TagKey<EntityType<?>> PROTECTION_IMMUNE = TagKey.create(
+            Registries.ENTITY_TYPE,
+            ResourceLocation.fromNamespaceAndPath(SyntacticWizardry.MOD_ID, "protection_immune"));
 
     public static final class Entry {
         private final UUID id;
@@ -248,7 +253,6 @@ public final class ProtectionRitualData extends SavedData {
             float progress = RitualTransitionRules.progress(entry.effectTicks);
             if (progress > 0.001F) {
                 enforceBoundary(level, entry, progress);
-                if (time % BORDER_INTERVAL_TICKS == 0L) renderBorder(level, entry, progress);
             } else {
                 entry.entityPositions.clear();
                 entry.projectilePositions.clear();
@@ -273,12 +277,16 @@ public final class ProtectionRitualData extends SavedData {
         for (Entity entity : level.getEntitiesOfClass(Entity.class, query,
                 candidate -> candidate != null && !candidate.isRemoved() && !(candidate instanceof Projectile))) {
             UUID id = entity.getUUID();
+            if (entity instanceof Player || entity.getType().is(PROTECTION_IMMUNE) || bindings.isBound(id)) {
+                entry.entityPositions.remove(id);
+                continue;
+            }
+
             seenEntities.add(id);
             Vec3 current = new Vec3(entity.getX(), entity.getY(), entity.getZ());
             Vec3 previous = entry.entityPositions.put(id, current);
             if (previous == null) previous = current.subtract(entity.getDeltaMovement());
 
-            if (bindings.isBound(id)) continue;
             if (inside(entry, previous, progress) == inside(entry, current, progress)) continue;
 
             entity.teleportTo(previous.x, previous.y, previous.z);
@@ -357,55 +365,6 @@ public final class ProtectionRitualData extends SavedData {
         if (name.contains("DragonFireball")) return 6.0D;
         if (name.contains("Snowball") || name.contains("Egg")) return 0.0D;
         return 1.0D;
-    }
-
-    private static void renderBorder(ServerLevel level, Entry entry, float progress) {
-        double scale = Math.max(0.001D, progress);
-        double hx = entry.halfX() * scale;
-        double hz = entry.halfZ() * scale;
-        double cx = entry.centerX();
-        double cz = entry.centerZ();
-
-        if (entry.shape == ProtectionAreaShape.BOX) {
-            int perSide = Math.max(8, BORDER_SAMPLES / 4);
-            for (int i = 0; i < perSide; i++) {
-                double t = i / (double) perSide;
-                borderParticle(level, entry, cx - hx + 2.0D * hx * t, cz - hz);
-                borderParticle(level, entry, cx - hx + 2.0D * hx * t, cz + hz);
-                borderParticle(level, entry, cx - hx, cz - hz + 2.0D * hz * t);
-                borderParticle(level, entry, cx + hx, cz - hz + 2.0D * hz * t);
-            }
-            return;
-        }
-
-        for (int i = 0; i < BORDER_SAMPLES; i++) {
-            double angle = Math.PI * 2.0D * i / BORDER_SAMPLES;
-            double x = cx + Math.cos(angle) * hx;
-            double z = cz + Math.sin(angle) * hz;
-            borderParticle(level, entry, x, z);
-        }
-    }
-
-    private static void borderParticle(ServerLevel level, Entry entry, double x, double z) {
-        double y = groundY(level, entry, x, z);
-        level.sendParticles(ParticleTypes.DRAGON_BREATH, x, y, z, 1, 0.0D, 0.0D, 0.0D, 0.0D);
-    }
-
-    private static double groundY(ServerLevel level, Entry entry, double x, double z) {
-        int bx = (int)Math.floor(x);
-        int bz = (int)Math.floor(z);
-        int centerY = (int)Math.floor(entry.centerY());
-
-        for (int y = centerY + 8; y >= centerY - 12; y--) {
-            BlockPos pos = new BlockPos(bx, y, bz);
-            BlockPos above = pos.above();
-            if (!level.getBlockState(pos).isAir()
-                    && level.getBlockState(pos).isSolidRender(level, pos)
-                    && level.getBlockState(above).isAir()) {
-                return y + 1.04D;
-            }
-        }
-        return entry.centerY() - 1.0D;
     }
 
     public Entry find(UUID id) {
