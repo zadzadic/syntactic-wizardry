@@ -1,7 +1,7 @@
 package com.proxpero.syntacticwizardry;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerLevel;\nimport net.minecraft.world.level.block.Blocks;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -70,7 +70,7 @@ public final class EclipseRitualStructure {
 
     private static List<RitualStructureRules.PatternSlot> buildActivePattern() {
         List<RitualStructureRules.PatternSlot> slots = new ArrayList<>();
-        slots.add(new RitualStructureRules.PatternSlot(new BlockPos(0, -1, 0), RitualStructureRules.Role.STRUCTURAL));
+        slots.add(RitualStructureRules.PatternSlot.specific(new BlockPos(0, -1, 0), Blocks.OBSIDIAN));
         for (BlockPos offset : RUNE_OFFSETS) {
             slots.add(new RitualStructureRules.PatternSlot(offset, RitualStructureRules.Role.RUNE));
         }
