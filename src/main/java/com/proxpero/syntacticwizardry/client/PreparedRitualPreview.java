@@ -10,6 +10,7 @@ import com.proxpero.syntacticwizardry.MagicLightRegistry;
 import com.proxpero.syntacticwizardry.MooncallPhase;
 import com.proxpero.syntacticwizardry.MooncallRitualStructure;
 import com.proxpero.syntacticwizardry.PermanencyRitualStructure;
+import com.proxpero.syntacticwizardry.ReliquaryRegistry;
 import com.proxpero.syntacticwizardry.RitualDefinition;
 import com.proxpero.syntacticwizardry.RitualStructureRules;
 import com.proxpero.syntacticwizardry.SummoningRitualStructure;
@@ -83,7 +84,8 @@ public final class PreparedRitualPreview {
         mooncallPhase = selectedMoonPhase == null ? MooncallPhase.FULL_MOON : selectedMoonPhase;
         catchTimeSetting = selectedCatchTime == null ? CatchTimeSetting.NOON : selectedCatchTime;
 
-        if (definition == RitualDefinition.MOONCALL
+        if (definition == RitualDefinition.LUMINAL_BRIDGE
+                || definition == RitualDefinition.MOONCALL
                 || definition == RitualDefinition.CATCH_TIME
                 || definition == RitualDefinition.SUMMONING
                 || definition == RitualDefinition.BINDING
@@ -125,7 +127,8 @@ public final class PreparedRitualPreview {
 
         BlockPos previewCenter = ritualCenter.immutable();
         RitualStructureRules.FocusPlan previewFocus =
-                definition == RitualDefinition.MOONCALL
+                definition == RitualDefinition.LUMINAL_BRIDGE
+                        || definition == RitualDefinition.MOONCALL
                         || definition == RitualDefinition.CATCH_TIME
                         || definition == RitualDefinition.SUMMONING
                         || definition == RitualDefinition.BINDING
@@ -141,7 +144,51 @@ public final class PreparedRitualPreview {
                 null,
                 "Mature Crystal"));
 
-        if (definition == RitualDefinition.PERMANENCY) {
+        if (definition == RitualDefinition.LUMINAL_BRIDGE) {
+            if (ReliquaryRegistry.block() != null) {
+                built.add(new GhostBlock(
+                        previewCenter.below(),
+                        RitualStructureRules.Role.SPECIFIC,
+                        null,
+                        "Reliquary",
+                        ReliquaryRegistry.block().defaultBlockState()));
+            }
+
+            if (ChalkRegistry.block() != null) {
+                for (int x = -1; x <= 1; x++) {
+                    for (int y = 0; y <= 2; y++) {
+                        BlockState runeState = ChalkRegistry.block().defaultBlockState()
+                                .setValue(ChalkRuneBlock.FACING, Direction.SOUTH);
+                        built.add(new GhostBlock(
+                                previewCenter.offset(x, y, -2),
+                                RitualStructureRules.Role.RUNE,
+                                null,
+                                "Portal Rune",
+                                runeState));
+                    }
+                }
+            }
+
+            for (int x = -2; x <= 2; x++) {
+                for (int y = -1; y <= 3; y++) {
+                    boolean interior = x >= -1 && x <= 1 && y >= 0 && y <= 2;
+                    if (!interior) {
+                        built.add(new GhostBlock(
+                                previewCenter.offset(x, y, -2),
+                                RitualStructureRules.Role.STRUCTURAL,
+                                null,
+                                "Structural Border",
+                                Blocks.STONE_BRICKS.defaultBlockState()));
+                    }
+                    built.add(new GhostBlock(
+                            previewCenter.offset(x, y, -3),
+                            RitualStructureRules.Role.STRUCTURAL,
+                            null,
+                            "Structural Backing",
+                            Blocks.STONE_BRICKS.defaultBlockState()));
+                }
+            }
+        } else if (definition == RitualDefinition.PERMANENCY) {
             built.add(new GhostBlock(
                     previewCenter.offset(PermanencyRitualStructure.GOLD_OFFSET),
                     RitualStructureRules.Role.SPECIFIC,
