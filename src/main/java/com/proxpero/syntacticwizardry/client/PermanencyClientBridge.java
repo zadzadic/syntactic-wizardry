@@ -38,6 +38,10 @@ public final class PermanencyClientBridge {
         return committed;
     }
 
+    public static void areaChanged() {
+        if (committed) clearPrepared();
+    }
+
     public static void clearPrepared() {
         if (!committed) return;
         committed = false;
