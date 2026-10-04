@@ -52,6 +52,9 @@ public final class ConduitPlannerState {
     private static boolean active;
     private static ViewMode viewMode = ViewMode.MANAGEMENT;
     private static BlockPos conduitPos = BlockPos.ZERO;
+    private static BlockPos ritualCenter;
+    private static BlockPos ritualHoverCenter;
+    private static boolean placingRitualCenter;
     private static RitualDefinition ritual = RitualDefinition.PROTECTION;
     private static AreaShape areaShape = AreaShape.BOX;
     private static int listScroll;
@@ -82,6 +85,7 @@ public final class ConduitPlannerState {
     private static Method exitMethod;
     private static Method cursorRayMethod;
     private static Method handleHitMethod;
+    private static Method placementTargetMethod;
     private static Field selectedField;
     private static Field modeField;
     private static Field selectedIdField;
@@ -125,6 +129,9 @@ public final class ConduitPlannerState {
         viewMode = ViewMode.MANAGEMENT;
         listScroll = 0;
         ritualPotence = 1;
+        ritualCenter = null;
+        ritualHoverCenter = null;
+        placingRitualCenter = false;
         activeScroll = 0;
         leftWasDown = false;
         rightWasDown = false;
@@ -188,17 +195,33 @@ public final class ConduitPlannerState {
             return;
         }
 
-        if (justPressed && overPlannerUi(mc, mouseX, mouseY)) {
+        boolean pointerOverUi = overPlannerUi(mc, mouseX, mouseY);
+        if (justPressed && pointerOverUi) {
             uiConsumed = true;
             handleUiClick(mc, mouseX, mouseY);
         }
 
+        if (placingRitualCenter && !pointerOverUi) {
+            ritualHoverCenter = builderPlacementTarget(mc, rawX, rawY);
+            if (justPressed && ritualHoverCenter != null) {
+                ritualCenter = ritualHoverCenter.immutable();
+                ritualHoverCenter = null;
+                placingRitualCenter = false;
+                clearSelection();
+                uiConsumed = true;
+            }
+        } else if (placingRitualCenter) {
+            ritualHoverCenter = null;
+        }
+
         boolean gizmoConsumed = false;
-        if (!uiConsumed && ritual.variableArea()) {
+        if (!placingRitualCenter && ritualCenter != null && !uiConsumed && ritual.variableArea()) {
             gizmoConsumed = handleGizmos(mc, leftDown, justPressed, rawX, rawY);
         }
 
-        if (!ritual.variableArea()) {
+        if (placingRitualCenter || ritualCenter == null) {
+            if (!selection().isEmpty()) clearSelection();
+        } else if (!ritual.variableArea()) {
             if (!selection().isEmpty()) clearSelection();
         } else if (!uiConsumed && !gizmoConsumed
                 && shouldRunBuilderVolume(mc, leftDown, justPressed, rawX, rawY)) {
@@ -262,6 +285,9 @@ public final class ConduitPlannerState {
         }
 
         renderAreaPanel(graphics, mc, width);
+        if (ritual != RitualDefinition.PERMANENCY) {
+            renderRitualStrengthPanel(graphics, mc, width);
+        }
         if (ritual == RitualDefinition.PERMANENCY) {
             renderPermanencyPanel(graphics, mc, width, height, mouseX, mouseY);
         }
@@ -298,16 +324,29 @@ public final class ConduitPlannerState {
     }
 
     public static boolean renderBuilderSelection(Object renderEvent) {
-        if (!active || viewMode != ViewMode.PLANNER || !ritual.variableArea()) return false;
-        int[] b = bounds();
-        if (b == null) return false;
+        if (!active || viewMode != ViewMode.PLANNER) return false;
         if (!(renderEvent instanceof net.neoforged.neoforge.client.event.RenderLevelStageEvent event)) return false;
+
+        BlockPos previewCenter = placingRitualCenter ? ritualHoverCenter : ritualCenter;
+        boolean ritualRendered = previewCenter != null;
+        if (previewCenter != null) {
+            PreparedRitualPreview.renderGhosts(
+                    event,
+                    PreparedRitualPreview.previewGhosts(ritual, previewCenter, requestedRitualPotence()),
+                    placingRitualCenter ? 0.55F : 0.90F);
+        }
+
+        if (placingRitualCenter || ritualCenter == null || !ritual.variableArea()) return ritualRendered;
+
+        int[] b = bounds();
+        if (b == null) return ritualRendered;
         if (areaShape == AreaShape.BOX) {
             boolean rendered = BuilderVolumeSupport.renderSelection(renderEvent);
             ConduitAreaRender.renderGizmos(event, b, permanencyUsesFacing(), facingYaw, facingPitch);
-            return rendered;
+            return rendered || ritualRendered;
         }
-        return ConduitAreaRender.render(event, areaShape, b, true, permanencyUsesFacing(), facingYaw, facingPitch);
+        return ConduitAreaRender.render(event, areaShape, b, true, permanencyUsesFacing(), facingYaw, facingPitch)
+                || ritualRendered;
     }
 
     public static void commitVirtualBounds() {
@@ -365,17 +404,29 @@ public final class ConduitPlannerState {
             return;
         }
         if (ritual != RitualDefinition.PERMANENCY) {
-            if (inside(mouseX, mouseY, width - 178, height - 72, 20, 18)) {
+            int strengthY = ritual.variableArea() ? 108 : 66;
+            if (inside(mouseX, mouseY, width - 171, strengthY + 20, 20, 18)) {
                 ritualPotence = Math.max(1, ritualPotence - 1);
                 return;
             }
-            if (inside(mouseX, mouseY, width - 28, height - 72, 20, 18)) {
+            if (inside(mouseX, mouseY, width - 35, strengthY + 20, 20, 18)) {
                 ritualPotence = Math.min(32, ritualPotence + 1);
+                return;
+            }
+            if (inside(mouseX, mouseY, width - 171, strengthY + 44, 156, 18)) {
+                ritualCenter = null;
+                ritualHoverCenter = null;
+                placingRitualCenter = true;
+                clearSelection();
                 return;
             }
         }
         if (inside(mouseX, mouseY, width - 178, height - 38, 170, 22)) {
-            PreparedRitualPreview.prepare(ritual, conduitPos, requestedRitualPotence());
+            if (ritualCenter == null) {
+                placingRitualCenter = true;
+                return;
+            }
+            PreparedRitualPreview.prepare(ritual, ritualCenter, requestedRitualPotence());
             return;
         }
 
@@ -384,6 +435,9 @@ public final class ConduitPlannerState {
             if (clicked != ritual) {
                 ritual = clicked;
                 ritualPotence = 1;
+                ritualCenter = null;
+                ritualHoverCenter = null;
+                placingRitualCenter = true;
                 permanentSpellEditor.close();
                 clearSelection();
                 movingArea = false;
@@ -606,6 +660,9 @@ public final class ConduitPlannerState {
         areaShape = AreaShape.BOX;
         listScroll = 0;
         ritualPotence = 1;
+        ritualCenter = null;
+        ritualHoverCenter = null;
+        placingRitualCenter = true;
         clearSelection();
         movingArea = false;
         rotatingFacing = false;
@@ -704,24 +761,43 @@ public final class ConduitPlannerState {
         return Math.max(3, (height - ACTIVE_LIST_TOP - ACTIVE_BOTTOM_MARGIN) / ACTIVE_ROW_H);
     }
 
+    private static void renderRitualStrengthPanel(GuiGraphics graphics, Minecraft mc, int width) {
+        int x = width - 178;
+        int y = ritual.variableArea() ? 108 : 66;
+        int w = 170;
+        int h = 68;
+
+        graphics.fill(x, y, x + w, y + h, 0xC0182232);
+        graphics.renderOutline(x, y, w, h, 0xFF8E72C7);
+        graphics.drawString(mc.font, "Ritual Strength", x + 7, y + 7, 0xFFF0E8FF, false);
+
+        drawButton(graphics, mc, x + 7, y + 20, 20, 18, "<", false);
+        graphics.drawCenteredString(mc.font, "Potence " + requestedRitualPotence(), x + 85, y + 25, 0xFFDCE6F3);
+        drawButton(graphics, mc, x + 143, y + 20, 20, 18, ">", false);
+
+        String focusText = "Focus: " + RitualStructureRules.focusPlan(requestedRitualPotence()).summary();
+        graphics.drawString(mc.font, mc.font.plainSubstrByWidth(focusText, 156),
+                x + 7, y + 42, 0xFFB9C5D6, false);
+
+        String button = ritualCenter == null ? "Place Ritual Center" : "Relocate Ritual Center";
+        drawButton(graphics, mc, x + 7, y + 48, 156, 18, button, false);
+    }
+
     private static void renderPlannerControls(GuiGraphics graphics, Minecraft mc, int width, int height) {
-        int potence = requestedRitualPotence();
-        RitualStructureRules.FocusPlan focus = RitualStructureRules.focusPlan(potence);
-
-        if (ritual == RitualDefinition.PERMANENCY) {
-            graphics.drawCenteredString(mc.font, "Potence " + potence + " (Permanent Spell)", width - 93, height - 68, 0xFFDCE6F3);
-        } else {
-            drawButton(graphics, mc, width - 178, height - 72, 20, 18, "<", false);
-            graphics.drawCenteredString(mc.font, "Potence " + potence, width - 93, height - 68, 0xFFDCE6F3);
-            drawButton(graphics, mc, width - 28, height - 72, 20, 18, ">", false);
-        }
-
-        String focusText = "Focus: " + focus.summary();
-        String shown = mc.font.plainSubstrByWidth(focusText, 170);
-        graphics.drawString(mc.font, shown, width - 178, height - 50, 0xFFB9C5D6, false);
-
         drawButton(graphics, mc, PANEL_X + 7, height - 38, 72, 22, "Back", false);
-        drawButton(graphics, mc, width - 178, height - 38, 170, 22, "Prepare Ritual", false);
+
+        String prepareText;
+        if (ritualCenter == null) prepareText = "Place Center First";
+        else prepareText = "Prepare Ritual";
+        drawButton(graphics, mc, width - 178, height - 38, 170, 22, prepareText, false);
+
+        if (ritualCenter != null) {
+            String centerText = "Center: " + ritualCenter.getX() + ", " + ritualCenter.getY() + ", " + ritualCenter.getZ();
+            graphics.drawString(mc.font, mc.font.plainSubstrByWidth(centerText, 170),
+                    width - 178, height - 50, 0xFF9FAEC4, false);
+        } else if (placingRitualCenter) {
+            graphics.drawString(mc.font, "Click the world to place the Ritual.", width - 178, height - 50, 0xFFFFD88A, false);
+        }
     }
 
     private static int requestedRitualPotence() {
@@ -884,6 +960,21 @@ public final class ConduitPlannerState {
         return best;
     }
 
+    private static BlockPos builderPlacementTarget(Minecraft mc, double rawX, double rawY) {
+        try {
+            if (placementTargetMethod == null) {
+                placementTargetMethod = BuilderInventoryPanel.class.getDeclaredMethod(
+                        "placementTarget", Object.class, double.class, double.class);
+                placementTargetMethod.setAccessible(true);
+            }
+            Object result = placementTargetMethod.invoke(null, mc, rawX, rawY);
+            if (!(result instanceof int[] xyz) || xyz.length < 3) return null;
+            return new BlockPos(xyz[0], xyz[1], xyz[2]);
+        } catch (Throwable ignored) {
+            return null;
+        }
+    }
+
     private static RayData cursorRay(Minecraft mc, double rawX, double rawY) {
         try {
             if (cursorRayMethod == null) {
@@ -994,9 +1085,11 @@ public final class ConduitPlannerState {
         double cy = (b[1] + b[4] + 1.0D) * 0.5D;
         double cz = (b[2] + b[5] + 1.0D) * 0.5D;
 
-        double centerX = conduitPos.getX() + 0.5D;
-        double centerY = conduitPos.getY() + 0.5D;
-        double centerZ = conduitPos.getZ() + 0.5D;
+        if (ritualCenter == null) return b;
+
+        double centerX = ritualCenter.getX() + 0.5D;
+        double centerY = ritualCenter.getY() + 0.5D;
+        double centerZ = ritualCenter.getZ() + 0.5D;
 
         double dx = cx - centerX;
         double dy = cy - centerY;
@@ -1032,8 +1125,12 @@ public final class ConduitPlannerState {
         int height = mc.getWindow().getGuiScaledHeight();
         if (inside(mouseX, mouseY, PANEL_X, PANEL_Y, PANEL_W, height - 16)) return true;
         if (inside(mouseX, mouseY, width - 178, 8, 170, ritual.variableArea() ? 92 : 50)) return true;
+        if (ritual != RitualDefinition.PERMANENCY) {
+            int strengthY = ritual.variableArea() ? 108 : 66;
+            if (inside(mouseX, mouseY, width - 178, strengthY, 170, 68)) return true;
+        }
         if (inside(mouseX, mouseY, PANEL_X + 7, height - 38, 72, 22)) return true;
-        if (inside(mouseX, mouseY, width - 178, height - 76, 170, 60)) return true;
+        if (inside(mouseX, mouseY, width - 178, height - 58, 170, 42)) return true;
         return ritual == RitualDefinition.PERMANENCY
                 && inside(mouseX, mouseY, width - 178, 104, 170, 72);
     }
@@ -1159,6 +1256,9 @@ public final class ConduitPlannerState {
 
         active = false;
         viewMode = ViewMode.MANAGEMENT;
+        ritualCenter = null;
+        ritualHoverCenter = null;
+        placingRitualCenter = false;
         leftWasDown = false;
         rightWasDown = false;
         uiConsumed = false;
