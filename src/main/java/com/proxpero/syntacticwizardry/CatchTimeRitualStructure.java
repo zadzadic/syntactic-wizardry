@@ -9,157 +9,123 @@ import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.List;
 
-/** Exact physical pattern for Catch Time, relative to the Lapis Block beneath the Mature Crystal. */
+/**
+ * Exact Catch Time structure.
+ *
+ * Every offset is relative directly to the clicked Mature Crystal, matching
+ * the structure-validation model used by Protection and Binding.
+ */
 public final class CatchTimeRitualStructure {
     public record RunePlacement(BlockPos offset, int glyph) {}
     public record Detection(boolean valid, String error, CatchTimeSetting setting) {}
 
-    private static final int GOLD_SEARCH_DISTANCE = 4;
+    public static final BlockPos LAPIS_OFFSET = new BlockPos(0, -1, 0);
 
     private static final List<BlockPos> STONE_BRICKS = List.of(
-            new BlockPos(-2, -1, -2),
-            new BlockPos(2, -1, -2),
-            new BlockPos(-2, -1, 2),
-            new BlockPos(2, -1, 2));
+            new BlockPos(-2, -2, -2),
+            new BlockPos(2, -2, -2),
+            new BlockPos(-2, -2, 2),
+            new BlockPos(2, -2, 2));
 
     private static final List<RunePlacement> RUNES = List.of(
-            new RunePlacement(new BlockPos(-1, 0, -4), 5),
-            new RunePlacement(new BlockPos(1, 0, -4), 12),
-            new RunePlacement(new BlockPos(-1, 0, -3), 9),
-            new RunePlacement(new BlockPos(1, 0, -3), 2),
-            new RunePlacement(new BlockPos(-3, 0, -1), 8),
-            new RunePlacement(new BlockPos(-2, 0, -1), 3),
-            new RunePlacement(new BlockPos(2, 0, -1), 10),
-            new RunePlacement(new BlockPos(3, 0, -1), 11),
-            new RunePlacement(new BlockPos(-3, 0, 1), 3),
-            new RunePlacement(new BlockPos(-2, 0, 1), 0),
-            new RunePlacement(new BlockPos(2, 0, 1), 4),
-            new RunePlacement(new BlockPos(3, 0, 1), 12),
-            new RunePlacement(new BlockPos(-1, 0, 3), 1),
-            new RunePlacement(new BlockPos(1, 0, 3), 5),
-            new RunePlacement(new BlockPos(-1, 0, 4), 7),
-            new RunePlacement(new BlockPos(1, 0, 4), 4));
+            new RunePlacement(new BlockPos(-1, -1, -4), 5),
+            new RunePlacement(new BlockPos(1, -1, -4), 12),
+            new RunePlacement(new BlockPos(-1, -1, -3), 9),
+            new RunePlacement(new BlockPos(1, -1, -3), 2),
+            new RunePlacement(new BlockPos(-3, -1, -1), 8),
+            new RunePlacement(new BlockPos(-2, -1, -1), 3),
+            new RunePlacement(new BlockPos(2, -1, -1), 10),
+            new RunePlacement(new BlockPos(3, -1, -1), 11),
+            new RunePlacement(new BlockPos(-3, -1, 1), 3),
+            new RunePlacement(new BlockPos(-2, -1, 1), 0),
+            new RunePlacement(new BlockPos(2, -1, 1), 4),
+            new RunePlacement(new BlockPos(3, -1, 1), 12),
+            new RunePlacement(new BlockPos(-1, -1, 3), 1),
+            new RunePlacement(new BlockPos(1, -1, 3), 5),
+            new RunePlacement(new BlockPos(-1, -1, 4), 7),
+            new RunePlacement(new BlockPos(1, -1, 4), 4));
 
     private CatchTimeRitualStructure() {}
 
-    /** Offsets are relative to the central Lapis Block. */
     public static List<BlockPos> stoneBrickOffsets() {
         return STONE_BRICKS;
     }
 
-    /** Offsets are relative to the central Lapis Block. */
     public static List<RunePlacement> runes() {
         return RUNES;
     }
 
-    public static BlockPos lapisCenter(BlockPos crystalCenter) {
-        return crystalCenter.below();
+    public static BlockPos lapisPosition(BlockPos center) {
+        return center.offset(LAPIS_OFFSET);
     }
 
-    public static BlockPos goldPosition(BlockPos crystalCenter, CatchTimeSetting setting) {
+    public static BlockPos goldPosition(BlockPos center, CatchTimeSetting setting) {
         CatchTimeSetting actual = setting == null ? CatchTimeSetting.NOON : setting;
-        return lapisCenter(crystalCenter).offset(actual.goldOffset());
+        return center.offset(actual.goldOffset());
     }
 
-    public static Detection detect(ServerLevel level, BlockPos crystalCenter) {
-        if (!level.getBlockState(crystalCenter).is(SyntacticWizardry.MATURE_CRYSTAL.get())) {
+    public static Detection detect(ServerLevel level, BlockPos center) {
+        if (!RitualStructureRules.isValidCenter(level.getBlockState(center))) {
             return invalid("The Center must be a Mature Crystal.");
         }
 
-        BlockPos base = lapisCenter(crystalCenter);
-        if (!level.getBlockState(base).is(Blocks.LAPIS_BLOCK)) {
+        if (!level.getBlockState(center.offset(LAPIS_OFFSET)).is(Blocks.LAPIS_BLOCK)) {
             return invalid("Catch Time requires a Lapis Block directly below the Mature Crystal.");
         }
 
-        if (!basePatternValid(level, base)) {
-            return invalid("The Catch Time ritual pattern is incomplete.");
+        if (!basePatternValid(level, center)) {
+            return invalid("The Catch Time ritual pattern is incomplete or incorrect.");
         }
 
-        CatchTimeSetting found = findGoldSetting(level, base);
-        if (found == null) {
-            int count = countCardinalGold(level, base);
-            if (count > 1) {
-                return invalid("Catch Time requires exactly one cardinal Gold Block.");
+        CatchTimeSetting found = null;
+        for (CatchTimeSetting setting : CatchTimeSetting.values()) {
+            if (!level.getBlockState(center.offset(setting.goldOffset())).is(Blocks.GOLD_BLOCK)) continue;
+            if (found != null) {
+                return invalid("Catch Time requires exactly one Gold Block next to the Lapis Block.");
             }
-            return invalid("Place one Gold Block on a cardinal line from the Lapis Block: East Dawn, South Noon, West Twilight, North Midnight.");
+            found = setting;
+        }
+
+        if (found == null) {
+            return invalid("Place one Gold Block directly beside the Lapis Block: East Dawn, South Noon, West Twilight, North Midnight.");
         }
 
         return new Detection(true, "", found);
     }
 
-    public static boolean activeStructureValid(ServerLevel level, BlockPos crystalCenter, CatchTimeSetting expected) {
+    public static boolean activeStructureValid(ServerLevel level, BlockPos center, CatchTimeSetting expected) {
         if (expected == null) return false;
-        BlockPos base = lapisCenter(crystalCenter);
-        if (!level.getBlockState(base).is(Blocks.LAPIS_BLOCK)) return false;
-        if (!basePatternValid(level, base)) return false;
+        if (!level.getBlockState(center.offset(LAPIS_OFFSET)).is(Blocks.LAPIS_BLOCK)) return false;
+        if (!basePatternValid(level, center)) return false;
 
-        CatchTimeSetting found = findGoldSetting(level, base);
-        return found == expected && countCardinalGold(level, base) == 1;
-    }
-
-
-    private static CatchTimeSetting findGoldSetting(ServerLevel level, BlockPos base) {
-        CatchTimeSetting found = null;
         for (CatchTimeSetting setting : CatchTimeSetting.values()) {
-            BlockPos step = setting.goldOffset();
-            for (int distance = 1; distance <= GOLD_SEARCH_DISTANCE; distance++) {
-                BlockPos pos = base.offset(step.getX() * distance, step.getY() * distance, step.getZ() * distance);
-                if (!level.getBlockState(pos).is(Blocks.GOLD_BLOCK)) continue;
-                if (found != null) return null;
-                found = setting;
+            boolean gold = level.getBlockState(center.offset(setting.goldOffset())).is(Blocks.GOLD_BLOCK);
+            if (setting == expected) {
+                if (!gold) return false;
+            } else if (gold) {
+                return false;
             }
         }
-        return found;
+
+        return true;
     }
 
-    private static int countCardinalGold(ServerLevel level, BlockPos base) {
-        int count = 0;
-        for (CatchTimeSetting setting : CatchTimeSetting.values()) {
-            BlockPos step = setting.goldOffset();
-            for (int distance = 1; distance <= GOLD_SEARCH_DISTANCE; distance++) {
-                BlockPos pos = base.offset(step.getX() * distance, step.getY() * distance, step.getZ() * distance);
-                if (level.getBlockState(pos).is(Blocks.GOLD_BLOCK)) count++;
-            }
-        }
-        return count;
-    }
-
-    public static boolean hasPatternHint(ServerLevel level, BlockPos crystalCenter) {
-        BlockPos base = lapisCenter(crystalCenter);
-        int matches = level.getBlockState(base).is(Blocks.LAPIS_BLOCK) ? 1 : 0;
+    private static boolean basePatternValid(ServerLevel level, BlockPos center) {
         for (BlockPos offset : STONE_BRICKS) {
-            if (level.getBlockState(base.offset(offset)).is(Blocks.STONE_BRICKS)) matches++;
-        }
-
-        ChalkRuneBlock runeBlock = ChalkRegistry.block();
-        if (runeBlock != null) {
-            for (RunePlacement placement : RUNES) {
-                BlockState state = level.getBlockState(base.offset(placement.offset()));
-                if (state.is(runeBlock)
-                        && state.getValue(ChalkRuneBlock.FACING) == Direction.UP
-                        && state.getValue(ChalkRuneBlock.COLOR) == DyeColor.BLACK
-                        && state.getValue(ChalkRuneBlock.GLYPH) == placement.glyph()) {
-                    matches++;
-                }
-            }
-        }
-        return matches >= 6;
-    }
-
-    private static boolean basePatternValid(ServerLevel level, BlockPos base) {
-        for (BlockPos offset : STONE_BRICKS) {
-            if (!level.getBlockState(base.offset(offset)).is(Blocks.STONE_BRICKS)) return false;
+            if (!level.getBlockState(center.offset(offset)).is(Blocks.STONE_BRICKS)) return false;
         }
 
         ChalkRuneBlock runeBlock = ChalkRegistry.block();
         if (runeBlock == null) return false;
+
         for (RunePlacement placement : RUNES) {
-            BlockState state = level.getBlockState(base.offset(placement.offset()));
+            BlockState state = level.getBlockState(center.offset(placement.offset()));
             if (!state.is(runeBlock)) return false;
             if (state.getValue(ChalkRuneBlock.FACING) != Direction.UP) return false;
             if (state.getValue(ChalkRuneBlock.COLOR) != DyeColor.BLACK) return false;
             if (state.getValue(ChalkRuneBlock.GLYPH) != placement.glyph()) return false;
         }
+
         return true;
     }
 
