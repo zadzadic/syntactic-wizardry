@@ -26,7 +26,9 @@ public final class EclipseClientState {
                     entry.name(),
                     RitualDefinition.ECLIPSE,
                     BlockPos.of(entry.center()),
-                    entry.paused());
+                    entry.paused(),
+                    entry.powered(),
+                    1.0D);
         }
         entries = List.copyOf(next);
     }
