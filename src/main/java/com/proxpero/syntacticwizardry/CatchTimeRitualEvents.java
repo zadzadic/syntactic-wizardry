@@ -33,11 +33,14 @@ public final class CatchTimeRitualEvents {
         if (!held.is(SyntacticWizardry.WAND.get())) return;
         if (!level.getBlockState(center).is(SyntacticWizardry.MATURE_CRYSTAL.get())) return;
         if (!(level instanceof ServerLevel server)) return;
-        if (!CatchTimeRitualStructure.hasPatternHint(server, center)) return;
+        if (!(event.getEntity() instanceof ServerPlayer player)) return;
+
+        // Lapis directly beneath the crystal identifies Catch Time strongly enough to run
+        // the full validator. Do not hide validation failures behind a heuristic match count.
+        if (!server.getBlockState(center.below()).is(Blocks.LAPIS_BLOCK)) return;
 
         event.setCanceled(true);
-        event.setCancellationResult(InteractionResult.sidedSuccess(level.isClientSide()));
-        if (!(event.getEntity() instanceof ServerPlayer player)) return;
+        event.setCancellationResult(InteractionResult.SUCCESS);
 
         if (WandBindingService.get(held) != null) {
             player.displayClientMessage(Component.literal("The Wand must be empty to activate a Ritual."), true);
