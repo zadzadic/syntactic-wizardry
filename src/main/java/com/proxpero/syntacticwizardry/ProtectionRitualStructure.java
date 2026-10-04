@@ -1,18 +1,17 @@
 package com.proxpero.syntacticwizardry;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.item.DyeColor;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.state.BlockState;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /** Physical pattern for the Protection ritual, relative to the Mature Crystal. */
 public final class ProtectionRitualStructure {
+    /** Glyph is retained only as an Armillary preview suggestion. It is never validated. */
     public record RunePlacement(BlockPos offset, int glyph) {}
 
+    /** Previewed as Iron, but any valid Structural Block is accepted. */
     private static final List<BlockPos> FOUNDATION_IRON = List.of(
             new BlockPos(-1, -2, -2),
             new BlockPos(1, -2, -2),
@@ -33,7 +32,10 @@ public final class ProtectionRitualStructure {
             new RunePlacement(new BlockPos(1, -1, 1), 6),
             new RunePlacement(new BlockPos(0, -1, 2), 3));
 
+    /** Previewed as Iron, but any valid Structural Block is accepted. */
     private static final BlockPos CENTER_IRON = new BlockPos(0, -1, 0);
+    private static final List<RitualStructureRules.PatternSlot> ACTIVE_PATTERN = buildActivePattern();
+    private static final List<RitualStructureRules.PatternSlot> DETECTION_PATTERN = withCenter(ACTIVE_PATTERN);
 
     private ProtectionRitualStructure() {}
 
@@ -50,52 +52,33 @@ public final class ProtectionRitualStructure {
     }
 
     public static boolean detect(ServerLevel level, BlockPos crystalCenter) {
-        return RitualStructureRules.isValidCenter(level.getBlockState(crystalCenter))
-                && activeStructureValid(level, crystalCenter);
+        return RitualStructureRules.detectPattern(level, crystalCenter, DETECTION_PATTERN).valid();
     }
 
     public static boolean activeStructureValid(ServerLevel level, BlockPos crystalCenter) {
-        ChalkRuneBlock runeBlock = ChalkRegistry.block();
-        if (runeBlock == null) return false;
-
-        if (!level.getBlockState(crystalCenter.offset(CENTER_IRON)).is(Blocks.IRON_BLOCK)) return false;
-
-        for (BlockPos offset : FOUNDATION_IRON) {
-            if (!level.getBlockState(crystalCenter.offset(offset)).is(Blocks.IRON_BLOCK)) return false;
-        }
-
-        for (RunePlacement placement : RUNES) {
-            BlockState state = level.getBlockState(crystalCenter.offset(placement.offset()));
-            if (!state.is(runeBlock)) return false;
-            if (state.getValue(ChalkRuneBlock.FACING) != Direction.UP) return false;
-            if (state.getValue(ChalkRuneBlock.COLOR) != DyeColor.BLACK) return false;
-            if (state.getValue(ChalkRuneBlock.GLYPH) != placement.glyph()) return false;
-        }
-
-        return true;
+        return RitualStructureRules.detectPattern(level, crystalCenter, ACTIVE_PATTERN).valid();
     }
 
     public static boolean hasPatternHint(ServerLevel level, BlockPos crystalCenter) {
-        int matches = 0;
+        return RitualStructureRules.countPatternMatches(level, crystalCenter, ACTIVE_PATTERN) >= 6;
+    }
 
-        if (level.getBlockState(crystalCenter.offset(CENTER_IRON)).is(Blocks.IRON_BLOCK)) matches++;
+    private static List<RitualStructureRules.PatternSlot> buildActivePattern() {
+        List<RitualStructureRules.PatternSlot> slots = new ArrayList<>();
+        slots.add(new RitualStructureRules.PatternSlot(CENTER_IRON, RitualStructureRules.Role.STRUCTURAL));
         for (BlockPos offset : FOUNDATION_IRON) {
-            if (level.getBlockState(crystalCenter.offset(offset)).is(Blocks.IRON_BLOCK)) matches++;
+            slots.add(new RitualStructureRules.PatternSlot(offset, RitualStructureRules.Role.STRUCTURAL));
         }
-
-        ChalkRuneBlock runeBlock = ChalkRegistry.block();
-        if (runeBlock != null) {
-            for (RunePlacement placement : RUNES) {
-                BlockState state = level.getBlockState(crystalCenter.offset(placement.offset()));
-                if (state.is(runeBlock)
-                        && state.getValue(ChalkRuneBlock.FACING) == Direction.UP
-                        && state.getValue(ChalkRuneBlock.COLOR) == DyeColor.BLACK
-                        && state.getValue(ChalkRuneBlock.GLYPH) == placement.glyph()) {
-                    matches++;
-                }
-            }
+        for (RunePlacement placement : RUNES) {
+            slots.add(new RitualStructureRules.PatternSlot(placement.offset(), RitualStructureRules.Role.RUNE));
         }
+        return List.copyOf(slots);
+    }
 
-        return matches >= 6;
+    private static List<RitualStructureRules.PatternSlot> withCenter(List<RitualStructureRules.PatternSlot> active) {
+        List<RitualStructureRules.PatternSlot> slots = new ArrayList<>();
+        slots.add(new RitualStructureRules.PatternSlot(BlockPos.ZERO, RitualStructureRules.Role.CENTER));
+        slots.addAll(active);
+        return List.copyOf(slots);
     }
 }
