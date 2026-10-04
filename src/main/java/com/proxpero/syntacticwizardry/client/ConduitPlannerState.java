@@ -290,6 +290,8 @@ public final class ConduitPlannerState {
         renderAreaPanel(graphics, mc, width);
         if (ritual == RitualDefinition.MOONCALL) {
             renderMooncallPanel(graphics, mc, width);
+        } else if (ritual == RitualDefinition.SUMMONING) {
+            renderNoPotencePanel(graphics, mc, width, "Summoning");
         } else if (ritual != RitualDefinition.PERMANENCY) {
             renderRitualStrengthPanel(graphics, mc, width);
         }
@@ -423,6 +425,14 @@ public final class ConduitPlannerState {
                 return;
             }
             if (inside(mouseX, mouseY, width - 171, phaseY + 44, 156, 18)) {
+                ritualCenter = null;
+                ritualHoverCenter = null;
+                placingRitualCenter = true;
+                clearSelection();
+                return;
+            }
+        } else if (ritual == RitualDefinition.SUMMONING) {
+            if (inside(mouseX, mouseY, width - 171, 110, 156, 18)) {
                 ritualCenter = null;
                 ritualHoverCenter = null;
                 placingRitualCenter = true;
@@ -835,6 +845,25 @@ public final class ConduitPlannerState {
         drawButton(graphics, mc, x + 7, y + 44, 156, 18, button, false);
     }
 
+    private static void renderNoPotencePanel(
+            GuiGraphics graphics,
+            Minecraft mc,
+            int width,
+            String title) {
+        int x = width - 178;
+        int y = 66;
+        int w = 170;
+        int h = 68;
+
+        graphics.fill(x, y, x + w, y + h, 0xC0182232);
+        graphics.renderOutline(x, y, w, h, 0xFF8E72C7);
+        graphics.drawString(mc.font, title, x + 7, y + 7, 0xFFF0E8FF, false);
+        graphics.drawCenteredString(mc.font, "No Potence", x + 85, y + 27, 0xFFB9C5D6);
+
+        String button = ritualCenter == null ? "Place Ritual Center" : "Relocate Ritual Center";
+        drawButton(graphics, mc, x + 7, y + 44, 156, 18, button, false);
+    }
+
     private static void renderRitualStrengthPanel(GuiGraphics graphics, Minecraft mc, int width) {
         int x = width - 178;
         int y = ritual.variableArea() ? 108 : 66;
@@ -875,7 +904,7 @@ public final class ConduitPlannerState {
     }
 
     private static int requestedRitualPotence() {
-        if (ritual == RitualDefinition.MOONCALL) return 0;
+        if (ritual == RitualDefinition.MOONCALL || ritual == RitualDefinition.SUMMONING) return 0;
         if (ritual != RitualDefinition.PERMANENCY) return ritualPotence;
 
         int[] plan = permanentSpellEditor.snapshotPlan();
@@ -1200,7 +1229,7 @@ public final class ConduitPlannerState {
         int height = mc.getWindow().getGuiScaledHeight();
         if (inside(mouseX, mouseY, PANEL_X, PANEL_Y, PANEL_W, height - 16)) return true;
         if (inside(mouseX, mouseY, width - 178, 8, 170, ritual.variableArea() ? 92 : 50)) return true;
-        if (ritual == RitualDefinition.MOONCALL) {
+        if (ritual == RitualDefinition.MOONCALL || ritual == RitualDefinition.SUMMONING) {
             if (inside(mouseX, mouseY, width - 178, 66, 170, 68)) return true;
         } else if (ritual != RitualDefinition.PERMANENCY) {
             int strengthY = ritual.variableArea() ? 108 : 66;
