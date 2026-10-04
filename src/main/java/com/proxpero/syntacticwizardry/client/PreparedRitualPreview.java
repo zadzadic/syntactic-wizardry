@@ -3,6 +3,8 @@ package com.proxpero.syntacticwizardry.client;
 import com.proxpero.syntacticwizardry.BindingRitualStructure;
 import com.proxpero.syntacticwizardry.ChalkRegistry;
 import com.proxpero.syntacticwizardry.ChalkRuneBlock;
+import com.proxpero.syntacticwizardry.CatchTimeRitualStructure;
+import com.proxpero.syntacticwizardry.CatchTimeSetting;
 import com.proxpero.syntacticwizardry.EclipseRitualStructure;
 import com.proxpero.syntacticwizardry.MagicLightRegistry;
 import com.proxpero.syntacticwizardry.MooncallPhase;
@@ -46,17 +48,18 @@ public final class PreparedRitualPreview {
     private static BlockPos center;
     private static int requestedPotence;
     private static MooncallPhase mooncallPhase = MooncallPhase.FULL_MOON;
+    private static CatchTimeSetting catchTimeSetting = CatchTimeSetting.NOON;
     private static RitualStructureRules.FocusPlan focusPlan;
     private static List<GhostBlock> ghosts = List.of();
 
     private PreparedRitualPreview() {}
 
     public static void prepare(RitualDefinition definition, BlockPos ritualCenter) {
-        prepare(definition, ritualCenter, 1, MooncallPhase.FULL_MOON);
+        prepare(definition, ritualCenter, 1, MooncallPhase.FULL_MOON, CatchTimeSetting.NOON);
     }
 
     public static void prepare(RitualDefinition definition, BlockPos ritualCenter, int potence) {
-        prepare(definition, ritualCenter, potence, MooncallPhase.FULL_MOON);
+        prepare(definition, ritualCenter, potence, MooncallPhase.FULL_MOON, CatchTimeSetting.NOON);
     }
 
     public static void prepare(
@@ -64,12 +67,23 @@ public final class PreparedRitualPreview {
             BlockPos ritualCenter,
             int potence,
             MooncallPhase selectedMoonPhase) {
+        prepare(definition, ritualCenter, potence, selectedMoonPhase, CatchTimeSetting.NOON);
+    }
+
+    public static void prepare(
+            RitualDefinition definition,
+            BlockPos ritualCenter,
+            int potence,
+            MooncallPhase selectedMoonPhase,
+            CatchTimeSetting selectedCatchTime) {
         if (definition == null || ritualCenter == null) return;
         ritual = definition;
         center = ritualCenter.immutable();
         mooncallPhase = selectedMoonPhase == null ? MooncallPhase.FULL_MOON : selectedMoonPhase;
+        catchTimeSetting = selectedCatchTime == null ? CatchTimeSetting.NOON : selectedCatchTime;
 
         if (definition == RitualDefinition.MOONCALL
+                || definition == RitualDefinition.CATCH_TIME
                 || definition == RitualDefinition.SUMMONING
                 || definition == RitualDefinition.BINDING
                 || definition == RitualDefinition.PROTECTION) {
@@ -80,14 +94,14 @@ public final class PreparedRitualPreview {
             focusPlan = RitualStructureRules.focusPlan(requestedPotence);
         }
 
-        ghosts = previewGhosts(definition, center, requestedPotence, mooncallPhase);
+        ghosts = previewGhosts(definition, center, requestedPotence, mooncallPhase, catchTimeSetting);
     }
 
     public static List<GhostBlock> previewGhosts(
             RitualDefinition definition,
             BlockPos ritualCenter,
             int potence) {
-        return previewGhosts(definition, ritualCenter, potence, MooncallPhase.FULL_MOON);
+        return previewGhosts(definition, ritualCenter, potence, MooncallPhase.FULL_MOON, CatchTimeSetting.NOON);
     }
 
     public static List<GhostBlock> previewGhosts(
@@ -95,11 +109,21 @@ public final class PreparedRitualPreview {
             BlockPos ritualCenter,
             int potence,
             MooncallPhase selectedMoonPhase) {
+        return previewGhosts(definition, ritualCenter, potence, selectedMoonPhase, CatchTimeSetting.NOON);
+    }
+
+    public static List<GhostBlock> previewGhosts(
+            RitualDefinition definition,
+            BlockPos ritualCenter,
+            int potence,
+            MooncallPhase selectedMoonPhase,
+            CatchTimeSetting selectedCatchTime) {
         if (definition == null || ritualCenter == null) return List.of();
 
         BlockPos previewCenter = ritualCenter.immutable();
         RitualStructureRules.FocusPlan previewFocus =
                 definition == RitualDefinition.MOONCALL
+                        || definition == RitualDefinition.CATCH_TIME
                         || definition == RitualDefinition.SUMMONING
                         || definition == RitualDefinition.BINDING
                         || definition == RitualDefinition.PROTECTION
@@ -142,6 +166,43 @@ public final class PreparedRitualPreview {
                         null,
                         "Chalk Rune"));
             }
+        } else if (definition == RitualDefinition.CATCH_TIME) {
+            CatchTimeSetting setting = selectedCatchTime == null ? CatchTimeSetting.NOON : selectedCatchTime;
+            BlockPos base = CatchTimeRitualStructure.lapisCenter(previewCenter);
+            built.add(new GhostBlock(
+                    base,
+                    RitualStructureRules.Role.STRUCTURAL,
+                    null,
+                    "Lapis Block",
+                    Blocks.LAPIS_BLOCK.defaultBlockState()));
+            for (BlockPos offset : CatchTimeRitualStructure.stoneBrickOffsets()) {
+                built.add(new GhostBlock(
+                        base.offset(offset),
+                        RitualStructureRules.Role.STRUCTURAL,
+                        null,
+                        "Stone Bricks",
+                        Blocks.STONE_BRICKS.defaultBlockState()));
+            }
+            if (ChalkRegistry.block() != null) {
+                for (CatchTimeRitualStructure.RunePlacement placement : CatchTimeRitualStructure.runes()) {
+                    BlockState runeState = ChalkRegistry.block().defaultBlockState()
+                            .setValue(ChalkRuneBlock.FACING, Direction.UP)
+                            .setValue(ChalkRuneBlock.COLOR, net.minecraft.world.item.DyeColor.BLACK)
+                            .setValue(ChalkRuneBlock.GLYPH, placement.glyph());
+                    built.add(new GhostBlock(
+                            base.offset(placement.offset()),
+                            RitualStructureRules.Role.RUNE,
+                            null,
+                            "Chalk Rune " + placement.glyph(),
+                            runeState));
+                }
+            }
+            built.add(new GhostBlock(
+                    base.offset(setting.goldOffset()),
+                    RitualStructureRules.Role.STRUCTURAL,
+                    null,
+                    "Gold Block - " + setting.displayName(),
+                    Blocks.GOLD_BLOCK.defaultBlockState()));
         } else if (definition == RitualDefinition.SUMMONING) {
             for (BlockPos offset : SummoningRitualStructure.runeOffsets()) {
                 built.add(new GhostBlock(
@@ -223,6 +284,10 @@ public final class PreparedRitualPreview {
         return mooncallPhase;
     }
 
+    public static CatchTimeSetting catchTimeSetting() {
+        return catchTimeSetting;
+    }
+
     public static List<GhostBlock> ghosts() {
         return ghosts;
     }
@@ -232,6 +297,7 @@ public final class PreparedRitualPreview {
         center = null;
         requestedPotence = 0;
         mooncallPhase = MooncallPhase.FULL_MOON;
+        catchTimeSetting = CatchTimeSetting.NOON;
         focusPlan = null;
         ghosts = List.of();
     }

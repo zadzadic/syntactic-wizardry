@@ -1,6 +1,7 @@
 package com.proxpero.syntacticwizardry;
 
 import com.proxpero.syntacticwizardry.client.BindingClientState;
+import com.proxpero.syntacticwizardry.client.CatchTimeClientState;
 import com.proxpero.syntacticwizardry.client.EclipseClientState;
 import com.proxpero.syntacticwizardry.client.MooncallClientState;
 import com.proxpero.syntacticwizardry.client.SummoningClientState;
@@ -15,6 +16,7 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 @EventBusSubscriber(modid = SyntacticWizardry.MOD_ID, bus = EventBusSubscriber.Bus.MOD)
 public final class RitualNetwork {
     private static final IPayloadHandler<EclipseSyncPayload> ECLIPSE_SYNC_HANDLER = new EclipseSyncHandler();
+    private static final IPayloadHandler<CatchTimeSyncPayload> CATCH_TIME_SYNC_HANDLER = new CatchTimeSyncHandler();
     private static final IPayloadHandler<MooncallSyncPayload> MOONCALL_SYNC_HANDLER = new MooncallSyncHandler();
     private static final IPayloadHandler<SummoningSyncPayload> SUMMONING_SYNC_HANDLER = new SummoningSyncHandler();
     private static final IPayloadHandler<BindingSyncPayload> BINDING_SYNC_HANDLER = new BindingSyncHandler();
@@ -26,6 +28,7 @@ public final class RitualNetwork {
     public static void registerPayloads(RegisterPayloadHandlersEvent event) {
         PayloadRegistrar registrar = event.registrar("1");
         registrar.playToClient(EclipseSyncPayload.TYPE, EclipseSyncPayload.STREAM_CODEC, ECLIPSE_SYNC_HANDLER);
+        registrar.playToClient(CatchTimeSyncPayload.TYPE, CatchTimeSyncPayload.STREAM_CODEC, CATCH_TIME_SYNC_HANDLER);
         registrar.playToClient(MooncallSyncPayload.TYPE, MooncallSyncPayload.STREAM_CODEC, MOONCALL_SYNC_HANDLER);
         registrar.playToClient(SummoningSyncPayload.TYPE, SummoningSyncPayload.STREAM_CODEC, SUMMONING_SYNC_HANDLER);
         registrar.playToClient(BindingSyncPayload.TYPE, BindingSyncPayload.STREAM_CODEC, BINDING_SYNC_HANDLER);
@@ -36,6 +39,13 @@ public final class RitualNetwork {
         @Override
         public void handle(EclipseSyncPayload payload, IPayloadContext context) {
             EclipseClientState.apply(payload);
+        }
+    }
+
+    private static final class CatchTimeSyncHandler implements IPayloadHandler<CatchTimeSyncPayload> {
+        @Override
+        public void handle(CatchTimeSyncPayload payload, IPayloadContext context) {
+            CatchTimeClientState.apply(payload);
         }
     }
 
@@ -65,6 +75,7 @@ public final class RitualNetwork {
         public void handle(RitualControlPayload payload, IPayloadContext context) {
             if (context.player() instanceof ServerPlayer player) {
                 EclipseRitualEvents.handleControl(player, payload);
+                CatchTimeRitualEvents.handleControl(player, payload);
                 MooncallRitualEvents.handleControl(player, payload);
                 SummoningRitualEvents.handleControl(player, payload);
                 BindingRitualEvents.handleControl(player, payload);
