@@ -16,7 +16,6 @@ import java.util.UUID;
 
 public final class EclipseRitualData extends SavedData {
     public static final String DATA_NAME = "syntacticwizardry_eclipse_rituals_v1";
-    public static final int TRANSITION_TICKS = 200;
 
     public static final class Entry {
         private final UUID id;
@@ -24,21 +23,24 @@ public final class EclipseRitualData extends SavedData {
         private final int potence;
         private final List<EclipseRitualStructure.FocusRef> foci;
         private String name;
-        private int transitionTicks;
+        private int effectTicks;
         private boolean paused;
         private boolean powered;
+        private boolean stopping;
 
         private Entry(UUID id, BlockPos center, int potence,
                       List<EclipseRitualStructure.FocusRef> foci,
-                      String name, int transitionTicks, boolean paused, boolean powered) {
+                      String name, int effectTicks, boolean paused,
+                      boolean powered, boolean stopping) {
             this.id = id;
             this.center = center.immutable();
             this.potence = Math.max(1, potence);
             this.foci = List.copyOf(foci);
             this.name = sanitizeName(name);
-            this.transitionTicks = Math.max(0, Math.min(TRANSITION_TICKS, transitionTicks));
+            this.effectTicks = RitualTransitionRules.clampTicks(effectTicks);
             this.paused = paused;
             this.powered = powered;
+            this.stopping = stopping;
         }
 
         public UUID id() { return id; }
@@ -46,9 +48,14 @@ public final class EclipseRitualData extends SavedData {
         public int potence() { return potence; }
         public List<EclipseRitualStructure.FocusRef> foci() { return foci; }
         public String name() { return name; }
-        public int transitionTicks() { return transitionTicks; }
+        public int effectTicks() { return effectTicks; }
         public boolean paused() { return paused; }
         public boolean powered() { return powered; }
+        public boolean stopping() { return stopping; }
+
+        public boolean targetActive() {
+            return !paused && !stopping && powered;
+        }
     }
 
     private final List<Entry> entries = new ArrayList<>();
@@ -81,15 +88,20 @@ public final class EclipseRitualData extends SavedData {
                         RitualStructureRules.FocusMaterial.values()[materialIndex]));
             }
 
+            int effectTicks = ritualTag.contains("EffectTicks", Tag.TAG_INT)
+                    ? ritualTag.getInt("EffectTicks")
+                    : ritualTag.getInt("Transition");
+
             data.entries.add(new Entry(
                     ritualTag.getUUID("Id"),
                     BlockPos.of(ritualTag.getLong("Center")),
                     ritualTag.getInt("Potence"),
                     foci,
                     ritualTag.getString("Name"),
-                    ritualTag.getInt("Transition"),
+                    effectTicks,
                     ritualTag.getBoolean("Paused"),
-                    ritualTag.getBoolean("Powered")));
+                    ritualTag.getBoolean("Powered"),
+                    ritualTag.getBoolean("Stopping")));
         }
         return data;
     }
@@ -103,9 +115,10 @@ public final class EclipseRitualData extends SavedData {
             ritualTag.putLong("Center", entry.center.asLong());
             ritualTag.putInt("Potence", entry.potence);
             ritualTag.putString("Name", entry.name);
-            ritualTag.putInt("Transition", entry.transitionTicks);
+            ritualTag.putInt("EffectTicks", entry.effectTicks);
             ritualTag.putBoolean("Paused", entry.paused);
             ritualTag.putBoolean("Powered", entry.powered);
+            ritualTag.putBoolean("Stopping", entry.stopping);
 
             ListTag focusTags = new ListTag();
             for (EclipseRitualStructure.FocusRef focus : entry.foci) {
@@ -135,7 +148,8 @@ public final class EclipseRitualData extends SavedData {
                 "Eclipse",
                 0,
                 false,
-                RitualManaSupport.tryConsumeUpkeep(level, center, 1.0D));
+                RitualManaSupport.tryConsumeUpkeep(level, center, 1.0D),
+                false);
         entries.add(entry);
         setDirty();
         return entry;
@@ -149,33 +163,45 @@ public final class EclipseRitualData extends SavedData {
         Iterator<Entry> iterator = entries.iterator();
         while (iterator.hasNext()) {
             Entry entry = iterator.next();
-            if (!EclipseRitualStructure.activeStructureValid(level, entry.center, entry.foci)) {
-                iterator.remove();
+
+            if (!entry.stopping
+                    && !EclipseRitualStructure.activeStructureValid(level, entry.center, entry.foci)) {
+                entry.stopping = true;
+                entry.paused = false;
+                entry.powered = false;
                 syncChanged = true;
                 dirty = true;
-                continue;
             }
 
-            if (entry.paused) {
+            if (entry.stopping || entry.paused) {
                 if (entry.powered) {
                     entry.powered = false;
                     syncChanged = true;
+                    dirty = true;
                 }
             } else if (time % 20L == 0L) {
                 boolean powered = RitualManaSupport.tryConsumeUpkeep(level, entry.center, 1.0D);
                 if (powered != entry.powered) {
                     entry.powered = powered;
                     syncChanged = true;
+                    dirty = true;
                 }
             }
 
-            if (!entry.paused && entry.powered && entry.transitionTicks < TRANSITION_TICKS) {
-                entry.transitionTicks++;
-                if (time % 20L == 0L || entry.transitionTicks == TRANSITION_TICKS) dirty = true;
+            int previousTicks = entry.effectTicks;
+            entry.effectTicks = RitualTransitionRules.step(entry.effectTicks, entry.targetActive());
+            if (entry.effectTicks != previousTicks) {
+                dirty = true;
+            }
+
+            if (entry.stopping && entry.effectTicks <= 0) {
+                iterator.remove();
+                syncChanged = true;
+                dirty = true;
             }
         }
 
-        if (dirty || syncChanged) setDirty();
+        if (dirty) setDirty();
         return syncChanged;
     }
 
@@ -187,8 +213,9 @@ public final class EclipseRitualData extends SavedData {
 
     public boolean setPaused(UUID id, boolean paused) {
         Entry entry = find(id);
-        if (entry == null || entry.paused == paused) return false;
+        if (entry == null || entry.stopping || entry.paused == paused) return false;
         entry.paused = paused;
+        if (paused) entry.powered = false;
         setDirty();
         return true;
     }
@@ -204,16 +231,25 @@ public final class EclipseRitualData extends SavedData {
     }
 
     public boolean stop(UUID id) {
-        boolean removed = entries.removeIf(entry -> entry.id.equals(id));
-        if (removed) setDirty();
-        return removed;
+        Entry entry = find(id);
+        if (entry == null || entry.stopping) return false;
+
+        if (entry.effectTicks <= 0) {
+            entries.remove(entry);
+        } else {
+            entry.stopping = true;
+            entry.paused = false;
+            entry.powered = false;
+        }
+
+        setDirty();
+        return true;
     }
 
     public int currentReduction() {
         int result = 0;
         for (Entry entry : entries) {
-            if (entry.paused || !entry.powered) continue;
-            int reduction = (int)Math.floor(entry.potence * (entry.transitionTicks / (double)TRANSITION_TICKS));
+            int reduction = Math.round(entry.potence * RitualTransitionRules.progress(entry.effectTicks));
             result = Math.max(result, Math.min(15, reduction));
         }
         return result;

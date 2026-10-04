@@ -11,8 +11,8 @@ import java.util.List;
 import java.util.UUID;
 
 public record EclipseSyncPayload(long syncGameTime, List<Entry> entries) implements CustomPacketPayload {
-    public record Entry(UUID id, String name, long center, int potence, int transitionTicks,
-                        boolean paused, boolean powered) {}
+    public record Entry(UUID id, String name, long center, int potence, int effectTicks,
+                        boolean paused, boolean powered, boolean stopping) {}
 
     public static final Type<EclipseSyncPayload> TYPE =
             new Type<>(ResourceLocation.fromNamespaceAndPath(SyntacticWizardry.MOD_ID, "eclipse_sync"));
@@ -32,6 +32,7 @@ public record EclipseSyncPayload(long syncGameTime, List<Entry> entries) impleme
                         raw.readVarInt(),
                         raw.readVarInt(),
                         raw.readBoolean(),
+                        raw.readBoolean(),
                         raw.readBoolean()));
             }
             return new EclipseSyncPayload(syncTime, List.copyOf(entries));
@@ -47,9 +48,10 @@ public record EclipseSyncPayload(long syncGameTime, List<Entry> entries) impleme
                 raw.writeUtf(entry.name(), 32);
                 raw.writeLong(entry.center());
                 raw.writeVarInt(entry.potence());
-                raw.writeVarInt(entry.transitionTicks());
+                raw.writeVarInt(entry.effectTicks());
                 raw.writeBoolean(entry.paused());
                 raw.writeBoolean(entry.powered());
+                raw.writeBoolean(entry.stopping());
             }
         }
     };

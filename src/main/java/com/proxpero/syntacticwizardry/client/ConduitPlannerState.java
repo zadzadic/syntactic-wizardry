@@ -707,12 +707,20 @@ public final class ConduitPlannerState {
                     hovered ? 0xB03B465D : 0x90252F42);
             String name = mc.font.plainSubstrByWidth(entry.name(), 174);
             graphics.drawString(mc.font, name, PANEL_X + 9, y + 5, 0xFFFFFFFF, false);
-            String status = entry.paused()
+            String status = entry.stopping()
+                    ? "Stopping"
+                    : entry.paused()
                     ? "Paused"
                     : !entry.powered()
                     ? "Dormant"
                     : entry.ritual().displayName();
-            int statusColor = entry.paused() ? 0xFFFFD88A : !entry.powered() ? 0xFFFF9E80 : 0xFF9FAEC4;
+            int statusColor = entry.stopping()
+                    ? 0xFFFFB38A
+                    : entry.paused()
+                    ? 0xFFFFD88A
+                    : !entry.powered()
+                    ? 0xFFFF9E80
+                    : 0xFF9FAEC4;
             graphics.drawString(mc.font, status, PANEL_X + 9, y + 15, statusColor, false);
             drawButton(graphics, mc, PANEL_X + 196, y + 4, 52, 18, entry.paused() ? "Resume" : "Pause", false);
             drawButton(graphics, mc, PANEL_X + 252, y + 4, 48, 18, "Stop", false);

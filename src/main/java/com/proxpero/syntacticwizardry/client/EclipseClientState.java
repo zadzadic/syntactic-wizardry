@@ -1,8 +1,8 @@
 package com.proxpero.syntacticwizardry.client;
 
-import com.proxpero.syntacticwizardry.EclipseRitualData;
 import com.proxpero.syntacticwizardry.EclipseSyncPayload;
 import com.proxpero.syntacticwizardry.RitualDefinition;
+import com.proxpero.syntacticwizardry.RitualTransitionRules;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 
@@ -34,21 +34,23 @@ public final class EclipseClientState {
                     BlockPos.of(entry.center()),
                     entry.paused(),
                     entry.powered(),
-                    1.0D);
+                    1.0D,
+                    entry.stopping());
         }
         entries = List.copyOf(next);
     }
 
     public static int currentReduction(ClientLevel level, float partialTick) {
-        if (level == null) return 0;
-        int result = 0;
-        double now = level.getGameTime() + partialTick;
+        return Math.round(currentReductionFloat(level, partialTick));
+    }
+
+    public static float currentReductionFloat(ClientLevel level, float partialTick) {
+        if (level == null) return 0.0F;
+        float result = 0.0F;
         for (Entry entry : entries) {
             EclipseSyncPayload.Entry state = entry.payload();
-            if (state.paused() || !state.powered()) continue;
-            double ticks = state.transitionTicks() + Math.max(0.0D, now - entry.syncGameTime());
-            double progress = Math.min(1.0D, ticks / EclipseRitualData.TRANSITION_TICKS);
-            result = Math.max(result, Math.min(15, (int)Math.floor(state.potence() * progress)));
+            float progress = interpolatedProgress(level, partialTick, entry);
+            result = Math.max(result, Math.min(15.0F, state.potence() * progress));
         }
         return result;
     }
@@ -56,14 +58,18 @@ public final class EclipseClientState {
     public static float visualProgress(ClientLevel level, float partialTick) {
         if (level == null) return 0.0F;
         float result = 0.0F;
-        double now = level.getGameTime() + partialTick;
         for (Entry entry : entries) {
-            EclipseSyncPayload.Entry state = entry.payload();
-            if (state.paused() || !state.powered()) continue;
-            double ticks = state.transitionTicks() + Math.max(0.0D, now - entry.syncGameTime());
-            result = Math.max(result, (float)Math.min(1.0D, ticks / EclipseRitualData.TRANSITION_TICKS));
+            result = Math.max(result, interpolatedProgress(level, partialTick, entry));
         }
         return result;
+    }
+
+    private static float interpolatedProgress(ClientLevel level, float partialTick, Entry entry) {
+        EclipseSyncPayload.Entry state = entry.payload();
+        double now = level.getGameTime() + partialTick;
+        double elapsed = Math.max(0.0D, now - entry.syncGameTime());
+        boolean targetActive = !state.paused() && !state.stopping() && state.powered();
+        return RitualTransitionRules.interpolatedProgress(state.effectTicks(), elapsed, targetActive);
     }
 
     public static void clear() {

@@ -53,7 +53,7 @@ public final class EclipseRitualEvents {
         EclipseLightRuntime.set(server, EclipseRitualData.get(server).currentReduction());
         syncLevel(server);
 
-        String state = entry.powered() ? "active" : "dormant: no Mana supply";
+        String state = entry.powered() ? "activating" : "dormant: no Mana supply";
         player.displayClientMessage(Component.literal(
                 "Eclipse Ritual activated at Potence " + entry.potence() + " (" + state + ")."), true);
     }
@@ -116,9 +116,10 @@ public final class EclipseRitualEvents {
                     entry.name(),
                     entry.center().asLong(),
                     entry.potence(),
-                    entry.transitionTicks(),
+                    entry.effectTicks(),
                     entry.paused(),
-                    entry.powered()));
+                    entry.powered(),
+                    entry.stopping()));
         }
         return new EclipseSyncPayload(level.getGameTime(), List.copyOf(entries));
     }

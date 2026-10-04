@@ -17,7 +17,7 @@ public final class EclipseClientEvents {
     public static void onTick(ClientTickEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null) return;
-        EclipseLightRuntime.set(mc.level, EclipseClientState.currentReduction(mc.level, 0.0F));
+        EclipseLightRuntime.set(mc.level, EclipseClientState.currentReductionFloat(mc.level, 0.0F));
     }
 
     @SubscribeEvent

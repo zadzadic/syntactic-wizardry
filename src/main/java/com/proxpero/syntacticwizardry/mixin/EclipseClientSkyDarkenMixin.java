@@ -16,13 +16,21 @@ public abstract class EclipseClientSkyDarkenMixin {
             float partialTick,
             CallbackInfoReturnable<Float> cir) {
         ClientLevel level = (ClientLevel)(Object)this;
-        int extraDarken = EclipseLightRuntime.get(level);
-        if (extraDarken <= 0) return;
+        float extraDarken = EclipseLightRuntime.getFloat(level);
+        if (extraDarken <= 0.0001F) return;
 
+        int integerDarken = EclipseLightRuntime.get(level);
         int effectiveSkyLevel = Mth.clamp(15 - level.getSkyDarken(), 0, 15);
-        int baselineSkyLevel = Mth.clamp(effectiveSkyLevel + extraDarken, 0, 15);
+        int baselineSkyLevel = Mth.clamp(effectiveSkyLevel + integerDarken, 0, 15);
 
-        float targetBrightness = LightTexture.getBrightness(level.dimensionType(), effectiveSkyLevel);
+        float targetSkyLevel = Mth.clamp(baselineSkyLevel - extraDarken, 0.0F, 15.0F);
+        int lower = Mth.floor(targetSkyLevel);
+        int upper = Math.min(15, lower + 1);
+        float fraction = targetSkyLevel - lower;
+        float targetBrightness = Mth.lerp(
+                fraction,
+                LightTexture.getBrightness(level.dimensionType(), lower),
+                LightTexture.getBrightness(level.dimensionType(), upper));
         float baselineBrightness = LightTexture.getBrightness(level.dimensionType(), baselineSkyLevel);
         float scale = baselineBrightness <= 1.0E-6F ? 0.0F : targetBrightness / baselineBrightness;
 
