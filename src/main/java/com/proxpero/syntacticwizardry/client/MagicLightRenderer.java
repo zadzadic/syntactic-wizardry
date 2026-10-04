@@ -30,6 +30,23 @@ public final class MagicLightRenderer implements BlockEntityRenderer<MagicLightB
         int outerAlpha = 112 + Math.round(wave * 36.0F);
         int innerAlpha = 184 + Math.round(wave * 40.0F);
 
+        renderSprite(poseStack, buffer, outerScale, innerScale, outerAlpha, innerAlpha);
+    }
+
+    public static void renderPreview(PoseStack poseStack, MultiBufferSource buffer, float alpha) {
+        float clamped = Math.max(0.12F, Math.min(0.85F, alpha));
+        int outerAlpha = Math.max(1, Math.min(255, Math.round(132.0F * clamped)));
+        int innerAlpha = Math.max(1, Math.min(255, Math.round(220.0F * clamped)));
+        renderSprite(poseStack, buffer, 0.68F, 0.39F, outerAlpha, innerAlpha);
+    }
+
+    private static void renderSprite(
+            PoseStack poseStack,
+            MultiBufferSource buffer,
+            float outerScale,
+            float innerScale,
+            int outerAlpha,
+            int innerAlpha) {
         poseStack.pushPose();
         poseStack.translate(0.5D, 0.5D, 0.5D);
         poseStack.mulPose(Minecraft.getInstance().getEntityRenderDispatcher().cameraOrientation());

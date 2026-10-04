@@ -3,6 +3,7 @@ package com.proxpero.syntacticwizardry.client;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.proxpero.syntacticwizardry.ChalkRegistry;
+import com.proxpero.syntacticwizardry.MagicLightRegistry;
 import com.proxpero.syntacticwizardry.RitualStructureRules;
 import com.proxpero.syntacticwizardry.SyntacticWizardry;
 import net.minecraft.client.Minecraft;
@@ -50,14 +51,18 @@ final class RitualGhostBlockRenderer {
                     pos.getY() - camera.y,
                     pos.getZ() - camera.z);
 
-            mc.getBlockRenderer().renderSingleBlock(
-                    state,
-                    pose,
-                    ghostBuffers,
-                    LightTexture.FULL_BRIGHT,
-                    OverlayTexture.NO_OVERLAY,
-                    ModelData.EMPTY,
-                    translucent);
+            if (MagicLightRegistry.block() != null && state.is(MagicLightRegistry.block())) {
+                MagicLightRenderer.renderPreview(pose, buffers, clampedAlpha);
+            } else {
+                mc.getBlockRenderer().renderSingleBlock(
+                        state,
+                        pose,
+                        ghostBuffers,
+                        LightTexture.FULL_BRIGHT,
+                        OverlayTexture.NO_OVERLAY,
+                        ModelData.EMPTY,
+                        translucent);
+            }
             pose.popPose();
         }
 
