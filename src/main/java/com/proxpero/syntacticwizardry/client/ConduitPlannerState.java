@@ -4,6 +4,7 @@ import com.arcane.magic.builder.BuilderInventoryPanel;
 import com.arcane.magic.builder.BuilderVolumeSupport;
 import com.arcane.magic.client.ArcaneBuilderClientEvents;
 import com.arcane.magic.client.ArcaneBuilderEditEvents;
+import com.proxpero.syntacticwizardry.MooncallPhase;
 import com.proxpero.syntacticwizardry.RitualDefinition;
 import com.proxpero.syntacticwizardry.SpellComponentDefinition;
 import com.proxpero.syntacticwizardry.SpellComponents;
@@ -59,6 +60,7 @@ public final class ConduitPlannerState {
     private static AreaShape areaShape = AreaShape.BOX;
     private static int listScroll;
     private static int ritualPotence = 1;
+    private static MooncallPhase mooncallPhase = MooncallPhase.FULL_MOON;
     private static int activeScroll;
     private static boolean leftWasDown;
     private static boolean rightWasDown;
@@ -129,6 +131,7 @@ public final class ConduitPlannerState {
         viewMode = ViewMode.MANAGEMENT;
         listScroll = 0;
         ritualPotence = 1;
+        mooncallPhase = MooncallPhase.FULL_MOON;
         ritualCenter = null;
         ritualHoverCenter = null;
         placingRitualCenter = false;
@@ -285,7 +288,9 @@ public final class ConduitPlannerState {
         }
 
         renderAreaPanel(graphics, mc, width);
-        if (ritual != RitualDefinition.PERMANENCY) {
+        if (ritual == RitualDefinition.MOONCALL) {
+            renderMooncallPanel(graphics, mc, width);
+        } else if (ritual != RitualDefinition.PERMANENCY) {
             renderRitualStrengthPanel(graphics, mc, width);
         }
         if (ritual == RitualDefinition.PERMANENCY) {
@@ -403,7 +408,24 @@ public final class ConduitPlannerState {
             clearSelection();
             return;
         }
-        if (ritual != RitualDefinition.PERMANENCY) {
+        if (ritual == RitualDefinition.MOONCALL) {
+            int phaseY = 66;
+            if (inside(mouseX, mouseY, width - 171, phaseY + 20, 20, 18)) {
+                mooncallPhase = mooncallPhase.previous();
+                return;
+            }
+            if (inside(mouseX, mouseY, width - 35, phaseY + 20, 20, 18)) {
+                mooncallPhase = mooncallPhase.next();
+                return;
+            }
+            if (inside(mouseX, mouseY, width - 171, phaseY + 44, 156, 18)) {
+                ritualCenter = null;
+                ritualHoverCenter = null;
+                placingRitualCenter = true;
+                clearSelection();
+                return;
+            }
+        } else if (ritual != RitualDefinition.PERMANENCY) {
             int strengthY = ritual.variableArea() ? 108 : 66;
             if (inside(mouseX, mouseY, width - 171, strengthY + 20, 20, 18)) {
                 ritualPotence = Math.max(1, ritualPotence - 1);
@@ -426,7 +448,11 @@ public final class ConduitPlannerState {
                 placingRitualCenter = true;
                 return;
             }
-            PreparedRitualPreview.prepare(ritual, ritualCenter, requestedRitualPotence());
+            PreparedRitualPreview.prepare(
+                    ritual,
+                    ritualCenter,
+                    requestedRitualPotence(),
+                    mooncallPhase);
             return;
         }
 
@@ -435,6 +461,7 @@ public final class ConduitPlannerState {
             if (clicked != ritual) {
                 ritual = clicked;
                 ritualPotence = 1;
+                mooncallPhase = MooncallPhase.FULL_MOON;
                 ritualCenter = null;
                 ritualHoverCenter = null;
                 placingRitualCenter = true;
@@ -660,6 +687,7 @@ public final class ConduitPlannerState {
         areaShape = AreaShape.BOX;
         listScroll = 0;
         ritualPotence = 1;
+        mooncallPhase = MooncallPhase.FULL_MOON;
         ritualCenter = null;
         ritualHoverCenter = null;
         placingRitualCenter = true;
@@ -743,6 +771,9 @@ public final class ConduitPlannerState {
 
         if (PreparedRitualPreview.prepared()) {
             String prepared = "Prepared: " + PreparedRitualPreview.ritual().displayName();
+            if (PreparedRitualPreview.ritual() == RitualDefinition.MOONCALL) {
+                prepared += " - " + PreparedRitualPreview.mooncallPhase().displayName();
+            }
             int tx = width - 146;
             int ty = 54;
             graphics.fill(tx, ty, width - 8, 108, 0xC0182232);
@@ -775,6 +806,29 @@ public final class ConduitPlannerState {
 
     private static int activeVisibleRows(int height) {
         return Math.max(3, (height - ACTIVE_LIST_TOP - ACTIVE_BOTTOM_MARGIN) / ACTIVE_ROW_H);
+    }
+
+    private static void renderMooncallPanel(GuiGraphics graphics, Minecraft mc, int width) {
+        int x = width - 178;
+        int y = 66;
+        int w = 170;
+        int h = 68;
+
+        graphics.fill(x, y, x + w, y + h, 0xC0182232);
+        graphics.renderOutline(x, y, w, h, 0xFF8E72C7);
+        graphics.drawString(mc.font, "Moon Phase", x + 7, y + 7, 0xFFF0E8FF, false);
+
+        drawButton(graphics, mc, x + 7, y + 20, 20, 18, "<", false);
+        graphics.drawCenteredString(
+                mc.font,
+                mooncallPhase.displayName(),
+                x + 85,
+                y + 25,
+                0xFFDCE6F3);
+        drawButton(graphics, mc, x + 143, y + 20, 20, 18, ">", false);
+
+        String button = ritualCenter == null ? "Place Ritual Center" : "Relocate Ritual Center";
+        drawButton(graphics, mc, x + 7, y + 44, 156, 18, button, false);
     }
 
     private static void renderRitualStrengthPanel(GuiGraphics graphics, Minecraft mc, int width) {
@@ -817,6 +871,7 @@ public final class ConduitPlannerState {
     }
 
     private static int requestedRitualPotence() {
+        if (ritual == RitualDefinition.MOONCALL) return 0;
         if (ritual != RitualDefinition.PERMANENCY) return ritualPotence;
 
         int[] plan = permanentSpellEditor.snapshotPlan();
@@ -1141,7 +1196,9 @@ public final class ConduitPlannerState {
         int height = mc.getWindow().getGuiScaledHeight();
         if (inside(mouseX, mouseY, PANEL_X, PANEL_Y, PANEL_W, height - 16)) return true;
         if (inside(mouseX, mouseY, width - 178, 8, 170, ritual.variableArea() ? 92 : 50)) return true;
-        if (ritual != RitualDefinition.PERMANENCY) {
+        if (ritual == RitualDefinition.MOONCALL) {
+            if (inside(mouseX, mouseY, width - 178, 66, 170, 68)) return true;
+        } else if (ritual != RitualDefinition.PERMANENCY) {
             int strengthY = ritual.variableArea() ? 108 : 66;
             if (inside(mouseX, mouseY, width - 178, strengthY, 170, 68)) return true;
         }
