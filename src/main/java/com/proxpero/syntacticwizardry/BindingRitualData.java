@@ -180,11 +180,13 @@ public final class BindingRitualData extends SavedData {
             if (entry.targetActive()
                     && entry.effectTicks >= RitualTransitionRules.DURATION_TICKS) {
                 int bound = applyBinding(level, entry);
-                notifyOwner(level, entry.ownerId, bound);
-                iterator.remove();
-                syncChanged = true;
-                dirty = true;
-                continue;
+                if (bound > 0) {
+                    notifyOwner(level, entry.ownerId, bound);
+                    iterator.remove();
+                    syncChanged = true;
+                    dirty = true;
+                    continue;
+                }
             }
 
             if (entry.stopping && entry.effectTicks <= 0) {
