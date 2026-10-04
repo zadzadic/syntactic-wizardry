@@ -2,7 +2,6 @@ package com.proxpero.syntacticwizardry;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.level.block.Blocks;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +20,9 @@ public final class EclipseRitualStructure {
             new BlockPos(0,0,-4), new BlockPos(1,0,-4),
             new BlockPos(3,0,-3), new BlockPos(4,0,-1));
 
+    private static final List<RitualStructureRules.PatternSlot> ACTIVE_PATTERN = buildActivePattern();
+    private static final List<RitualStructureRules.PatternSlot> DETECTION_PATTERN = withCenter(ACTIVE_PATTERN);
+
     private EclipseRitualStructure() {}
 
     public static List<BlockPos> runeOffsets() {
@@ -28,21 +30,24 @@ public final class EclipseRitualStructure {
     }
 
     public static Detection detect(ServerLevel level, BlockPos center) {
-        if (!level.getBlockState(center).is(SyntacticWizardry.MATURE_CRYSTAL.get())) {
-            return invalid("The Center must be a Mature Crystal.");
-        }
-        if (!level.getBlockState(center.below()).is(Blocks.OBSIDIAN)) {
-            return invalid("Eclipse requires Obsidian directly beneath the Mature Crystal.");
-        }
-
-        for (BlockPos offset : RUNE_OFFSETS) {
-            if (!RitualStructureRules.isValidRune(level.getBlockState(center.offset(offset)))) {
+        RitualStructureRules.PatternMatch match = RitualStructureRules.detectPattern(
+                level, center, DETECTION_PATTERN, RitualStructureRules.focusSlots(), 1);
+        if (!match.valid()) {
+            if (match.failedRole() == RitualStructureRules.Role.CENTER) {
+                return invalid("The Center must be a Mature Crystal.");
+            }
+            if (match.failedRole() == RitualStructureRules.Role.FOCUS) {
+                return invalid("Eclipse requires at least one Focus Block.");
+            }
+            if (match.failedRole() == RitualStructureRules.Role.RUNE) {
                 return invalid("The Eclipse rune circle is incomplete.");
             }
+            return invalid("The Eclipse ritual structure is incomplete.");
         }
 
-        List<FocusRef> foci = scanFoci(level, center);
-        if (foci.isEmpty()) return invalid("Eclipse requires at least one Focus Block.");
+        List<FocusRef> foci = match.foci().stream()
+                .map(focus -> new FocusRef(focus.position(), focus.material()))
+                .toList();
 
         int potence = suppliedPotence(foci);
         RitualStructureRules.FocusMaterial required = RitualStructureRules.requiredTier(potence);
@@ -55,24 +60,28 @@ public final class EclipseRitualStructure {
     }
 
     public static boolean activeStructureValid(ServerLevel level, BlockPos center, List<FocusRef> expectedFoci) {
-        if (!level.getBlockState(center.below()).is(Blocks.OBSIDIAN)) return false;
-        for (BlockPos offset : RUNE_OFFSETS) {
-            if (!RitualStructureRules.isValidRune(level.getBlockState(center.offset(offset)))) return false;
-        }
+        if (!RitualStructureRules.detectPattern(level, center, ACTIVE_PATTERN).valid()) return false;
         for (FocusRef focus : expectedFoci) {
-            if (!focus.material().matches(level.getBlockState(focus.position()))) return false;
+            if (!RitualStructureRules.isValidForRole(
+                    level, focus.position(), RitualStructureRules.Role.FOCUS)) return false;
         }
         return true;
     }
 
-    private static List<FocusRef> scanFoci(ServerLevel level, BlockPos center) {
-        List<FocusRef> result = new ArrayList<>();
-        for (BlockPos offset : RitualStructureRules.focusSlots()) {
-            BlockPos pos = center.offset(offset);
-            RitualStructureRules.FocusMaterial material = RitualStructureRules.focusMaterial(level.getBlockState(pos));
-            if (material != null) result.add(new FocusRef(pos.immutable(), material));
+    private static List<RitualStructureRules.PatternSlot> buildActivePattern() {
+        List<RitualStructureRules.PatternSlot> slots = new ArrayList<>();
+        slots.add(new RitualStructureRules.PatternSlot(new BlockPos(0, -1, 0), RitualStructureRules.Role.STRUCTURAL));
+        for (BlockPos offset : RUNE_OFFSETS) {
+            slots.add(new RitualStructureRules.PatternSlot(offset, RitualStructureRules.Role.RUNE));
         }
-        return result;
+        return List.copyOf(slots);
+    }
+
+    private static List<RitualStructureRules.PatternSlot> withCenter(List<RitualStructureRules.PatternSlot> active) {
+        List<RitualStructureRules.PatternSlot> slots = new ArrayList<>();
+        slots.add(new RitualStructureRules.PatternSlot(BlockPos.ZERO, RitualStructureRules.Role.CENTER));
+        slots.addAll(active);
+        return List.copyOf(slots);
     }
 
     private static int suppliedPotence(List<FocusRef> foci) {

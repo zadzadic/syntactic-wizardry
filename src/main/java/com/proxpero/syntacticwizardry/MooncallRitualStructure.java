@@ -2,10 +2,15 @@ package com.proxpero.syntacticwizardry;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.level.block.Blocks;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public final class MooncallRitualStructure {
     public record Detection(boolean valid, String error, MooncallPhase phase) {}
+
+    private static final List<RitualStructureRules.PatternSlot> RUNE_PATTERN = buildRunePattern();
+    private static final List<RitualStructureRules.PatternSlot> DETECTION_PATTERN = withCenter(RUNE_PATTERN);
 
     private MooncallRitualStructure() {}
 
@@ -24,27 +29,26 @@ public final class MooncallRitualStructure {
     }
 
     public static Detection detect(ServerLevel level, BlockPos center) {
-        if (!level.getBlockState(center).is(SyntacticWizardry.MATURE_CRYSTAL.get())) {
-            return invalid("The Center must be a Mature Crystal.");
-        }
-
-        for (BlockPos offset : EclipseRitualStructure.runeOffsets()) {
-            if (!RitualStructureRules.isValidRune(level.getBlockState(center.offset(offset)))) {
-                return invalid("The Mooncall rune circle is incomplete.");
+        RitualStructureRules.PatternMatch common = RitualStructureRules.detectPattern(level, center, DETECTION_PATTERN);
+        if (!common.valid()) {
+            if (common.failedRole() == RitualStructureRules.Role.CENTER) {
+                return invalid("The Center must be a Mature Crystal.");
             }
+            return invalid("The Mooncall rune circle is incomplete.");
         }
 
         MooncallPhase found = null;
         for (MooncallPhase phase : MooncallPhase.values()) {
-            if (!level.getBlockState(center.offset(obsidianOffset(phase))).is(Blocks.OBSIDIAN)) continue;
+            BlockPos pos = center.offset(obsidianOffset(phase));
+            if (!RitualStructureRules.isValidForRole(level, pos, RitualStructureRules.Role.STRUCTURAL)) continue;
             if (found != null) {
-                return invalid("Mooncall requires exactly one Obsidian phase marker.");
+                return invalid("Mooncall requires exactly one phase-marker Structural Block.");
             }
             found = phase;
         }
 
         if (found == null) {
-            return invalid("Mooncall requires one Obsidian phase marker two blocks from the Center.");
+            return invalid("Mooncall requires one phase-marker Structural Block two blocks from the Center.");
         }
 
         return new Detection(true, "", found);
@@ -52,20 +56,32 @@ public final class MooncallRitualStructure {
 
     public static boolean hasPhaseMarker(ServerLevel level, BlockPos center) {
         for (MooncallPhase phase : MooncallPhase.values()) {
-            if (level.getBlockState(center.offset(obsidianOffset(phase))).is(Blocks.OBSIDIAN)) return true;
+            BlockPos pos = center.offset(obsidianOffset(phase));
+            if (RitualStructureRules.isValidForRole(level, pos, RitualStructureRules.Role.STRUCTURAL)) return true;
         }
         return false;
     }
 
     public static boolean activeStructureValid(ServerLevel level, BlockPos center, MooncallPhase phase) {
         if (phase == null) return false;
-        if (!level.getBlockState(center.offset(obsidianOffset(phase))).is(Blocks.OBSIDIAN)) return false;
+        if (!RitualStructureRules.detectPattern(level, center, RUNE_PATTERN).valid()) return false;
+        return RitualStructureRules.isValidForRole(
+                level,
+                center.offset(obsidianOffset(phase)),
+                RitualStructureRules.Role.STRUCTURAL);
+    }
 
-        for (BlockPos offset : EclipseRitualStructure.runeOffsets()) {
-            if (!RitualStructureRules.isValidRune(level.getBlockState(center.offset(offset)))) return false;
-        }
+    private static List<RitualStructureRules.PatternSlot> buildRunePattern() {
+        return EclipseRitualStructure.runeOffsets().stream()
+                .map(offset -> new RitualStructureRules.PatternSlot(offset, RitualStructureRules.Role.RUNE))
+                .toList();
+    }
 
-        return true;
+    private static List<RitualStructureRules.PatternSlot> withCenter(List<RitualStructureRules.PatternSlot> active) {
+        List<RitualStructureRules.PatternSlot> slots = new ArrayList<>();
+        slots.add(new RitualStructureRules.PatternSlot(BlockPos.ZERO, RitualStructureRules.Role.CENTER));
+        slots.addAll(active);
+        return List.copyOf(slots);
     }
 
     private static Detection invalid(String error) {

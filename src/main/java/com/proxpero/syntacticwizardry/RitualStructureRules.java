@@ -26,6 +26,31 @@ public final class RitualStructureRules {
         FOCUS
     }
 
+    /** A ritual-relative block requirement. The role defines what matters; material identity does not. */
+    public record PatternSlot(BlockPos offset, Role role) {
+        public PatternSlot {
+            if (offset == null || role == null) throw new IllegalArgumentException("Ritual pattern slots require an offset and role.");
+        }
+
+        public BlockPos position(BlockPos center) {
+            return center.offset(offset);
+        }
+    }
+
+    /** A valid Focus discovered in a ritual focus slot. */
+    public record MatchedFocus(BlockPos position, FocusMaterial material) {}
+
+    /** Result of the shared ritual block detector. */
+    public record PatternMatch(
+            boolean valid,
+            Role failedRole,
+            BlockPos failedPosition,
+            List<MatchedFocus> foci) {
+        public PatternMatch {
+            foci = List.copyOf(foci == null ? List.of() : foci);
+        }
+    }
+
     public enum FocusMaterial {
         IRON("Iron", 1, 4),
         GOLD("Gold", 2, 6),
@@ -141,22 +166,97 @@ public final class RitualStructureRules {
         return true;
     }
 
+    public static boolean isValidFocus(BlockState state) {
+        return focusMaterial(state) != null;
+    }
+
     public static boolean isValidFocus(BlockState state, FocusMaterial material) {
         return material != null && material.matches(state);
     }
 
-    public static boolean isValidForRole(
-            LevelReader level,
-            BlockPos pos,
-            Role role,
-            FocusMaterial focusMaterial) {
+    /**
+     * Generic ritual role validation.
+     *
+     * Runes are accepted regardless of glyph, color, or facing.
+     * Structural blocks are accepted regardless of material, provided they satisfy
+     * the shared structural-block rule.
+     * Focuses are accepted when they are any registered valid Focus material.
+     */
+    public static boolean isValidForRole(LevelReader level, BlockPos pos, Role role) {
         BlockState state = level.getBlockState(pos);
         return switch (role) {
             case CENTER -> isValidCenter(state);
             case RUNE -> isValidRune(state);
             case STRUCTURAL -> isValidStructural(level, pos);
-            case FOCUS -> isValidFocus(state, focusMaterial);
+            case FOCUS -> isValidFocus(state);
         };
+    }
+
+    /** Backward-compatible exact-Focus overload for UI/planning code. */
+    public static boolean isValidForRole(
+            LevelReader level,
+            BlockPos pos,
+            Role role,
+            FocusMaterial focusMaterial) {
+        if (role != Role.FOCUS) return isValidForRole(level, pos, role);
+        return isValidFocus(level.getBlockState(pos), focusMaterial);
+    }
+
+    /**
+     * Shared detector used by every ritual structure.
+     *
+     * Required slots are validated only by their role. Optional focus positions are
+     * scanned using the same generic Focus rule, and minFocusCount controls whether
+     * the ritual requires Focuses at all.
+     */
+    public static PatternMatch detectPattern(
+            LevelReader level,
+            BlockPos center,
+            List<PatternSlot> requiredSlots,
+            List<BlockPos> focusOffsets,
+            int minFocusCount) {
+        if (level == null || center == null) {
+            return new PatternMatch(false, Role.CENTER, center, List.of());
+        }
+
+        List<PatternSlot> slots = requiredSlots == null ? List.of() : requiredSlots;
+        for (PatternSlot slot : slots) {
+            BlockPos pos = slot.position(center);
+            if (!isValidForRole(level, pos, slot.role())) {
+                return new PatternMatch(false, slot.role(), pos.immutable(), List.of());
+            }
+        }
+
+        List<MatchedFocus> foci = new ArrayList<>();
+        List<BlockPos> candidates = focusOffsets == null ? List.of() : focusOffsets;
+        for (BlockPos offset : candidates) {
+            if (offset == null) continue;
+            BlockPos pos = center.offset(offset);
+            FocusMaterial material = focusMaterial(level.getBlockState(pos));
+            if (material != null) foci.add(new MatchedFocus(pos.immutable(), material));
+        }
+
+        if (foci.size() < Math.max(0, minFocusCount)) {
+            return new PatternMatch(false, Role.FOCUS, center.immutable(), foci);
+        }
+        return new PatternMatch(true, null, null, foci);
+    }
+
+    public static PatternMatch detectPattern(
+            LevelReader level,
+            BlockPos center,
+            List<PatternSlot> requiredSlots) {
+        return detectPattern(level, center, requiredSlots, List.of(), 0);
+    }
+
+    /** Counts how many required ritual slots currently satisfy their generic role. */
+    public static int countPatternMatches(LevelReader level, BlockPos center, List<PatternSlot> requiredSlots) {
+        if (level == null || center == null || requiredSlots == null) return 0;
+        int matches = 0;
+        for (PatternSlot slot : requiredSlots) {
+            if (slot != null && isValidForRole(level, slot.position(center), slot.role())) matches++;
+        }
+        return matches;
     }
 
     public static boolean isReservedFocusBand(BlockPos center, BlockPos pos) {
