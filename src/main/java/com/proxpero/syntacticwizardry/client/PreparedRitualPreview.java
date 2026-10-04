@@ -1,17 +1,10 @@
 package com.proxpero.syntacticwizardry.client;
 
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.proxpero.syntacticwizardry.EclipseRitualStructure;
 import com.proxpero.syntacticwizardry.RitualDefinition;
 import com.proxpero.syntacticwizardry.RitualStructureRules;
 import com.proxpero.syntacticwizardry.SyntacticWizardry;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.LevelRenderer;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -138,58 +131,7 @@ public final class PreparedRitualPreview {
     }
 
     public static void renderGhosts(RenderLevelStageEvent event, List<GhostBlock> blocks, float alpha) {
-        if (event == null || blocks == null || blocks.isEmpty()
-                || event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES) return;
-
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null) return;
-
-        PoseStack pose = event.getPoseStack();
-        Vec3 camera = event.getCamera().getPosition();
-        MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
-        RenderType lines = RenderType.lines();
-        VertexConsumer consumer = buffers.getBuffer(lines);
-
-        for (GhostBlock ghost : blocks) {
-            BlockPos pos = ghost.pos();
-            double pulse = 0.03D + 0.015D * Math.sin(
-                    (mc.level.getGameTime() + event.getPartialTick().getGameTimeDeltaPartialTick(false)) * 0.14D);
-
-            float[] color = colorFor(ghost);
-            LevelRenderer.renderLineBox(
-                    pose, consumer,
-                    pos.getX() - camera.x - pulse,
-                    pos.getY() - camera.y - pulse,
-                    pos.getZ() - camera.z - pulse,
-                    pos.getX() - camera.x + 1.0D + pulse,
-                    pos.getY() - camera.y + 1.0D + pulse,
-                    pos.getZ() - camera.z + 1.0D + pulse,
-                    color[0], color[1], color[2], Math.max(0.10F, Math.min(1.0F, alpha)));
-        }
-
-        buffers.endBatch(lines);
+        RitualGhostBlockRenderer.render(event, blocks, alpha);
     }
 
-    private static float[] colorFor(GhostBlock ghost) {
-        if (ghost.role() == RitualStructureRules.Role.CENTER) {
-            return new float[]{0.72F, 0.42F, 1.0F};
-        }
-
-        if (ghost.role() == RitualStructureRules.Role.RUNE) {
-            return new float[]{0.72F, 0.42F, 1.0F};
-        }
-        if (ghost.role() == RitualStructureRules.Role.STRUCTURAL) {
-            return new float[]{0.34F, 0.20F, 0.42F};
-        }
-        if (ghost.role() != RitualStructureRules.Role.FOCUS || ghost.focusMaterial() == null) {
-            return new float[]{0.70F, 0.70F, 0.70F};
-        }
-
-        return switch (ghost.focusMaterial()) {
-            case IRON -> new float[]{0.78F, 0.78F, 0.82F};
-            case GOLD -> new float[]{1.00F, 0.78F, 0.18F};
-            case EMERALD -> new float[]{0.18F, 0.90F, 0.38F};
-            case DIAMOND -> new float[]{0.28F, 0.92F, 1.00F};
-        };
-    }
 }
