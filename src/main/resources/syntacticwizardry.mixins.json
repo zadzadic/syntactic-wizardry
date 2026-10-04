@@ -5,8 +5,7 @@
   "mixins": [
     "PlayerFlightMixin",
     "LivingEntityFlightMixin",
-    "EclipseSkyDarkenMixin",
-    "EclipseRawBrightnessMixin"
+    "EclipseSkyDarkenMixin"
   ],
   "client": [
     "RunecasterItemRenderMixin",
