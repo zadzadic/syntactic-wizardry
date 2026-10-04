@@ -171,10 +171,7 @@ public final class EclipseRitualData extends SavedData {
 
             if (!entry.paused && entry.powered && entry.transitionTicks < TRANSITION_TICKS) {
                 entry.transitionTicks++;
-                if (time % 10L == 0L || entry.transitionTicks == TRANSITION_TICKS) {
-                    dirty = true;
-                    syncChanged = true;
-                }
+                if (time % 20L == 0L || entry.transitionTicks == TRANSITION_TICKS) dirty = true;
             }
         }
 
