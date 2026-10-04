@@ -1,6 +1,7 @@
 package com.proxpero.syntacticwizardry.client;
 
 import com.proxpero.syntacticwizardry.EclipseRitualStructure;
+import com.proxpero.syntacticwizardry.MooncallPhase;
 import com.proxpero.syntacticwizardry.RitualDefinition;
 import com.proxpero.syntacticwizardry.RitualStructureRules;
 import com.proxpero.syntacticwizardry.SyntacticWizardry;
@@ -26,21 +27,38 @@ public final class PreparedRitualPreview {
     private static RitualDefinition ritual;
     private static BlockPos center;
     private static int requestedPotence;
+    private static MooncallPhase mooncallPhase = MooncallPhase.FULL_MOON;
     private static RitualStructureRules.FocusPlan focusPlan;
     private static List<GhostBlock> ghosts = List.of();
 
     private PreparedRitualPreview() {}
 
     public static void prepare(RitualDefinition definition, BlockPos ritualCenter) {
-        prepare(definition, ritualCenter, 1);
+        prepare(definition, ritualCenter, 1, MooncallPhase.FULL_MOON);
     }
 
     public static void prepare(RitualDefinition definition, BlockPos ritualCenter, int potence) {
+        prepare(definition, ritualCenter, potence, MooncallPhase.FULL_MOON);
+    }
+
+    public static void prepare(
+            RitualDefinition definition,
+            BlockPos ritualCenter,
+            int potence,
+            MooncallPhase selectedMoonPhase) {
         if (definition == null || ritualCenter == null) return;
         ritual = definition;
         center = ritualCenter.immutable();
-        requestedPotence = Math.max(1, potence);
-        focusPlan = RitualStructureRules.focusPlan(requestedPotence);
+        mooncallPhase = selectedMoonPhase == null ? MooncallPhase.FULL_MOON : selectedMoonPhase;
+
+        if (definition == RitualDefinition.MOONCALL) {
+            requestedPotence = 0;
+            focusPlan = null;
+        } else {
+            requestedPotence = Math.max(1, potence);
+            focusPlan = RitualStructureRules.focusPlan(requestedPotence);
+        }
+
         ghosts = previewGhosts(definition, center, requestedPotence);
     }
 
@@ -51,7 +69,9 @@ public final class PreparedRitualPreview {
         if (definition == null || ritualCenter == null) return List.of();
 
         BlockPos previewCenter = ritualCenter.immutable();
-        RitualStructureRules.FocusPlan previewFocus = RitualStructureRules.focusPlan(Math.max(1, potence));
+        RitualStructureRules.FocusPlan previewFocus = definition == RitualDefinition.MOONCALL
+                ? null
+                : RitualStructureRules.focusPlan(Math.max(1, potence));
         List<GhostBlock> built = new ArrayList<>();
 
         built.add(new GhostBlock(
@@ -75,12 +95,14 @@ public final class PreparedRitualPreview {
             }
         }
 
-        for (RitualStructureRules.FocusPlacement placement : previewFocus.placements()) {
-            built.add(new GhostBlock(
-                    placement.position(previewCenter),
-                    RitualStructureRules.Role.FOCUS,
-                    placement.material(),
-                    placement.material().displayName() + " Focus"));
+        if (previewFocus != null) {
+            for (RitualStructureRules.FocusPlacement placement : previewFocus.placements()) {
+                built.add(new GhostBlock(
+                        placement.position(previewCenter),
+                        RitualStructureRules.Role.FOCUS,
+                        placement.material(),
+                        placement.material().displayName() + " Focus"));
+            }
         }
 
         return Collections.unmodifiableList(built);
@@ -106,6 +128,10 @@ public final class PreparedRitualPreview {
         return focusPlan;
     }
 
+    public static MooncallPhase mooncallPhase() {
+        return mooncallPhase;
+    }
+
     public static List<GhostBlock> ghosts() {
         return ghosts;
     }
@@ -114,6 +140,7 @@ public final class PreparedRitualPreview {
         ritual = null;
         center = null;
         requestedPotence = 0;
+        mooncallPhase = MooncallPhase.FULL_MOON;
         focusPlan = null;
         ghosts = List.of();
     }
