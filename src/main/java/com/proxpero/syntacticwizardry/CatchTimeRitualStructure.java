@@ -14,6 +14,8 @@ public final class CatchTimeRitualStructure {
     public record RunePlacement(BlockPos offset, int glyph) {}
     public record Detection(boolean valid, String error, CatchTimeSetting setting) {}
 
+    private static final int GOLD_SEARCH_DISTANCE = 4;
+
     private static final List<BlockPos> STONE_BRICKS = List.of(
             new BlockPos(-2, -1, -2),
             new BlockPos(2, -1, -2),
@@ -73,17 +75,13 @@ public final class CatchTimeRitualStructure {
             return invalid("The Catch Time ritual pattern is incomplete.");
         }
 
-        CatchTimeSetting found = null;
-        for (CatchTimeSetting setting : CatchTimeSetting.values()) {
-            if (!level.getBlockState(base.offset(setting.goldOffset())).is(Blocks.GOLD_BLOCK)) continue;
-            if (found != null) {
+        CatchTimeSetting found = findGoldSetting(level, base);
+        if (found == null) {
+            int count = countCardinalGold(level, base);
+            if (count > 1) {
                 return invalid("Catch Time requires exactly one cardinal Gold Block.");
             }
-            found = setting;
-        }
-
-        if (found == null) {
-            return invalid("Place one Gold Block beside the Lapis Block: East Dawn, South Noon, West Twilight, North Midnight.");
+            return invalid("Place one Gold Block on a cardinal line from the Lapis Block: East Dawn, South Noon, West Twilight, North Midnight.");
         }
 
         return new Detection(true, "", found);
@@ -95,15 +93,35 @@ public final class CatchTimeRitualStructure {
         if (!level.getBlockState(base).is(Blocks.LAPIS_BLOCK)) return false;
         if (!basePatternValid(level, base)) return false;
 
+        CatchTimeSetting found = findGoldSetting(level, base);
+        return found == expected && countCardinalGold(level, base) == 1;
+    }
+
+
+    private static CatchTimeSetting findGoldSetting(ServerLevel level, BlockPos base) {
+        CatchTimeSetting found = null;
         for (CatchTimeSetting setting : CatchTimeSetting.values()) {
-            boolean gold = level.getBlockState(base.offset(setting.goldOffset())).is(Blocks.GOLD_BLOCK);
-            if (setting == expected) {
-                if (!gold) return false;
-            } else if (gold) {
-                return false;
+            BlockPos step = setting.goldOffset();
+            for (int distance = 1; distance <= GOLD_SEARCH_DISTANCE; distance++) {
+                BlockPos pos = base.offset(step.getX() * distance, step.getY() * distance, step.getZ() * distance);
+                if (!level.getBlockState(pos).is(Blocks.GOLD_BLOCK)) continue;
+                if (found != null) return null;
+                found = setting;
             }
         }
-        return true;
+        return found;
+    }
+
+    private static int countCardinalGold(ServerLevel level, BlockPos base) {
+        int count = 0;
+        for (CatchTimeSetting setting : CatchTimeSetting.values()) {
+            BlockPos step = setting.goldOffset();
+            for (int distance = 1; distance <= GOLD_SEARCH_DISTANCE; distance++) {
+                BlockPos pos = base.offset(step.getX() * distance, step.getY() * distance, step.getZ() * distance);
+                if (level.getBlockState(pos).is(Blocks.GOLD_BLOCK)) count++;
+            }
+        }
+        return count;
     }
 
     public static boolean hasPatternHint(ServerLevel level, BlockPos crystalCenter) {
