@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": { "model": "syntacticwizardry:block/reliquary" },
+    "facing=east": { "model": "syntacticwizardry:block/reliquary", "y": 90 },
+    "facing=south": { "model": "syntacticwizardry:block/reliquary", "y": 180 },
+    "facing=west": { "model": "syntacticwizardry:block/reliquary", "y": 270 }
+  }
+}
