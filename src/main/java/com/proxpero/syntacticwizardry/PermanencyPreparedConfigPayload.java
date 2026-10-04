@@ -42,13 +42,21 @@ public record PermanencyPreparedConfigPayload(
                     float yaw = raw.readFloat();
                     float pitch = raw.readFloat();
 
-                    int planLength = Math.min(SpellPresentation.PLAN_DATA_SIZE, Math.max(0, raw.readVarInt()));
+                    int encodedPlanLength = Math.max(0, raw.readVarInt());
+                    int planLength = Math.min(SpellPresentation.PLAN_DATA_SIZE, encodedPlanLength);
                     int[] plan = new int[planLength];
-                    for (int i = 0; i < planLength; i++) plan[i] = raw.readInt();
+                    for (int i = 0; i < encodedPlanLength; i++) {
+                        int value = raw.readInt();
+                        if (i < planLength) plan[i] = value;
+                    }
 
-                    int settingsLength = Math.min(SpellPresentation.SETTINGS_DATA_SIZE, Math.max(0, raw.readVarInt()));
+                    int encodedSettingsLength = Math.max(0, raw.readVarInt());
+                    int settingsLength = Math.min(SpellPresentation.SETTINGS_DATA_SIZE, encodedSettingsLength);
                     int[] settings = new int[settingsLength];
-                    for (int i = 0; i < settingsLength; i++) settings[i] = raw.readInt();
+                    for (int i = 0; i < encodedSettingsLength; i++) {
+                        int value = raw.readInt();
+                        if (i < settingsLength) settings[i] = value;
+                    }
 
                     boolean hasConfig = raw.readBoolean();
                     return new PermanencyPreparedConfigPayload(
