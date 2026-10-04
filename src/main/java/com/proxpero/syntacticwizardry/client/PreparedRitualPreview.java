@@ -71,7 +71,8 @@ public final class PreparedRitualPreview {
 
         if (definition == RitualDefinition.MOONCALL
                 || definition == RitualDefinition.SUMMONING
-                || definition == RitualDefinition.BINDING) {
+                || definition == RitualDefinition.BINDING
+                || definition == RitualDefinition.PROTECTION) {
             requestedPotence = 0;
             focusPlan = null;
         } else {
@@ -80,6 +81,7 @@ public final class PreparedRitualPreview {
         }
 
         ghosts = previewGhosts(definition, center, requestedPotence, mooncallPhase);
+        ProtectionAreaClientBridge.onPrepared(definition, ritualCenter);
     }
 
     public static List<GhostBlock> previewGhosts(
@@ -101,6 +103,7 @@ public final class PreparedRitualPreview {
                 definition == RitualDefinition.MOONCALL
                         || definition == RitualDefinition.SUMMONING
                         || definition == RitualDefinition.BINDING
+                        || definition == RitualDefinition.PROTECTION
                         ? null
                         : RitualStructureRules.focusPlan(Math.max(1, potence));
         List<GhostBlock> built = new ArrayList<>();
@@ -193,6 +196,7 @@ public final class PreparedRitualPreview {
             }
         }
 
+        ProtectionRitualPreviewSupport.append(definition, previewCenter, built);
         return Collections.unmodifiableList(built);
     }
 
