@@ -168,16 +168,15 @@ public final class PreparedRitualPreview {
             }
         } else if (definition == RitualDefinition.CATCH_TIME) {
             CatchTimeSetting setting = selectedCatchTime == null ? CatchTimeSetting.NOON : selectedCatchTime;
-            BlockPos base = CatchTimeRitualStructure.lapisCenter(previewCenter);
             built.add(new GhostBlock(
-                    base,
+                    previewCenter.offset(CatchTimeRitualStructure.LAPIS_OFFSET),
                     RitualStructureRules.Role.STRUCTURAL,
                     null,
                     "Lapis Block",
                     Blocks.LAPIS_BLOCK.defaultBlockState()));
             for (BlockPos offset : CatchTimeRitualStructure.stoneBrickOffsets()) {
                 built.add(new GhostBlock(
-                        base.offset(offset),
+                        previewCenter.offset(offset),
                         RitualStructureRules.Role.STRUCTURAL,
                         null,
                         "Stone Bricks",
@@ -190,7 +189,7 @@ public final class PreparedRitualPreview {
                             .setValue(ChalkRuneBlock.COLOR, net.minecraft.world.item.DyeColor.BLACK)
                             .setValue(ChalkRuneBlock.GLYPH, placement.glyph());
                     built.add(new GhostBlock(
-                            base.offset(placement.offset()),
+                            previewCenter.offset(placement.offset()),
                             RitualStructureRules.Role.RUNE,
                             null,
                             "Chalk Rune " + placement.glyph(),
@@ -198,7 +197,7 @@ public final class PreparedRitualPreview {
                 }
             }
             built.add(new GhostBlock(
-                    base.offset(setting.goldOffset()),
+                    previewCenter.offset(setting.goldOffset()),
                     RitualStructureRules.Role.STRUCTURAL,
                     null,
                     "Gold Block - " + setting.displayName(),
