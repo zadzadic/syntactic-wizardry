@@ -3,13 +3,15 @@ package com.proxpero.syntacticwizardry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.LevelReader;
-import net.minecraft.world.level.block.Block;\nimport net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.List;\nimport java.util.function.Supplier;
+import java.util.List;
+import java.util.function.Supplier;
 
 /**
  * Shared physical rules for every ritual structure.
