@@ -231,7 +231,10 @@ public final class ConduitPlannerState {
             int[] before = bounds();
             BuilderVolumeSupport.clientTick(event);
             int[] after = bounds();
-            if (after != null && !Arrays.equals(before, after)) normalizeShapeBounds(before, after);
+            if (after != null && !Arrays.equals(before, after)) {
+                if (ritual == RitualDefinition.PROTECTION) ProtectionAreaClientBridge.areaChanged();
+                normalizeShapeBounds(before, after);
+            }
         }
 
         if (!leftDown) {
@@ -438,7 +441,7 @@ public final class ConduitPlannerState {
         } else if (ritual == RitualDefinition.SUMMONING
                 || ritual == RitualDefinition.BINDING
                 || ritual == RitualDefinition.PROTECTION) {
-            int noPotenceY = ritual.variableArea() ? 108 : 66;
+            int noPotenceY = ritual == RitualDefinition.PROTECTION && ritual.variableArea() ? 132 : 66;
             if (inside(mouseX, mouseY, width - 171, noPotenceY + 44, 156, 18)) {
                 ritualCenter = null;
                 ritualHoverCenter = null;
@@ -480,6 +483,9 @@ public final class ConduitPlannerState {
         RitualDefinition clicked = ritualAt(mc, mouseX, mouseY);
         if (clicked != null) {
             if (clicked != ritual) {
+                if (ritual == RitualDefinition.PROTECTION && clicked != RitualDefinition.PROTECTION) {
+                    ProtectionAreaClientBridge.clearPrepared();
+                }
                 ritual = clicked;
                 ritualPotence = 1;
                 mooncallPhase = MooncallPhase.FULL_MOON;
@@ -513,7 +519,19 @@ public final class ConduitPlannerState {
             setAreaShape(AreaShape.CYLINDER);
             return;
         }
+        if (ritual == RitualDefinition.PROTECTION
+                && inside(mouseX, mouseY, x + 7, y + 70, 156, 18)) {
+            boolean committed = ProtectionAreaClientBridge.commitCurrentArea();
+            if (mc.player != null) {
+                mc.player.displayClientMessage(
+                        Component.literal(committed
+                                ? "Protection area committed."
+                                : "Select an area before committing it."), true);
+            }
+            return;
+        }
         if (inside(mouseX, mouseY, x + 7, y + 47, 70, 18)) {
+            if (ritual == RitualDefinition.PROTECTION) ProtectionAreaClientBridge.areaChanged();
             clearSelection();
             return;
         }
@@ -523,6 +541,7 @@ public final class ConduitPlannerState {
 
     private static void setAreaShape(AreaShape shape) {
         areaShape = shape;
+        ProtectionAreaClientBridge.areaChanged();
         int[] b = bounds();
         if (b != null) normalizeShapeBounds(null, b);
     }
@@ -541,7 +560,9 @@ public final class ConduitPlannerState {
         int x = width - 178;
         int y = 8;
         int w = 170;
-        int h = ritual.variableArea() ? 92 : 50;
+        int h = ritual == RitualDefinition.PROTECTION && ritual.variableArea()
+                ? 116
+                : ritual.variableArea() ? 92 : 50;
         graphics.fill(x, y, x + w, y + h, 0xC0182232);
         graphics.renderOutline(x, y, w, h, 0xFF8E72C7);
         graphics.drawString(mc.font, ritual.displayName(), x + 7, y + 7, 0xFFF0E8FF, false);
@@ -559,6 +580,10 @@ public final class ConduitPlannerState {
         int[] b = bounds();
         if (b == null) {
             graphics.drawString(mc.font, "No area selected", x + 82, y + 52, 0xFFB9C5D6, false);
+            if (ritual == RitualDefinition.PROTECTION) {
+                drawButton(graphics, mc, x + 7, y + 70, 156, 18, "Commit Area", false);
+                graphics.drawString(mc.font, "Select an area first", x + 7, y + 94, 0xFF9FAEC4, false);
+            }
             return;
         }
 
@@ -573,7 +598,14 @@ public final class ConduitPlannerState {
             graphics.drawString(mc.font, sx + " x " + sy + " x " + sz, x + 82, y + 52, 0xFFDCE6F3, false);
         }
 
-        graphics.drawString(mc.font, "Drag center axes to move", x + 7, y + 72, 0xFF9FAEC4, false);
+        if (ritual == RitualDefinition.PROTECTION) {
+            drawButton(graphics, mc, x + 7, y + 70, 156, 18,
+                    ProtectionAreaClientBridge.committed() ? "Area Committed" : "Commit Area",
+                    ProtectionAreaClientBridge.committed());
+            graphics.drawString(mc.font, "Committed area may be anywhere", x + 7, y + 94, 0xFF9FAEC4, false);
+        } else {
+            graphics.drawString(mc.font, "Drag center axes to move", x + 7, y + 72, 0xFF9FAEC4, false);
+        }
     }
 
     private static void renderPermanencyPanel(GuiGraphics graphics, Minecraft mc, int width, int height,
@@ -861,7 +893,7 @@ public final class ConduitPlannerState {
             int width,
             String title) {
         int x = width - 178;
-        int y = 66;
+        int y = ritual == RitualDefinition.PROTECTION && ritual.variableArea() ? 132 : 66;
         int w = 170;
         int h = 68;
 
@@ -965,8 +997,7 @@ public final class ConduitPlannerState {
         }
 
         if (!justPressed) return false;
-        RayData ray = cursorRay(mc, rawX, rawY);
-        if (ray == null) return false;
+        RayData ray = cursorRay(mc, rawX, rawY);        if (ray == null) return false;
 
         if (permanencyUsesFacing()) {
             double[] origin = ConduitAreaRender.facingOrigin(b);
@@ -1121,6 +1152,7 @@ public final class ConduitPlannerState {
 
     private static void normalizeShapeBounds(int[] before, int[] after) {
         if (after == null) return;
+        if (ritual == RitualDefinition.PROTECTION) ProtectionAreaClientBridge.areaChanged();
         if (areaShape == AreaShape.BOX) {
             int[] constrained = constrainEffectOrigin(after);
             if (!Arrays.equals(after, constrained)) setBounds(constrained);
@@ -1181,6 +1213,7 @@ public final class ConduitPlannerState {
 
     private static void setBounds(int[] b) {
         try {
+            if (ritual == RitualDefinition.PROTECTION) ProtectionAreaClientBridge.areaChanged();
             int[] constrained = constrainEffectOrigin(b);
             intField("minX").setInt(null, constrained[0]);
             intField("minY").setInt(null, constrained[1]);
@@ -1197,6 +1230,8 @@ public final class ConduitPlannerState {
         if (source == null || source.length < 6) return source;
 
         int[] b = Arrays.copyOf(source, source.length);
+        // Protection areas are explicitly committed and are not spatially tied to the ritual.
+        if (ritual == RitualDefinition.PROTECTION) return b;
         double cx = (b[0] + b[3] + 1.0D) * 0.5D;
         double cy = (b[1] + b[4] + 1.0D) * 0.5D;
         double cz = (b[2] + b[5] + 1.0D) * 0.5D;
@@ -1240,11 +1275,16 @@ public final class ConduitPlannerState {
         int width = mc.getWindow().getGuiScaledWidth();
         int height = mc.getWindow().getGuiScaledHeight();
         if (inside(mouseX, mouseY, PANEL_X, PANEL_Y, PANEL_W, height - 16)) return true;
-        if (inside(mouseX, mouseY, width - 178, 8, 170, ritual.variableArea() ? 92 : 50)) return true;
+        int areaPanelH = ritual == RitualDefinition.PROTECTION && ritual.variableArea()
+                ? 116
+                : ritual.variableArea() ? 92 : 50;
+        if (inside(mouseX, mouseY, width - 178, 8, 170, areaPanelH)) return true;
         if (ritual == RitualDefinition.MOONCALL
                 || ritual == RitualDefinition.SUMMONING
                 || ritual == RitualDefinition.BINDING) {
             if (inside(mouseX, mouseY, width - 178, 66, 170, 68)) return true;
+        } else if (ritual == RitualDefinition.PROTECTION) {
+            if (inside(mouseX, mouseY, width - 178, 132, 170, 68)) return true;
         } else if (ritual != RitualDefinition.PERMANENCY) {
             int strengthY = ritual.variableArea() ? 108 : 66;
             if (inside(mouseX, mouseY, width - 178, strengthY, 170, 68)) return true;
