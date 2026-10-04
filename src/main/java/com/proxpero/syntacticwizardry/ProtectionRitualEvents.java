@@ -32,11 +32,14 @@ public final class ProtectionRitualEvents {
         if (!held.is(SyntacticWizardry.WAND.get())) return;
         if (!level.getBlockState(center).is(SyntacticWizardry.MATURE_CRYSTAL.get())) return;
         if (!(level instanceof ServerLevel server)) return;
-        if (!ProtectionRitualStructure.hasPatternHint(server, center)) return;
+        if (!(event.getEntity() instanceof ServerPlayer player)) return;
+
+        ProtectionPreparedAreaData preparedAreas = ProtectionPreparedAreaData.get(server);
+        boolean committedArea = preparedAreas.hasOwner(player.getUUID());
+        if (!ProtectionRitualStructure.hasPatternHint(server, center) && !committedArea) return;
 
         event.setCanceled(true);
         event.setCancellationResult(InteractionResult.SUCCESS);
-        if (!(event.getEntity() instanceof ServerPlayer player)) return;
 
         if (WandBindingService.get(held) != null) {
             player.displayClientMessage(Component.literal("The Wand must be empty to activate a Ritual."), true);
@@ -50,7 +53,7 @@ public final class ProtectionRitualEvents {
         }
 
         ProtectionPreparedAreaData.Config prepared =
-                ProtectionPreparedAreaData.get(server).consume(player.getUUID(), center);
+                preparedAreas.consume(player.getUUID());
         ProtectionRitualData.Entry entry = ProtectionRitualData.get(server).activate(
                 server, center, player.getUUID(), prepared);
 
