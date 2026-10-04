@@ -4,6 +4,7 @@ import com.arcane.magic.builder.BuilderInventoryPanel;
 import com.arcane.magic.builder.BuilderVolumeSupport;
 import com.arcane.magic.client.ArcaneBuilderClientEvents;
 import com.arcane.magic.client.ArcaneBuilderEditEvents;
+import com.proxpero.syntacticwizardry.CatchTimeSetting;
 import com.proxpero.syntacticwizardry.MooncallPhase;
 import com.proxpero.syntacticwizardry.RitualDefinition;
 import com.proxpero.syntacticwizardry.SpellComponentDefinition;
@@ -61,6 +62,7 @@ public final class ConduitPlannerState {
     private static int listScroll;
     private static int ritualPotence = 1;
     private static MooncallPhase mooncallPhase = MooncallPhase.FULL_MOON;
+    private static CatchTimeSetting catchTimeSetting = CatchTimeSetting.NOON;
     private static int activeScroll;
     private static boolean leftWasDown;
     private static boolean rightWasDown;
@@ -132,6 +134,7 @@ public final class ConduitPlannerState {
         listScroll = 0;
         ritualPotence = 1;
         mooncallPhase = MooncallPhase.FULL_MOON;
+        catchTimeSetting = CatchTimeSetting.NOON;
         ritualCenter = null;
         ritualHoverCenter = null;
         placingRitualCenter = false;
@@ -293,6 +296,8 @@ public final class ConduitPlannerState {
         renderAreaPanel(graphics, mc, width);
         if (ritual == RitualDefinition.MOONCALL) {
             renderMooncallPanel(graphics, mc, width);
+        } else if (ritual == RitualDefinition.CATCH_TIME) {
+            renderCatchTimePanel(graphics, mc, width);
         } else if (ritual == RitualDefinition.SUMMONING) {
             renderNoPotencePanel(graphics, mc, width, "Summoning");
         } else if (ritual == RitualDefinition.BINDING) {
@@ -350,7 +355,8 @@ public final class ConduitPlannerState {
                             ritual,
                             previewCenter,
                             requestedRitualPotence(),
-                            mooncallPhase),
+                            mooncallPhase,
+                            catchTimeSetting),
                     placingRitualCenter ? 0.55F : 0.90F);
         }
 
@@ -438,6 +444,23 @@ public final class ConduitPlannerState {
                 clearSelection();
                 return;
             }
+        } else if (ritual == RitualDefinition.CATCH_TIME) {
+            int timeY = 66;
+            if (inside(mouseX, mouseY, width - 171, timeY + 20, 20, 18)) {
+                catchTimeSetting = catchTimeSetting.previous();
+                return;
+            }
+            if (inside(mouseX, mouseY, width - 35, timeY + 20, 20, 18)) {
+                catchTimeSetting = catchTimeSetting.next();
+                return;
+            }
+            if (inside(mouseX, mouseY, width - 171, timeY + 44, 156, 18)) {
+                ritualCenter = null;
+                ritualHoverCenter = null;
+                placingRitualCenter = true;
+                clearSelection();
+                return;
+            }
         } else if (ritual == RitualDefinition.SUMMONING
                 || ritual == RitualDefinition.BINDING
                 || ritual == RitualDefinition.PROTECTION) {
@@ -476,7 +499,8 @@ public final class ConduitPlannerState {
                     ritual,
                     ritualCenter,
                     requestedRitualPotence(),
-                    mooncallPhase);
+                    mooncallPhase,
+                    catchTimeSetting);
             return;
         }
 
@@ -489,6 +513,7 @@ public final class ConduitPlannerState {
                 ritual = clicked;
                 ritualPotence = 1;
                 mooncallPhase = MooncallPhase.FULL_MOON;
+                catchTimeSetting = CatchTimeSetting.NOON;
                 ritualCenter = null;
                 ritualHoverCenter = null;
                 placingRitualCenter = true;
@@ -744,6 +769,7 @@ public final class ConduitPlannerState {
         listScroll = 0;
         ritualPotence = 1;
         mooncallPhase = MooncallPhase.FULL_MOON;
+        catchTimeSetting = CatchTimeSetting.NOON;
         ritualCenter = null;
         ritualHoverCenter = null;
         placingRitualCenter = true;
@@ -829,6 +855,8 @@ public final class ConduitPlannerState {
             String prepared = "Prepared: " + PreparedRitualPreview.ritual().displayName();
             if (PreparedRitualPreview.ritual() == RitualDefinition.MOONCALL) {
                 prepared += " - " + PreparedRitualPreview.mooncallPhase().displayName();
+            } else if (PreparedRitualPreview.ritual() == RitualDefinition.CATCH_TIME) {
+                prepared += " - " + PreparedRitualPreview.catchTimeSetting().displayName();
             }
             int tx = width - 146;
             int ty = 54;
@@ -881,6 +909,24 @@ public final class ConduitPlannerState {
                 x + 85,
                 y + 25,
                 0xFFDCE6F3);
+        drawButton(graphics, mc, x + 143, y + 20, 20, 18, ">", false);
+
+        String button = ritualCenter == null ? "Place Ritual Center" : "Relocate Ritual Center";
+        drawButton(graphics, mc, x + 7, y + 44, 156, 18, button, false);
+    }
+
+    private static void renderCatchTimePanel(GuiGraphics graphics, Minecraft mc, int width) {
+        int x = width - 178;
+        int y = 66;
+        int w = 170;
+        int h = 68;
+
+        graphics.fill(x, y, x + w, y + h, 0xC0182232);
+        graphics.renderOutline(x, y, w, h, 0xFF8E72C7);
+        graphics.drawString(mc.font, "Locked Time", x + 7, y + 7, 0xFFF0E8FF, false);
+
+        drawButton(graphics, mc, x + 7, y + 20, 20, 18, "<", false);
+        graphics.drawCenteredString(mc.font, catchTimeSetting.displayName(), x + 85, y + 25, 0xFFDCE6F3);
         drawButton(graphics, mc, x + 143, y + 20, 20, 18, ">", false);
 
         String button = ritualCenter == null ? "Place Ritual Center" : "Relocate Ritual Center";
@@ -947,11 +993,11 @@ public final class ConduitPlannerState {
 
     private static int requestedRitualPotence() {
         if (ritual == RitualDefinition.MOONCALL
+                || ritual == RitualDefinition.CATCH_TIME
                 || ritual == RitualDefinition.SUMMONING
                 || ritual == RitualDefinition.BINDING
                 || ritual == RitualDefinition.PROTECTION) return 0;
         if (ritual != RitualDefinition.PERMANENCY) return ritualPotence;
-
         int[] plan = permanentSpellEditor.snapshotPlan();
         int[] settings = permanentSpellEditor.snapshotSettings();
         int result = 1;
@@ -1280,6 +1326,7 @@ public final class ConduitPlannerState {
                 : ritual.variableArea() ? 92 : 50;
         if (inside(mouseX, mouseY, width - 178, 8, 170, areaPanelH)) return true;
         if (ritual == RitualDefinition.MOONCALL
+                || ritual == RitualDefinition.CATCH_TIME
                 || ritual == RitualDefinition.SUMMONING
                 || ritual == RitualDefinition.BINDING) {
             if (inside(mouseX, mouseY, width - 178, 66, 170, 68)) return true;
