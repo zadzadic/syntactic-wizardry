@@ -16,8 +16,10 @@ public final class SummoningRitualStructure {
 
         for (int x = -1; x <= 1; x++) {
             for (int z = -1; z <= 1; z++) {
-                runes.add(new BlockPos(x, -1, z));
-                structural.add(new BlockPos(x, -2, z));
+                if (x != 0 || z != 0) {
+                    runes.add(new BlockPos(x, 0, z));
+                }
+                structural.add(new BlockPos(x, -1, z));
             }
         }
 
