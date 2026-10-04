@@ -1,6 +1,10 @@
 package com.proxpero.syntacticwizardry.client;
 
+import com.proxpero.syntacticwizardry.BindingRitualStructure;
+import com.proxpero.syntacticwizardry.ChalkRegistry;
+import com.proxpero.syntacticwizardry.ChalkRuneBlock;
 import com.proxpero.syntacticwizardry.EclipseRitualStructure;
+import com.proxpero.syntacticwizardry.MagicLightRegistry;
 import com.proxpero.syntacticwizardry.MooncallPhase;
 import com.proxpero.syntacticwizardry.MooncallRitualStructure;
 import com.proxpero.syntacticwizardry.RitualDefinition;
@@ -8,6 +12,7 @@ import com.proxpero.syntacticwizardry.RitualStructureRules;
 import com.proxpero.syntacticwizardry.SummoningRitualStructure;
 import com.proxpero.syntacticwizardry.SyntacticWizardry;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.api.distmarker.Dist;
@@ -64,7 +69,9 @@ public final class PreparedRitualPreview {
         center = ritualCenter.immutable();
         mooncallPhase = selectedMoonPhase == null ? MooncallPhase.FULL_MOON : selectedMoonPhase;
 
-        if (definition == RitualDefinition.MOONCALL || definition == RitualDefinition.SUMMONING) {
+        if (definition == RitualDefinition.MOONCALL
+                || definition == RitualDefinition.SUMMONING
+                || definition == RitualDefinition.BINDING) {
             requestedPotence = 0;
             focusPlan = null;
         } else {
@@ -91,7 +98,9 @@ public final class PreparedRitualPreview {
 
         BlockPos previewCenter = ritualCenter.immutable();
         RitualStructureRules.FocusPlan previewFocus =
-                definition == RitualDefinition.MOONCALL || definition == RitualDefinition.SUMMONING
+                definition == RitualDefinition.MOONCALL
+                        || definition == RitualDefinition.SUMMONING
+                        || definition == RitualDefinition.BINDING
                         ? null
                         : RitualStructureRules.focusPlan(Math.max(1, potence));
         List<GhostBlock> built = new ArrayList<>();
@@ -146,6 +155,31 @@ public final class PreparedRitualPreview {
                         null,
                         "Structural Block",
                         Blocks.STONE.defaultBlockState()));
+            }
+        } else if (definition == RitualDefinition.BINDING) {
+            if (ChalkRegistry.block() != null) {
+                for (BindingRitualStructure.RunePlacement placement : BindingRitualStructure.runes()) {
+                    BlockState runeState = ChalkRegistry.block().defaultBlockState()
+                            .setValue(ChalkRuneBlock.FACING, Direction.UP)
+                            .setValue(ChalkRuneBlock.GLYPH, placement.glyph());
+                    built.add(new GhostBlock(
+                            previewCenter.offset(placement.offset()),
+                            RitualStructureRules.Role.RUNE,
+                            null,
+                            "Chalk Rune " + placement.glyph(),
+                            runeState));
+                }
+            }
+
+            if (MagicLightRegistry.block() != null) {
+                for (BlockPos offset : BindingRitualStructure.lightOffsets()) {
+                    built.add(new GhostBlock(
+                            previewCenter.offset(offset),
+                            RitualStructureRules.Role.STRUCTURAL,
+                            null,
+                            "Magic Light",
+                            MagicLightRegistry.block().defaultBlockState()));
+                }
             }
         }
 
