@@ -19,13 +19,18 @@ public final class ActiveRitualClientRegistry {
         private final RitualDefinition ritual;
         private final BlockPos center;
         private boolean paused;
+        private boolean powered;
+        private double manaDrawPerSecond;
 
-        private Entry(UUID id, String name, RitualDefinition ritual, BlockPos center, boolean paused) {
+        private Entry(UUID id, String name, RitualDefinition ritual, BlockPos center,
+                      boolean paused, boolean powered, double manaDrawPerSecond) {
             this.id = id;
             this.name = name;
             this.ritual = ritual;
             this.center = center.immutable();
             this.paused = paused;
+            this.powered = powered;
+            this.manaDrawPerSecond = Math.max(0.0D, manaDrawPerSecond);
         }
 
         public UUID id() { return id; }
@@ -33,6 +38,8 @@ public final class ActiveRitualClientRegistry {
         public RitualDefinition ritual() { return ritual; }
         public BlockPos center() { return center; }
         public boolean paused() { return paused; }
+        public boolean powered() { return powered; }
+        public double manaDrawPerSecond() { return manaDrawPerSecond; }
     }
 
     private static final List<Entry> ENTRIES = new ArrayList<>();
@@ -44,13 +51,27 @@ public final class ActiveRitualClientRegistry {
     }
 
     public static Entry register(UUID id, String name, RitualDefinition ritual, BlockPos center, boolean paused) {
+        return register(id, name, ritual, center, paused, true, 1.0D);
+    }
+
+    public static Entry register(UUID id, String name, RitualDefinition ritual, BlockPos center,
+                                 boolean paused, boolean powered, double manaDrawPerSecond) {
         Entry existing = find(id);
         if (existing != null) {
             existing.name = sanitize(name, ritual);
             existing.paused = paused;
+            existing.powered = powered;
+            existing.manaDrawPerSecond = Math.max(0.0D, manaDrawPerSecond);
             return existing;
         }
-        Entry entry = new Entry(id, sanitize(name, ritual), ritual, center, paused);
+        Entry entry = new Entry(
+                id,
+                sanitize(name, ritual),
+                ritual,
+                center,
+                paused,
+                powered,
+                manaDrawPerSecond);
         ENTRIES.add(entry);
         return entry;
     }
@@ -78,6 +99,15 @@ public final class ActiveRitualClientRegistry {
 
     public static void stop(UUID id) {
         ENTRIES.removeIf(entry -> entry.id.equals(id));
+    }
+
+    public static double totalManaDrawPerSecond() {
+        double total = 0.0D;
+        for (Entry entry : ENTRIES) {
+            if (entry.paused || !entry.powered) continue;
+            total += entry.manaDrawPerSecond;
+        }
+        return total;
     }
 
     public static void clearRitual(RitualDefinition ritual) {
