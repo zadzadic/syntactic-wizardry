@@ -2,6 +2,7 @@ package com.proxpero.syntacticwizardry.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.math.Axis;
 import com.proxpero.syntacticwizardry.ChalkRegistry;
 import com.proxpero.syntacticwizardry.ChalkRuneBlock;
 import com.proxpero.syntacticwizardry.PermanencySyncPayload;
@@ -120,11 +121,17 @@ public final class PermanencyRuneFieldRenderEvents {
                             .setValue(ChalkRuneBlock.COLOR, DyeColor.WHITE)
                             .setValue(ChalkRuneBlock.GLYPH, glyph);
 
+                    float yaw = (float)Math.floorMod(hash >>> 9, 360);
+
                     pose.pushPose();
                     pose.translate(
                             px - 0.5D - camera.x,
                             ground + GROUND_OFFSET + rise - camera.y,
                             pz - 0.5D - camera.z);
+                    pose.translate(0.5D, 0.5D, 0.5D);
+                    pose.mulPose(Axis.YP.rotationDegrees(yaw));
+                    pose.mulPose(Axis.XP.rotationDegrees(90.0F));
+                    pose.translate(-0.5D, -0.5D, -0.5D);
 
                     MultiBufferSource ghostBuffers = ignored ->
                             new AlphaVertexConsumer(buffers.getBuffer(translucent), alpha);
