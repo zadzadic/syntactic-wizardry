@@ -87,13 +87,14 @@ public final class PreparedRitualPreview {
                 || definition == RitualDefinition.CATCH_TIME
                 || definition == RitualDefinition.SUMMONING
                 || definition == RitualDefinition.BINDING
-                || definition == RitualDefinition.PROTECTION
-                || definition == RitualDefinition.PERMANENCY) {
+                || definition == RitualDefinition.PROTECTION) {
             requestedPotence = 0;
             focusPlan = null;
         } else {
             requestedPotence = Math.max(1, potence);
-            focusPlan = RitualStructureRules.focusPlan(requestedPotence);
+            focusPlan = definition == RitualDefinition.PERMANENCY
+                    ? null
+                    : RitualStructureRules.focusPlan(requestedPotence);
         }
 
         ghosts = previewGhosts(definition, center, requestedPotence, mooncallPhase, catchTimeSetting);
