@@ -2,7 +2,7 @@ name: Build Syntactic Wizardry
 on:
   workflow_dispatch:
   push:
-    branches: [ main, chatgpt-luminal-v0.2.28-build, chatgpt-luminal-v0.2.29-render, chatgpt-luminal-v0.2.30-los, chatgpt-luminal-v0.2.31-color, chatgpt-luminal-v0.2.42-world-lighting, chatgpt-luminal-v0.2.43-context-lighting, chatgpt-luminal-v0.2.45-front-air-projection, chatgpt-luminal-v0.2.46-horizontal-basis ]
+    branches: [ main, chatgpt-luminal-v0.2.28-build, chatgpt-luminal-v0.2.29-render, chatgpt-luminal-v0.2.30-los, chatgpt-luminal-v0.2.31-color, chatgpt-luminal-v0.2.42-world-lighting, chatgpt-luminal-v0.2.43-context-lighting, chatgpt-luminal-v0.2.45-front-air-projection, chatgpt-luminal-v0.2.46-horizontal-basis, chatgpt-luminal-v0.2.47-cache-swirl ]
   pull_request:
     branches: [ main ]
 jobs:
@@ -54,6 +54,11 @@ jobs:
         run: |
           base64 -d .build/luminal-v0.2.46-horizontal-basis.patch.gz.b64 | gzip -d > /tmp/luminal-v0.2.46-horizontal-basis.patch
           git apply /tmp/luminal-v0.2.46-horizontal-basis.patch
+      - name: Apply v0.2.47 cache and edge swirl patch
+        if: ${{ hashFiles('.build/luminal-v0.2.47-cache-swirl.patch.gz.b64') != '' }}
+        run: |
+          base64 -d .build/luminal-v0.2.47-cache-swirl.patch.gz.b64 | gzip -d > /tmp/luminal-v0.2.47-cache-swirl.patch
+          git apply /tmp/luminal-v0.2.47-cache-swirl.patch
       - name: Read mod version
         run: echo "MOD_VERSION=$(grep '^mod_version=' gradle.properties | cut -d= -f2)" >> "$GITHUB_ENV"
       - name: Install Gradle 9.2.1
