@@ -69,6 +69,11 @@ jobs:
         run: |
           cat .build/luminal-v0.2.50-entities.part0 .build/luminal-v0.2.50-entities.part1 .build/luminal-v0.2.50-entities.part2 .build/luminal-v0.2.50-entities.part3 | base64 -d | gzip -d > /tmp/luminal-v0.2.50-entities.patch
           git apply /tmp/luminal-v0.2.50-entities.patch
+      - name: Apply v0.2.50 entity query fix
+        if: ${{ hashFiles('.build/luminal-v0.2.50-entities-fix.patch.gz.b64') != '' }}
+        run: |
+          base64 -d .build/luminal-v0.2.50-entities-fix.patch.gz.b64 | gzip -d > /tmp/luminal-v0.2.50-entities-fix.patch
+          git apply /tmp/luminal-v0.2.50-entities-fix.patch
       - name: Read mod version
         run: echo "MOD_VERSION=$(grep '^mod_version=' gradle.properties | cut -d= -f2)" >> "$GITHUB_ENV"
       - name: Install Gradle 9.2.1
