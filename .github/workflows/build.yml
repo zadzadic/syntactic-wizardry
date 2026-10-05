@@ -2,7 +2,7 @@ name: Build Syntactic Wizardry
 on:
   workflow_dispatch:
   push:
-    branches: [ main, chatgpt-luminal-v0.2.28-build, chatgpt-luminal-v0.2.29-render, chatgpt-luminal-v0.2.30-los, chatgpt-luminal-v0.2.31-color, chatgpt-luminal-v0.2.32-remote-world, chatgpt-luminal-v0.2.33-load-safety, chatgpt-luminal-v0.2.34-portal-transform, chatgpt-luminal-v0.2.35-perspective, chatgpt-luminal-v0.2.36-render-stability, chatgpt-luminal-v0.2.37-screen-projection, chatgpt-luminal-v0.2.38-performance, chatgpt-luminal-v0.2.39-snapshot-lighting, chatgpt-luminal-v0.3.1-multiworld, chatgpt-luminal-v0.3.2-camera-fix, chatgpt-luminal-v0.3.3-render-target, chatgpt-luminal-v0.3.4-camera-init, chatgpt-luminal-v0.3.5-world-aperture, chatgpt-luminal-v0.3.6-world-stage, chatgpt-luminal-v0.3.7-camera-facing, chatgpt-luminal-v0.3.8-perspective-depth ]
+    branches: [ main, chatgpt-luminal-v0.2.28-build, chatgpt-luminal-v0.2.29-render, chatgpt-luminal-v0.2.30-los, chatgpt-luminal-v0.2.31-color, chatgpt-luminal-v0.2.32-remote-world, chatgpt-luminal-v0.2.33-load-safety, chatgpt-luminal-v0.2.34-portal-transform, chatgpt-luminal-v0.2.35-perspective, chatgpt-luminal-v0.2.36-render-stability, chatgpt-luminal-v0.2.37-screen-projection, chatgpt-luminal-v0.2.38-performance, chatgpt-luminal-v0.2.39-snapshot-lighting, chatgpt-luminal-v0.3.1-multiworld, chatgpt-luminal-v0.3.2-camera-fix, chatgpt-luminal-v0.3.3-render-target, chatgpt-luminal-v0.3.4-camera-init, chatgpt-luminal-v0.3.5-world-aperture, chatgpt-luminal-v0.3.6-world-stage, chatgpt-luminal-v0.3.7-camera-facing, chatgpt-luminal-v0.3.8-perspective-depth, chatgpt-luminal-v0.3.9-camera-opposite ]
   pull_request:
     branches: [ main ]
 jobs:
@@ -114,6 +114,11 @@ jobs:
         run: |
           base64 -d .build/luminal-v0.3.8-perspective-depth.patch.gz.b64 | gzip -d > /tmp/luminal-v0.3.8-perspective-depth.patch
           git apply /tmp/luminal-v0.3.8-perspective-depth.patch
+      - name: Apply v0.3.9 portal camera opposite-facing fix
+        if: ${{ hashFiles('.build/luminal-v0.3.9-camera-opposite.patch.gz.b64') != '' }}
+        run: |
+          base64 -d .build/luminal-v0.3.9-camera-opposite.patch.gz.b64 | gzip -d > /tmp/luminal-v0.3.9-camera-opposite.patch
+          git apply /tmp/luminal-v0.3.9-camera-opposite.patch
       - name: Read mod version
         run: echo "MOD_VERSION=$(grep '^mod_version=' gradle.properties | cut -d= -f2)" >> "$GITHUB_ENV"
       - name: Install Gradle 9.2.1
