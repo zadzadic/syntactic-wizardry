@@ -121,3 +121,4 @@ jobs:
             build/libs/*.jar
             syntactic-magic-development.${{ env.MOD_VERSION }}.zip
           if-no-files-found: error
+# v0.3.5 build trigger
