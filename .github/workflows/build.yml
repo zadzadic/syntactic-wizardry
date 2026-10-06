@@ -146,3 +146,8 @@ jobs:
             build/libs/*.jar
             syntactic-magic-development.${{ env.MOD_VERSION }}.zip
           if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: syntactic-wizardry-${{ env.MOD_VERSION }}-release
+          path: build/libs/*.jar
+          if-no-files-found: error
