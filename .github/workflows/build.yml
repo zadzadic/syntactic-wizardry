@@ -134,6 +134,11 @@ jobs:
         run: |
           base64 -d .build/ritual-v0.2.60-ice-crown-size.patch.gz.b64 | gzip -d > /tmp/ritual-v0.2.60-ice-crown-size.patch
           git apply /tmp/ritual-v0.2.60-ice-crown-size.patch
+      - name: Apply v0.2.60 Ice Crown new source files
+        if: ${{ hashFiles('.build/ritual-v0.2.60-ice-crown-size-newfiles.patch.gz.b64') != '' }}
+        run: |
+          base64 -d .build/ritual-v0.2.60-ice-crown-size-newfiles.patch.gz.b64 | gzip -d > /tmp/ritual-v0.2.60-ice-crown-size-newfiles.patch
+          git apply /tmp/ritual-v0.2.60-ice-crown-size-newfiles.patch
       - name: Read mod version
         run: echo "MOD_VERSION=$(grep '^mod_version=' gradle.properties | cut -d= -f2)" >> "$GITHUB_ENV"
       - name: Install Gradle 9.2.1
