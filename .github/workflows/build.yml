@@ -224,6 +224,11 @@ jobs:
         run: |
           base64 -d .build/ritual-v0.2.75-pedestal-fixes.patch.gz.b64 | gzip -d > /tmp/ritual-v0.2.75-pedestal-fixes.patch
           git apply /tmp/ritual-v0.2.75-pedestal-fixes.patch
+      - name: Apply v0.2.75 Pedestal pickup payload source
+        if: ${{ hashFiles('.build/ritual-v0.2.75-pedestal-fixes-newfile.patch.gz.b64') != '' }}
+        run: |
+          base64 -d .build/ritual-v0.2.75-pedestal-fixes-newfile.patch.gz.b64 | gzip -d > /tmp/ritual-v0.2.75-pedestal-fixes-newfile.patch
+          git apply /tmp/ritual-v0.2.75-pedestal-fixes-newfile.patch
       - name: Read mod version
         run: echo "MOD_VERSION=$(grep '^mod_version=' gradle.properties | cut -d= -f2)" >> "$GITHUB_ENV"
       - name: Install Gradle 9.2.1
