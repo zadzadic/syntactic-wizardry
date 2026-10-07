@@ -1,0 +1,13 @@
+--- a/src/main/java/com/proxpero/syntacticwizardry/GlassBulletProjectile.java
++++ b/src/main/java/com/proxpero/syntacticwizardry/GlassBulletProjectile.java
+@@ -32,9 +32,9 @@
+         super.doPostHurtEffects(target);
+         ItemStack payload = getPickupItem();
+ 
++        Entity source = getOwner();
+         PotionContents contents = payload.get(DataComponents.POTION_CONTENTS);
+         if (contents != null && contents.hasEffects()) {
+-            Entity source = getOwner();
+             for (MobEffectInstance effect : contents.getAllEffects()) {
+                 if (effect.getEffect().value().isInstantenous()) {
+                     effect.getEffect().value().applyInstantenousEffect(this, source, target, effect.getAmplifier(), 1.0D);
