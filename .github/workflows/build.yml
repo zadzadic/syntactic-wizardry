@@ -362,6 +362,9 @@ jobs:
         run: |
           base64 -d .build/alchemy-v0.3.1-glass-bullets.patch.gz.b64 | gzip -d > /tmp/alchemy-v0.3.1-glass-bullets.patch
           git apply /tmp/alchemy-v0.3.1-glass-bullets.patch
+      - name: Apply v0.3.1 Glass Bullet scope fix
+        if: ${{ hashFiles('.build/alchemy-v0.3.1-glass-bullets-scope-fix.patch') != '' }}
+        run: git apply .build/alchemy-v0.3.1-glass-bullets-scope-fix.patch
       - name: Read mod version
         run: echo "MOD_VERSION=$(grep '^mod_version=' gradle.properties | cut -d= -f2)" >> "$GITHUB_ENV"
       - name: Install Gradle 9.2.1
