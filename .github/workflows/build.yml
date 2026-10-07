@@ -215,9 +215,9 @@ jobs:
           base64 -d .build/ritual-v0.2.73-drought.patch.gz.b64 | gzip -d > /tmp/ritual-v0.2.73-drought.patch
           git apply /tmp/ritual-v0.2.73-drought.patch
       - name: Apply v0.2.74 Pedestal patch
-        if: ${{ hashFiles('.build/ritual-v0.2.74-pedestal.patch.gz.b64') != '' }}
+        if: ${{ hashFiles('.build/ritual-v0.2.74-pedestal.part00') != '' }}
         run: |
-          base64 -d .build/ritual-v0.2.74-pedestal.patch.gz.b64 | gzip -d > /tmp/ritual-v0.2.74-pedestal.patch
+          cat .build/ritual-v0.2.74-pedestal.part00 .build/ritual-v0.2.74-pedestal.part01 .build/ritual-v0.2.74-pedestal.part02 .build/ritual-v0.2.74-pedestal.part03 .build/ritual-v0.2.74-pedestal.part04 | base64 -d | gzip -d > /tmp/ritual-v0.2.74-pedestal.patch
           git apply /tmp/ritual-v0.2.74-pedestal.patch
       - name: Read mod version
         run: echo "MOD_VERSION=$(grep '^mod_version=' gradle.properties | cut -d= -f2)" >> "$GITHUB_ENV"
