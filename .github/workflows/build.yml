@@ -284,7 +284,7 @@ jobs:
         run: |
           base64 -d .build/alchemy-v0.2.85-randomingredients.patch.gz.b64 | gzip -d > /tmp/alchemy-v0.2.85-randomingredients.patch
           git apply /tmp/alchemy-v0.2.85-randomingredients.patch
-      - name: Apply v0.2.86 potion grammar patch
+      - name: Apply v0.2.86 potion grammar patch (fixed package)
         if: ${{ hashFiles('.build/alchemy-v0.2.86-potion-grammar.patch.gz.b64') != '' }}
         run: |
           base64 -d .build/alchemy-v0.2.86-potion-grammar.patch.gz.b64 | gzip -d > /tmp/alchemy-v0.2.86-potion-grammar.patch
