@@ -184,6 +184,11 @@ jobs:
         run: |
           base64 -d .build/ritual-v0.2.68-armillary-drag-outline.patch.gz.b64 | gzip -d > /tmp/ritual-v0.2.68-armillary-drag-outline.patch
           git apply /tmp/ritual-v0.2.68-armillary-drag-outline.patch
+      - name: Apply v0.2.68 drag helper fix
+        if: ${{ hashFiles('.build/ritual-v0.2.68-armillary-drag-fix.patch.gz.b64') != '' }}
+        run: |
+          base64 -d .build/ritual-v0.2.68-armillary-drag-fix.patch.gz.b64 | gzip -d > /tmp/ritual-v0.2.68-armillary-drag-fix.patch
+          git apply /tmp/ritual-v0.2.68-armillary-drag-fix.patch
       - name: Read mod version
         run: echo "MOD_VERSION=$(grep '^mod_version=' gradle.properties | cut -d= -f2)" >> "$GITHUB_ENV"
       - name: Install Gradle 9.2.1
