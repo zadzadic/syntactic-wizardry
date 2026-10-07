@@ -330,10 +330,8 @@ jobs:
           base64 -d .build/alchemy-v0.2.94-alembic-batch-output.patch.gz.b64 | gzip -d > /tmp/alchemy-v0.2.94-alembic-batch-output.patch
           git apply /tmp/alchemy-v0.2.94-alembic-batch-output.patch
       - name: Apply v0.2.95 potion bucket cauldron patch
-        if: ${{ hashFiles('.build/alchemy-v0.2.95-potion-bucket-cauldron.patch.gz.b64') != '' }}
-        run: |
-          base64 -d .build/alchemy-v0.2.95-potion-bucket-cauldron.patch.gz.b64 | gzip -d > /tmp/alchemy-v0.2.95-potion-bucket-cauldron.patch
-          git apply /tmp/alchemy-v0.2.95-potion-bucket-cauldron.patch
+        if: ${{ hashFiles('.build/alchemy-v0.2.95-potion-bucket-cauldron.patch') != '' }}
+        run: git apply .build/alchemy-v0.2.95-potion-bucket-cauldron.patch
       - name: Read mod version
         run: echo "MOD_VERSION=$(grep '^mod_version=' gradle.properties | cut -d= -f2)" >> "$GITHUB_ENV"
       - name: Install Gradle 9.2.1
