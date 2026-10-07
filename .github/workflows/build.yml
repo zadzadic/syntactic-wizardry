@@ -2,7 +2,7 @@ name: Build Syntactic Wizardry
 on:
   workflow_dispatch:
   push:
-    branches: [ main, chatgpt-luminal-v0.2.28-build, chatgpt-luminal-v0.2.29-render, chatgpt-luminal-v0.2.30-los, chatgpt-luminal-v0.2.31-color, chatgpt-luminal-v0.2.32-remote-world, chatgpt-luminal-v0.2.33-load-safety, chatgpt-luminal-v0.2.34-portal-transform, chatgpt-luminal-v0.2.35-perspective, chatgpt-luminal-v0.2.36-render-stability, chatgpt-luminal-v0.2.37-screen-projection, chatgpt-luminal-v0.2.38-performance, chatgpt-luminal-v0.2.39-snapshot-lighting, chatgpt-luminal-v0.3.1-multiworld, chatgpt-luminal-v0.3.2-camera-fix, chatgpt-luminal-v0.3.3-render-target, chatgpt-luminal-v0.3.4-camera-init, chatgpt-luminal-v0.3.5-world-aperture, chatgpt-luminal-v0.3.6-world-stage, chatgpt-luminal-v0.3.7-camera-facing, chatgpt-luminal-v0.3.8-perspective-depth, chatgpt-luminal-v0.3.9-camera-opposite, chatgpt-luminal-v0.3.10-vanilla-camera, chatgpt-luminal-v0.3.11-interior-camera, chatgpt-luminal-v0.3.12-fixed-window, chatgpt-luminal-v0.3.13-world-anchored-texture, chatgpt-luminal-v0.3.14-window-parallax, chatgpt-luminal-v0.3.15-outward-facing, chatgpt-luminal-v0.3.16-source-rotation-only, chatgpt-luminal-v0.3.17-source-frame-window ]
+    branches: [ main, chatgpt-luminal-v0.2.28-build, chatgpt-luminal-v0.2.29-render, chatgpt-luminal-v0.2.30-los, chatgpt-luminal-v0.2.31-color, chatgpt-luminal-v0.2.42-world-lighting, chatgpt-luminal-v0.2.43-context-lighting, chatgpt-luminal-v0.2.45-front-air-projection, chatgpt-luminal-v0.2.46-horizontal-basis, chatgpt-luminal-v0.2.47-cache-swirl, chatgpt-luminal-v0.2.49-fixed-cache-camera-preserved, chatgpt-luminal-v0.2.50-entities, chatgpt-luminal-v0.2.51-projectiles, chatgpt-luminal-v0.2.52-impact-bypass, chatgpt-conduit-v0.2.53-placement, chatgpt-luminal-v0.2.54-light-context, chatgpt-ritual-v0.2.55-rotation, chatgpt-ritual-v0.2.56-clear-skies, chatgpt-ritual-v0.2.57-stormlord, chatgpt-ritual-v0.2.58-stormlord-local, chatgpt-ritual-v0.2.59-weather-lifecycle, chatgpt-ritual-v0.2.60-ice-crown-size, chatgpt-ritual-v0.2.61-consecrate, chatgpt-ritual-v0.2.62-alter-biome, chatgpt-ritual-v0.2.63-anchor, chatgpt-ritual-v0.2.64-seek, chatgpt-ritual-v0.2.65-seek-compass-fix, chatgpt-ritual-v0.2.66-verdancy, chatgpt-v0.2.67-armillary-area-position, chatgpt-v0.2.68-armillary-drag-outline, chatgpt-v0.2.69-armillary-face-resize, chatgpt-v0.2.70-armillary-gui ]
   pull_request:
     branches: [ main ]
 jobs:
@@ -34,131 +34,171 @@ jobs:
         run: |
           base64 -d .build/luminal-v0.2.31-color.patch.gz.b64 | gzip -d > /tmp/luminal-v0.2.31-color.patch
           git apply /tmp/luminal-v0.2.31-color.patch
-      - name: Apply v0.2.32 remote spectator patch
-        if: ${{ hashFiles('.build/luminal-v0.2.32-remote-world.patch.gz.b64') != '' }}
+      - name: Apply v0.2.42 world lighting patch
+        if: ${{ hashFiles('.build/luminal-v0.2.42-world-lighting.patch.gz.b64') != '' }}
         run: |
-          base64 -d .build/luminal-v0.2.32-remote-world.patch.gz.b64 | gzip -d > /tmp/luminal-v0.2.32-remote-world.patch
-          git apply /tmp/luminal-v0.2.32-remote-world.patch
-      - name: Apply v0.2.33 load-safety patch
-        if: ${{ hashFiles('.build/luminal-v0.2.33-load-safety.patch.gz.b64') != '' }}
+          base64 -d .build/luminal-v0.2.42-world-lighting.patch.gz.b64 | gzip -d > /tmp/luminal-v0.2.42-world-lighting.patch
+          git apply /tmp/luminal-v0.2.42-world-lighting.patch
+      - name: Apply v0.2.43 lighting context patch
+        if: ${{ hashFiles('.build/luminal-v0.2.43-context-lighting.patch.gz.b64') != '' }}
         run: |
-          base64 -d .build/luminal-v0.2.33-load-safety.patch.gz.b64 | gzip -d > /tmp/luminal-v0.2.33-load-safety.patch
-          git apply /tmp/luminal-v0.2.33-load-safety.patch
-      - name: Apply v0.2.34 portal transform patch
-        if: ${{ hashFiles('.build/luminal-v0.2.34-portal-transform.patch.gz.b64') != '' }}
+          base64 -d .build/luminal-v0.2.43-context-lighting.patch.gz.b64 | gzip -d > /tmp/luminal-v0.2.43-context-lighting.patch
+          git apply /tmp/luminal-v0.2.43-context-lighting.patch
+      - name: Apply v0.2.45 front-air projection patch
+        if: ${{ hashFiles('.build/luminal-v0.2.45-front-air-projection.patch.gz.b64') != '' }}
         run: |
-          base64 -d .build/luminal-v0.2.34-portal-transform.patch.gz.b64 | gzip -d > /tmp/luminal-v0.2.34-portal-transform.patch
-          git apply /tmp/luminal-v0.2.34-portal-transform.patch
-      - name: Apply v0.2.35 perspective patch
-        if: ${{ hashFiles('.build/luminal-v0.2.35-perspective.patch.gz.b64') != '' }}
+          base64 -d .build/luminal-v0.2.45-front-air-projection.patch.gz.b64 | gzip -d > /tmp/luminal-v0.2.45-front-air-projection.patch
+          git apply /tmp/luminal-v0.2.45-front-air-projection.patch
+      - name: Apply v0.2.46 horizontal basis patch
+        if: ${{ hashFiles('.build/luminal-v0.2.46-horizontal-basis.patch.gz.b64') != '' }}
         run: |
-          base64 -d .build/luminal-v0.2.35-perspective.patch.gz.b64 | gzip -d > /tmp/luminal-v0.2.35-perspective.patch
-          git apply /tmp/luminal-v0.2.35-perspective.patch
-      - name: Apply v0.2.36 render stability patch
-        if: ${{ hashFiles('.build/luminal-v0.2.36-render-stability.patch.gz.b64') != '' }}
+          base64 -d .build/luminal-v0.2.46-horizontal-basis.patch.gz.b64 | gzip -d > /tmp/luminal-v0.2.46-horizontal-basis.patch
+          git apply /tmp/luminal-v0.2.46-horizontal-basis.patch
+      - name: Apply v0.2.47 cache and edge swirl patch
+        if: ${{ hashFiles('.build/luminal-v0.2.47-cache-swirl.patch.gz.b64') != '' }}
         run: |
-          base64 -d .build/luminal-v0.2.36-render-stability.patch.gz.b64 | gzip -d > /tmp/luminal-v0.2.36-render-stability.patch
-          git apply /tmp/luminal-v0.2.36-render-stability.patch
-      - name: Apply v0.2.37 screen projection patch
-        if: ${{ hashFiles('.build/luminal-v0.2.37-screen-projection.patch.gz.b64') != '' }}
+          cat .build/luminal-v0.2.47-cache-swirl.part0 .build/luminal-v0.2.47-cache-swirl.part1 .build/luminal-v0.2.47-cache-swirl.part2 .build/luminal-v0.2.47-cache-swirl.part3 | base64 -d | gzip -d > /tmp/luminal-v0.2.47-cache-swirl.patch
+          git apply /tmp/luminal-v0.2.47-cache-swirl.patch
+      - name: Apply v0.2.49 fixed cache patch
+        if: ${{ hashFiles('.build/luminal-v0.2.49-fixed-cache.part0') != '' }}
         run: |
-          base64 -d .build/luminal-v0.2.37-screen-projection.patch.gz.b64 | gzip -d > /tmp/luminal-v0.2.37-screen-projection.patch
-          git apply /tmp/luminal-v0.2.37-screen-projection.patch
-      - name: Apply v0.2.38 performance patch
-        if: ${{ hashFiles('.build/luminal-v0.2.38-performance.patch.gz.b64') != '' }}
+          cat .build/luminal-v0.2.49-fixed-cache.part0 .build/luminal-v0.2.49-fixed-cache.part1 .build/luminal-v0.2.49-fixed-cache.part2 .build/luminal-v0.2.49-fixed-cache.part3 | base64 -d | gzip -d > /tmp/luminal-v0.2.49-fixed-cache.patch
+          git apply /tmp/luminal-v0.2.49-fixed-cache.patch
+      - name: Apply v0.2.50 entity rendering patch
+        if: ${{ hashFiles('.build/luminal-v0.2.50-entities.part0') != '' }}
         run: |
-          base64 -d .build/luminal-v0.2.38-performance.patch.gz.b64 | gzip -d > /tmp/luminal-v0.2.38-performance.patch
-          git apply /tmp/luminal-v0.2.38-performance.patch
-      - name: Apply v0.2.39 snapshot-lighting rollback patch
-        if: ${{ hashFiles('.build/luminal-v0.2.39-return-snapshot-lighting.patch.gz.b64') != '' }}
+          cat .build/luminal-v0.2.50-entities.part0 .build/luminal-v0.2.50-entities.part1 .build/luminal-v0.2.50-entities.part2 .build/luminal-v0.2.50-entities.part3 | base64 -d | gzip -d > /tmp/luminal-v0.2.50-entities.patch
+          git apply /tmp/luminal-v0.2.50-entities.patch
+      - name: Apply v0.2.50 entity query fix
+        if: ${{ hashFiles('.build/luminal-v0.2.50-entities-fix.patch.gz.b64') != '' }}
         run: |
-          base64 -d .build/luminal-v0.2.39-return-snapshot-lighting.patch.gz.b64 | gzip -d > /tmp/luminal-v0.2.39-return-snapshot-lighting.patch
-          git apply /tmp/luminal-v0.2.39-return-snapshot-lighting.patch
-      - name: Apply v0.3.1 multi-world portal patch
-        if: ${{ hashFiles('.build/luminal-v0.3.1-multiworld.patch.gz.b64') != '' }}
+          base64 -d .build/luminal-v0.2.50-entities-fix.patch.gz.b64 | gzip -d > /tmp/luminal-v0.2.50-entities-fix.patch
+          git apply /tmp/luminal-v0.2.50-entities-fix.patch
+      - name: Apply v0.2.51 projectile gateway patch
+        if: ${{ hashFiles('.build/luminal-v0.2.51-projectiles.patch.gz.b64') != '' }}
         run: |
-          base64 -d .build/luminal-v0.3.1-multiworld.patch.gz.b64 | gzip -d > /tmp/luminal-v0.3.1-multiworld.patch
-          git apply /tmp/luminal-v0.3.1-multiworld.patch
-      - name: Apply v0.3.2 portal camera fix
-        if: ${{ hashFiles('.build/luminal-v0.3.2-camera-fix.patch.gz.b64') != '' }}
+          base64 -d .build/luminal-v0.2.51-projectiles.patch.gz.b64 | gzip -d > /tmp/luminal-v0.2.51-projectiles.patch
+          git apply /tmp/luminal-v0.2.51-projectiles.patch
+      - name: Apply v0.2.51 projectile service source
+        if: ${{ hashFiles('.build/luminal-v0.2.51-projectiles-newfile.patch.gz.b64') != '' }}
         run: |
-          base64 -d .build/luminal-v0.3.2-camera-fix.patch.gz.b64 | gzip -d > /tmp/luminal-v0.3.2-camera-fix.patch
-          git apply /tmp/luminal-v0.3.2-camera-fix.patch
-      - name: Apply v0.3.3 isolated portal render target
-        if: ${{ hashFiles('.build/luminal-v0.3.3-render-target.patch.gz.b64') != '' }}
+          base64 -d .build/luminal-v0.2.51-projectiles-newfile.patch.gz.b64 | gzip -d > /tmp/luminal-v0.2.51-projectiles-newfile.patch
+          git apply /tmp/luminal-v0.2.51-projectiles-newfile.patch
+      - name: Apply v0.2.52 projectile impact bypass patch
+        if: ${{ hashFiles('.build/luminal-v0.2.52-impact-bypass.patch.gz.b64') != '' }}
         run: |
-          base64 -d .build/luminal-v0.3.3-render-target.patch.gz.b64 | gzip -d > /tmp/luminal-v0.3.3-render-target.patch
-          git apply /tmp/luminal-v0.3.3-render-target.patch
-      - name: Apply v0.3.4 portal camera initialization fix
-        if: ${{ hashFiles('.build/luminal-v0.3.4-camera-init.patch.gz.b64') != '' }}
+          base64 -d .build/luminal-v0.2.52-impact-bypass.patch.gz.b64 | gzip -d > /tmp/luminal-v0.2.52-impact-bypass.patch
+          git apply /tmp/luminal-v0.2.52-impact-bypass.patch
+      - name: Apply v0.2.53 Conduit placement patch
+        if: ${{ hashFiles('.build/conduit-v0.2.53-placement.patch.gz.b64') != '' }}
         run: |
-          base64 -d .build/luminal-v0.3.4-camera-init.patch.gz.b64 | gzip -d > /tmp/luminal-v0.3.4-camera-init.patch
-          git apply /tmp/luminal-v0.3.4-camera-init.patch
-      - name: Apply v0.3.5 source-world portal aperture fix
-        if: ${{ hashFiles('.build/luminal-v0.3.5-world-aperture.patch.gz.b64') != '' }}
+          base64 -d .build/conduit-v0.2.53-placement.patch.gz.b64 | gzip -d > /tmp/conduit-v0.2.53-placement.patch
+          git apply /tmp/conduit-v0.2.53-placement.patch
+      - name: Apply v0.2.54 Luminal Bridge lighting context patch
+        if: ${{ hashFiles('.build/luminal-v0.2.54-light-context.patch.gz.b64') != '' }}
         run: |
-          base64 -d .build/luminal-v0.3.5-world-aperture.patch.gz.b64 | gzip -d > /tmp/luminal-v0.3.5-world-aperture.patch
-          git apply /tmp/luminal-v0.3.5-world-aperture.patch
-      - name: Apply v0.3.6 world-stage portal positioning fix
-        if: ${{ hashFiles('.build/luminal-v0.3.6-world-stage.patch.gz.b64') != '' }}
+          base64 -d .build/luminal-v0.2.54-light-context.patch.gz.b64 | gzip -d > /tmp/luminal-v0.2.54-light-context.patch
+          git apply /tmp/luminal-v0.2.54-light-context.patch
+      - name: Apply v0.2.55 prepared ritual rotation patch
+        if: ${{ hashFiles('.build/ritual-v0.2.55-rotation.patch.gz.b64') != '' }}
         run: |
-          base64 -d .build/luminal-v0.3.6-world-stage.patch.gz.b64 | gzip -d > /tmp/luminal-v0.3.6-world-stage.patch
-          git apply /tmp/luminal-v0.3.6-world-stage.patch
-      - name: Apply v0.3.7 portal camera facing fix
-        if: ${{ hashFiles('.build/luminal-v0.3.7-camera-facing.patch.gz.b64') != '' }}
+          base64 -d .build/ritual-v0.2.55-rotation.patch.gz.b64 | gzip -d > /tmp/ritual-v0.2.55-rotation.patch
+          git apply /tmp/ritual-v0.2.55-rotation.patch
+      - name: Apply v0.2.56 Clear Skies ritual patch
+        if: ${{ hashFiles('.build/ritual-v0.2.56-clear-skies.patch.gz.b64') != '' }}
         run: |
-          base64 -d .build/luminal-v0.3.7-camera-facing.patch.gz.b64 | gzip -d > /tmp/luminal-v0.3.7-camera-facing.patch
-          git apply /tmp/luminal-v0.3.7-camera-facing.patch
-      - name: Apply v0.3.8 perspective depth fix
-        if: ${{ hashFiles('.build/luminal-v0.3.8-perspective-depth.patch.gz.b64') != '' }}
+          base64 -d .build/ritual-v0.2.56-clear-skies.patch.gz.b64 | gzip -d > /tmp/ritual-v0.2.56-clear-skies.patch
+          git apply /tmp/ritual-v0.2.56-clear-skies.patch
+      - name: Apply v0.2.56 Clear Skies compile fix
+        if: ${{ hashFiles('.build/ritual-v0.2.56-clear-skies-compilefix.patch.gz.b64') != '' }}
         run: |
-          base64 -d .build/luminal-v0.3.8-perspective-depth.patch.gz.b64 | gzip -d > /tmp/luminal-v0.3.8-perspective-depth.patch
-          git apply /tmp/luminal-v0.3.8-perspective-depth.patch
-      - name: Apply v0.3.9 portal camera opposite-facing fix
-        if: ${{ hashFiles('.build/luminal-v0.3.9-camera-opposite.patch.gz.b64') != '' }}
+          base64 -d .build/ritual-v0.2.56-clear-skies-compilefix.patch.gz.b64 | gzip -d > /tmp/ritual-v0.2.56-clear-skies-compilefix.patch
+          git apply /tmp/ritual-v0.2.56-clear-skies-compilefix.patch
+      - name: Apply v0.2.57 Stormlord ritual patch
+        if: ${{ hashFiles('.build/ritual-v0.2.57-stormlord.part0') != '' }}
         run: |
-          base64 -d .build/luminal-v0.3.9-camera-opposite.patch.gz.b64 | gzip -d > /tmp/luminal-v0.3.9-camera-opposite.patch
-          git apply /tmp/luminal-v0.3.9-camera-opposite.patch
-      - name: Apply v0.3.10 vanilla destination camera fix
-        if: ${{ hashFiles('.build/luminal-v0.3.10-vanilla-camera.patch.gz.b64') != '' }}
+          cat .build/ritual-v0.2.57-stormlord.part0 .build/ritual-v0.2.57-stormlord.part1 .build/ritual-v0.2.57-stormlord.part2 | base64 -d | gzip -d > /tmp/ritual-v0.2.57-stormlord.patch
+          git apply /tmp/ritual-v0.2.57-stormlord.patch
+      - name: Apply v0.2.58 local Stormlord weather patch
+        if: ${{ hashFiles('.build/ritual-v0.2.58-stormlord-local.patch.gz.b64') != '' }}
         run: |
-          base64 -d .build/luminal-v0.3.10-vanilla-camera.patch.gz.b64 | gzip -d > /tmp/luminal-v0.3.10-vanilla-camera.patch
-          git apply /tmp/luminal-v0.3.10-vanilla-camera.patch
-      - name: Apply v0.3.11 interior portal camera fix
-        if: ${{ hashFiles('.build/luminal-v0.3.11-interior-camera.patch.gz.b64') != '' }}
+          base64 -d .build/ritual-v0.2.58-stormlord-local.patch.gz.b64 | gzip -d > /tmp/ritual-v0.2.58-stormlord-local.patch
+          git apply /tmp/ritual-v0.2.58-stormlord-local.patch
+      - name: Apply v0.2.59 weather lifecycle fixes
+        if: ${{ hashFiles('.build/ritual-v0.2.59-weather-lifecycle.patch.gz.b64') != '' }}
         run: |
-          base64 -d .build/luminal-v0.3.11-interior-camera.patch.gz.b64 | gzip -d > /tmp/luminal-v0.3.11-interior-camera.patch
-          git apply /tmp/luminal-v0.3.11-interior-camera.patch
-      - name: Apply v0.3.12 fixed-window portal camera
-        if: ${{ hashFiles('.build/luminal-v0.3.12-fixed-window.patch.gz.b64') != '' }}
+          base64 -d .build/ritual-v0.2.59-weather-lifecycle.patch.gz.b64 | gzip -d > /tmp/ritual-v0.2.59-weather-lifecycle.patch
+          git apply /tmp/ritual-v0.2.59-weather-lifecycle.patch
+      - name: Apply v0.2.60 Ice Crown and ritual Size patch
+        if: ${{ hashFiles('.build/ritual-v0.2.60-ice-crown-size.patch.gz.b64') != '' }}
         run: |
-          base64 -d .build/luminal-v0.3.12-fixed-window.patch.gz.b64 | gzip -d > /tmp/luminal-v0.3.12-fixed-window.patch
-          git apply /tmp/luminal-v0.3.12-fixed-window.patch
-      - name: Apply v0.3.13 world-anchored portal texture fix
-        if: ${{ hashFiles('.build/luminal-v0.3.13-world-anchored-texture.patch.gz.b64') != '' }}
+          base64 -d .build/ritual-v0.2.60-ice-crown-size.patch.gz.b64 | gzip -d > /tmp/ritual-v0.2.60-ice-crown-size.patch
+          git apply /tmp/ritual-v0.2.60-ice-crown-size.patch
+      - name: Apply v0.2.60 Ice Crown new source files
+        if: ${{ hashFiles('.build/ritual-v0.2.60-ice-crown-size-newfiles.patch.gz.b64') != '' }}
         run: |
-          base64 -d .build/luminal-v0.3.13-world-anchored-texture.patch.gz.b64 | gzip -d > /tmp/luminal-v0.3.13-world-anchored-texture.patch
-          git apply /tmp/luminal-v0.3.13-world-anchored-texture.patch
-      - name: Apply v0.3.14 true-window parallax fix
-        if: ${{ hashFiles('.build/luminal-v0.3.14-window-parallax.patch.gz.b64') != '' }}
+          base64 -d .build/ritual-v0.2.60-ice-crown-size-newfiles.patch.gz.b64 | gzip -d > /tmp/ritual-v0.2.60-ice-crown-size-newfiles.patch
+          git apply /tmp/ritual-v0.2.60-ice-crown-size-newfiles.patch
+      - name: Apply v0.2.61 Consecrate ritual patch
+        if: ${{ hashFiles('.build/ritual-v0.2.61-consecrate.patch.gz.b64') != '' }}
         run: |
-          base64 -d .build/luminal-v0.3.14-window-parallax.patch.gz.b64 | gzip -d > /tmp/luminal-v0.3.14-window-parallax.patch
-          git apply /tmp/luminal-v0.3.14-window-parallax.patch
-      - name: Apply v0.3.15 outward-facing portal rotation fix
-        if: ${{ hashFiles('.build/luminal-v0.3.15-outward-facing.patch.gz.b64') != '' }}
+          base64 -d .build/ritual-v0.2.61-consecrate.patch.gz.b64 | gzip -d > /tmp/ritual-v0.2.61-consecrate.patch
+          git apply /tmp/ritual-v0.2.61-consecrate.patch
+      - name: Apply v0.2.62 Alter Biome ritual patch
+        if: ${{ hashFiles('.build/ritual-v0.2.62-alter-biome.part00') != '' }}
         run: |
-          base64 -d .build/luminal-v0.3.15-outward-facing.patch.gz.b64 | gzip -d > /tmp/luminal-v0.3.15-outward-facing.patch
-          git apply /tmp/luminal-v0.3.15-outward-facing.patch
-      - name: Apply v0.3.16 source rotation only fix
-        if: ${{ hashFiles('.build/luminal-v0.3.16-source-rotation.patch.gz.b64') != '' }}
+          cat .build/ritual-v0.2.62-alter-biome.part00 .build/ritual-v0.2.62-alter-biome.part01 .build/ritual-v0.2.62-alter-biome.part02 .build/ritual-v0.2.62-alter-biome.part03 | base64 -d | gzip -d > /tmp/ritual-v0.2.62-alter-biome.patch
+          git apply /tmp/ritual-v0.2.62-alter-biome.patch
+      - name: Apply v0.2.63 Anchor ritual patch
+        if: ${{ hashFiles('.build/ritual-v0.2.63-anchor.part00') != '' }}
         run: |
-          base64 -d .build/luminal-v0.3.16-source-rotation.patch.gz.b64 | gzip -d > /tmp/luminal-v0.3.16-source-rotation.patch
-          git apply /tmp/luminal-v0.3.16-source-rotation.patch
-      - name: Apply v0.3.17 source-frame portal window fix
-        if: ${{ hashFiles('.build/luminal-v0.3.17-source-frame-window.patch.gz.b64') != '' }}
+          cat .build/ritual-v0.2.63-anchor.part00 .build/ritual-v0.2.63-anchor.part01 .build/ritual-v0.2.63-anchor.part02 .build/ritual-v0.2.63-anchor.part03 .build/ritual-v0.2.63-anchor.part04 | base64 -d | gzip -d > /tmp/ritual-v0.2.63-anchor.patch
+          git apply /tmp/ritual-v0.2.63-anchor.patch
+      - name: Apply v0.2.64 Seek ritual patch
+        if: ${{ hashFiles('.build/ritual-v0.2.64-seek.part00') != '' }}
         run: |
-          base64 -d .build/luminal-v0.3.17-source-frame-window.patch.gz.b64 | gzip -d > /tmp/luminal-v0.3.17-source-frame-window.patch
-          git apply /tmp/luminal-v0.3.17-source-frame-window.patch
+          cat .build/ritual-v0.2.64-seek.part00 | base64 -d | gzip -d > /tmp/ritual-v0.2.64-seek.patch
+          git apply /tmp/ritual-v0.2.64-seek.patch
+      - name: Apply v0.2.64 Seek source files
+        if: ${{ hashFiles('.build/ritual-v0.2.64-seek-newfiles.patch.gz.b64') != '' }}
+        run: |
+          base64 -d .build/ritual-v0.2.64-seek-newfiles.patch.gz.b64 | gzip -d > /tmp/ritual-v0.2.64-seek-newfiles.patch
+          git apply /tmp/ritual-v0.2.64-seek-newfiles.patch
+      - name: Apply v0.2.65 Seek compass fixes
+        if: ${{ hashFiles('.build/ritual-v0.2.65-seek-compass-fix.patch.gz.b64') != '' }}
+        run: |
+          base64 -d .build/ritual-v0.2.65-seek-compass-fix.patch.gz.b64 | gzip -d > /tmp/ritual-v0.2.65-seek-compass-fix.patch
+          git apply /tmp/ritual-v0.2.65-seek-compass-fix.patch
+      - name: Apply v0.2.66 Verdancy ritual patch
+        if: ${{ hashFiles('.build/ritual-v0.2.66-verdancy.patch.gz.b64') != '' }}
+        run: |
+          base64 -d .build/ritual-v0.2.66-verdancy.patch.gz.b64 | gzip -d > /tmp/ritual-v0.2.66-verdancy.patch
+          git apply /tmp/ritual-v0.2.66-verdancy.patch
+      - name: Apply v0.2.67 Armillary area position fix
+        if: ${{ hashFiles('.build/ritual-v0.2.67-area-position.patch.gz.b64') != '' }}
+        run: |
+          base64 -d .build/ritual-v0.2.67-area-position.patch.gz.b64 | gzip -d > /tmp/ritual-v0.2.67-area-position.patch
+          git apply /tmp/ritual-v0.2.67-area-position.patch
+      - name: Apply v0.2.68 Armillary drag/outline patch
+        if: ${{ hashFiles('.build/ritual-v0.2.68-armillary-drag-outline.patch.gz.b64') != '' }}
+        run: |
+          base64 -d .build/ritual-v0.2.68-armillary-drag-outline.patch.gz.b64 | gzip -d > /tmp/ritual-v0.2.68-armillary-drag-outline.patch
+          git apply /tmp/ritual-v0.2.68-armillary-drag-outline.patch
+      - name: Apply v0.2.68 drag helper fix
+        if: ${{ hashFiles('.build/ritual-v0.2.68-armillary-drag-fix.patch.gz.b64') != '' }}
+        run: |
+          base64 -d .build/ritual-v0.2.68-armillary-drag-fix.patch.gz.b64 | gzip -d > /tmp/ritual-v0.2.68-armillary-drag-fix.patch
+          git apply /tmp/ritual-v0.2.68-armillary-drag-fix.patch
+      - name: Apply v0.2.69 Armillary face resize patch
+        if: ${{ hashFiles('.build/ritual-v0.2.69-armillary-face-resize.patch.gz.b64') != '' }}
+        run: |
+          base64 -d .build/ritual-v0.2.69-armillary-face-resize.patch.gz.b64 | gzip -d > /tmp/ritual-v0.2.69-armillary-face-resize.patch
+          git apply /tmp/ritual-v0.2.69-armillary-face-resize.patch
+      - name: Apply v0.2.70 Armillary GUI patch
+        if: ${{ hashFiles('.build/ritual-v0.2.70-armillary-gui.patch.gz.b64') != '' }}
+        run: |
+          base64 -d .build/ritual-v0.2.70-armillary-gui.patch.gz.b64 | gzip -d > /tmp/ritual-v0.2.70-armillary-gui.patch
+          git apply /tmp/ritual-v0.2.70-armillary-gui.patch
       - name: Read mod version
         run: echo "MOD_VERSION=$(grep '^mod_version=' gradle.properties | cut -d= -f2)" >> "$GITHUB_ENV"
       - name: Install Gradle 9.2.1
@@ -181,4 +221,8 @@ jobs:
             build/libs/*.jar
             syntactic-magic-development.${{ env.MOD_VERSION }}.zip
           if-no-files-found: error
-# v0.3.5 build trigger
+      - uses: actions/upload-artifact@v4
+        with:
+          name: syntactic-wizardry-${{ env.MOD_VERSION }}-release
+          path: build/libs/*.jar
+          if-no-files-found: error
