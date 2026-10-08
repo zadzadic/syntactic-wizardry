@@ -597,6 +597,14 @@ jobs:
           git apply --check /tmp/v0.3.45.patch
           git apply /tmp/v0.3.45.patch
           sed -i 's/^mod_version=.*/mod_version=0.3.45/' gradle.properties
+      - name: Apply v0.3.47 non-occluding Scribe's Lectern and custom model
+        run: |
+          base64 -d .build/v0.3.47-lectern-occlusion.patch.gz.b64 | gzip -d > /tmp/v0.3.47.patch
+          git apply --check /tmp/v0.3.47.patch
+          git apply /tmp/v0.3.47.patch
+          base64 -d .build/v0.3.47-lectern-top.tar.gz.b64 | tar -xz -C src/main/resources/assets/syntacticwizardry/textures/block/
+          test -s src/main/resources/assets/syntacticwizardry/textures/block/scribes_lectern_top.png
+          sed -i 's/^mod_version=.*/mod_version=0.3.47/' gradle.properties
       - name: Read mod version
         run: echo "MOD_VERSION=$(grep '^mod_version=' gradle.properties | cut -d= -f2)" >> "$GITHUB_ENV"
       - name: Install Gradle 9.2.1
