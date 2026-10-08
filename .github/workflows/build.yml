@@ -386,6 +386,12 @@ jobs:
       - name: Install v0.3.9 Research Desk textures
         if: ${{ hashFiles('.build/research-desk-v0.3.9-assets.sh') != '' }}
         run: bash .build/research-desk-v0.3.9-assets.sh
+      - name: Apply v0.3.10 readable Notes and Amethyst maturation
+        if: ${{ hashFiles('.build/v0.3.10-notes-crystal.patch.gz.b64') != '' }}
+        run: |
+          base64 -d .build/v0.3.10-notes-crystal.patch.gz.b64 | gzip -d > /tmp/v0.3.10.patch
+          git apply --check /tmp/v0.3.10.patch
+          git apply /tmp/v0.3.10.patch
       - name: Read mod version
         run: echo "MOD_VERSION=$(grep '^mod_version=' gradle.properties | cut -d= -f2)" >> "$GITHUB_ENV"
       - name: Install Gradle 9.2.1
