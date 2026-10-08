@@ -410,6 +410,12 @@ jobs:
           base64 -d .build/v0.3.13-research-notes-overlay.patch.gz.b64 | gzip -d > /tmp/v0.3.13.patch
           git apply --check /tmp/v0.3.13.patch
           git apply /tmp/v0.3.13.patch
+      - name: Apply v0.3.16 vanilla book style parchment layering
+        if: ${{ hashFiles('.build/v0.3.16-book-style-render.patch.gz.b64') != '' }}
+        run: |
+          base64 -d .build/v0.3.16-book-style-render.patch.gz.b64 | gzip -d > /tmp/v0.3.16.patch
+          git apply --check /tmp/v0.3.16.patch
+          git apply /tmp/v0.3.16.patch
       - name: Read mod version
         run: echo "MOD_VERSION=$(grep '^mod_version=' gradle.properties | cut -d= -f2)" >> "$GITHUB_ENV"
       - name: Install Gradle 9.2.1
