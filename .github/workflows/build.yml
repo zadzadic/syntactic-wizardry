@@ -568,6 +568,14 @@ jobs:
           test -s src/main/resources/assets/syntacticwizardry/textures/block/armillary_ring_gold.png
           test -s src/main/resources/assets/syntacticwizardry/textures/block/armillary_ring_lapis.png
           sed -i 's/^mod_version=.*/mod_version=0.3.40/' gradle.properties
+      - name: Apply v0.3.41 amethyst orb texture and spherical UVs
+        run: |
+          base64 -d .build/v0.3.41-orb-uv.patch.gz.b64 | gzip -d > /tmp/v0.3.41.patch
+          git apply --check /tmp/v0.3.41.patch
+          git apply /tmp/v0.3.41.patch
+          base64 -d .build/v0.3.41-orb-texture.tar.gz.b64 | tar -xz -C src/main/resources/assets/syntacticwizardry/textures/block/
+          test -s src/main/resources/assets/syntacticwizardry/textures/block/armillary_orb_amethyst.png
+          sed -i 's/^mod_version=.*/mod_version=0.3.41/' gradle.properties
       - name: Read mod version
         run: echo "MOD_VERSION=$(grep '^mod_version=' gradle.properties | cut -d= -f2)" >> "$GITHUB_ENV"
       - name: Install Gradle 9.2.1
