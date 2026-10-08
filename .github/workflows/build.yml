@@ -585,6 +585,12 @@ jobs:
           test -s src/main/resources/assets/syntacticwizardry/textures/block/armillary_copper_top.png
           test -s src/main/resources/assets/syntacticwizardry/textures/block/armillary_copper_sides.png
           sed -i 's/^mod_version=.*/mod_version=0.3.43/' gradle.properties
+      - name: Apply v0.3.44 stationary Builder and Armillary
+        run: |
+          base64 -d .build/v0.3.44-stationary.patch.gz.b64 | gzip -d > /tmp/v0.3.44.patch
+          git apply --check /tmp/v0.3.44.patch
+          git apply /tmp/v0.3.44.patch
+          sed -i 's/^mod_version=.*/mod_version=0.3.44/' gradle.properties
       - name: Read mod version
         run: echo "MOD_VERSION=$(grep '^mod_version=' gradle.properties | cut -d= -f2)" >> "$GITHUB_ENV"
       - name: Install Gradle 9.2.1
