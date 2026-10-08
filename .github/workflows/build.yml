@@ -500,6 +500,12 @@ jobs:
           git apply --check /tmp/v0.3.30.patch
           git apply /tmp/v0.3.30.patch
           sed -i 's/^mod_version=.*/mod_version=0.3.30/' gradle.properties
+      - name: Apply v0.3.31 5x5 ritual preview fix
+        run: |
+          base64 -d .build/v0.3.31-preview.patch.gz.b64 | gzip -d > /tmp/v0.3.31.patch
+          git apply --check /tmp/v0.3.31.patch
+          git apply /tmp/v0.3.31.patch
+          sed -i 's/^mod_version=.*/mod_version=0.3.31/' gradle.properties
       - name: Read mod version
         run: echo "MOD_VERSION=$(grep '^mod_version=' gradle.properties | cut -d= -f2)" >> "$GITHUB_ENV"
       - name: Install Gradle 9.2.1
