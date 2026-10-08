@@ -422,6 +422,12 @@ jobs:
           base64 -d .build/v0.3.15-research-focus.patch.gz.b64 | gzip -d > /tmp/v0.3.15-research-focus.patch
           git apply --check /tmp/v0.3.15-research-focus.patch
           git apply /tmp/v0.3.15-research-focus.patch
+      - name: Apply v0.3.15 Research Notes blur fix
+        if: ${{ hashFiles('.build/v0.3.15-render-fix.patch.gz.b64') != '' }}
+        run: |
+          base64 -d .build/v0.3.15-render-fix.patch.gz.b64 | gzip -d > /tmp/v0.3.15-render-fix.patch
+          git apply --check /tmp/v0.3.15-render-fix.patch
+          git apply /tmp/v0.3.15-render-fix.patch
       - name: Read mod version
         run: echo "MOD_VERSION=$(grep '^mod_version=' gradle.properties | cut -d= -f2)" >> "$GITHUB_ENV"
       - name: Install Gradle 9.2.1
