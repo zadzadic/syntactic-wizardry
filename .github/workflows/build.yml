@@ -591,6 +591,12 @@ jobs:
           git apply --check /tmp/v0.3.44.patch
           git apply /tmp/v0.3.44.patch
           sed -i 's/^mod_version=.*/mod_version=0.3.44/' gradle.properties
+      - name: Apply v0.3.45 world-found Spell Randomizer flag
+        run: |
+          base64 -d .build/v0.3.45-randomizer-flag.patch.gz.b64 | gzip -d > /tmp/v0.3.45.patch
+          git apply --check /tmp/v0.3.45.patch
+          git apply /tmp/v0.3.45.patch
+          sed -i 's/^mod_version=.*/mod_version=0.3.45/' gradle.properties
       - name: Read mod version
         run: echo "MOD_VERSION=$(grep '^mod_version=' gradle.properties | cut -d= -f2)" >> "$GITHUB_ENV"
       - name: Install Gradle 9.2.1
