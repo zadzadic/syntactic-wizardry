@@ -559,6 +559,15 @@ jobs:
           git apply --check /tmp/v0.3.39.patch
           git apply /tmp/v0.3.39.patch
           sed -i 's/^mod_version=.*/mod_version=0.3.39/' gradle.properties
+      - name: Apply v0.3.40 Armillary beveled platform and UV mapping
+        run: |
+          base64 -d .build/v0.3.40-armillary-geometry.patch.gz.b64 | gzip -d > /tmp/v0.3.40.patch
+          git apply --check /tmp/v0.3.40.patch
+          git apply /tmp/v0.3.40.patch
+          base64 -d .build/v0.3.40-ring-textures.tgz.b64 | tar -xz -C src/main/resources/assets/syntacticwizardry/textures/block/
+          test -s src/main/resources/assets/syntacticwizardry/textures/block/armillary_ring_gold.png
+          test -s src/main/resources/assets/syntacticwizardry/textures/block/armillary_ring_lapis.png
+          sed -i 's/^mod_version=.*/mod_version=0.3.40/' gradle.properties
       - name: Read mod version
         run: echo "MOD_VERSION=$(grep '^mod_version=' gradle.properties | cut -d= -f2)" >> "$GITHUB_ENV"
       - name: Install Gradle 9.2.1
