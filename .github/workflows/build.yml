@@ -530,6 +530,12 @@ jobs:
           git apply --check /tmp/v0.3.35.patch
           git apply /tmp/v0.3.35.patch
           sed -i 's/^mod_version=.*/mod_version=0.3.35/' gradle.properties
+      - name: Apply v0.3.36 Mooncall and north indicator
+        run: |
+          base64 -d .build/v0.3.36-mooncall-north.patch.gz.b64 | gzip -d > /tmp/v0.3.36.patch
+          git apply --check /tmp/v0.3.36.patch
+          git apply /tmp/v0.3.36.patch
+          sed -i 's/^mod_version=.*/mod_version=0.3.36/' gradle.properties
       - name: Read mod version
         run: echo "MOD_VERSION=$(grep '^mod_version=' gradle.properties | cut -d= -f2)" >> "$GITHUB_ENV"
       - name: Install Gradle 9.2.1
