@@ -668,6 +668,14 @@ jobs:
           test -s src/main/resources/assets/syntacticwizardry/models/block/power_core_crystal.obj
           test -s src/main/resources/assets/syntacticwizardry/models/block/pylon_star.obj
           sed -i 's/^mod_version=.*/mod_version=0.3.60/' gradle.properties
+      - name: Apply v0.3.61 remove Magic Staves and tier Runecaster discounts
+        run: |
+          base64 -d .build/v0.3.61-runecaster.patch.gz.b64 | gzip -d > /tmp/v0.3.61.patch
+          git apply --check /tmp/v0.3.61.patch
+          git apply /tmp/v0.3.61.patch
+          grep -q 'mod_version=0.3.61' gradle.properties
+          grep -q '0.70F' src/main/java/com/proxpero/syntacticwizardry/SyntacticWizardry.java
+          ! grep -q 'WOOD_STAFF=ITEMS.register' src/main/java/com/proxpero/syntacticwizardry/SyntacticWizardry.java
       - name: Read mod version
         run: echo "MOD_VERSION=$(grep '^mod_version=' gradle.properties | cut -d= -f2)" >> "$GITHUB_ENV"
       - name: Install Gradle 9.2.1
