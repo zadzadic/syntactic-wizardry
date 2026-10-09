@@ -646,6 +646,12 @@ jobs:
           test -s src/main/resources/assets/syntacticwizardry/models/block/power_core_pillar_connected.obj
           test -s src/main/resources/assets/syntacticwizardry/textures/block/power_core_crystal_nethern.png
           sed -i 's/^mod_version=.*/mod_version=0.3.56/' gradle.properties
+      - name: Apply v0.3.57 outward-facing pillar mesh winding
+        run: |
+          base64 -d .build/v0.3.57-pillar-winding.patch.gz.b64 | gzip -d > /tmp/v0.3.57.patch
+          git apply --check /tmp/v0.3.57.patch
+          git apply /tmp/v0.3.57.patch
+          sed -i 's/^mod_version=.*/mod_version=0.3.57/' gradle.properties
       - name: Read mod version
         run: echo "MOD_VERSION=$(grep '^mod_version=' gradle.properties | cut -d= -f2)" >> "$GITHUB_ENV"
       - name: Install Gradle 9.2.1
