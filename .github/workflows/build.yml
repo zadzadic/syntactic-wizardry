@@ -605,6 +605,15 @@ jobs:
           base64 -d .build/v0.3.47-lectern-top.tar.gz.b64 | tar -xz -C src/main/resources/assets/syntacticwizardry/textures/block/
           test -s src/main/resources/assets/syntacticwizardry/textures/block/scribes_lectern_top.png
           sed -i 's/^mod_version=.*/mod_version=0.3.47/' gradle.properties
+      - name: Apply v0.3.50 two-block Research Desk redesign
+        run: |
+          base64 -d .build/v0.3.50-research-redesign.patch.gz.b64 | gzip -d > /tmp/v0.3.50.patch
+          git apply --check /tmp/v0.3.50.patch
+          git apply /tmp/v0.3.50.patch
+          base64 -d .build/v0.3.50-desk-textures.tar.gz.b64 | tar -xz -C src/main/resources/assets/syntacticwizardry/textures/block/
+          test -s src/main/resources/assets/syntacticwizardry/textures/block/research50_top_left.png
+          test -s src/main/resources/assets/syntacticwizardry/textures/block/research50_top_right.png
+          sed -i 's/^mod_version=.*/mod_version=0.3.50/' gradle.properties
       - name: Read mod version
         run: echo "MOD_VERSION=$(grep '^mod_version=' gradle.properties | cut -d= -f2)" >> "$GITHUB_ENV"
       - name: Install Gradle 9.2.1
