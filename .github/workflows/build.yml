@@ -614,6 +614,15 @@ jobs:
           test -s src/main/resources/assets/syntacticwizardry/textures/block/research50_top_left.png
           test -s src/main/resources/assets/syntacticwizardry/textures/block/research50_top_right.png
           sed -i 's/^mod_version=.*/mod_version=0.3.50/' gradle.properties
+      - name: Apply v0.3.53 copper stairs Armillary foundation
+        run: |
+          base64 -d .build/v0.3.53-stair-foundation.patch.gz.b64 | gzip -d > /tmp/v0.3.53.patch
+          git apply --check /tmp/v0.3.53.patch
+          git apply /tmp/v0.3.53.patch
+          base64 -d .build/v0.3.53-preserved-textures.tar.gz.b64 | tar -xz -C src/main/resources/assets/syntacticwizardry/textures/block/
+          test -s src/main/resources/assets/syntacticwizardry/textures/block/armillary_orb_amethyst.png
+          test -s src/main/resources/assets/syntacticwizardry/textures/block/research50_top_left.png
+          sed -i 's/^mod_version=.*/mod_version=0.3.53/' gradle.properties
       - name: Read mod version
         run: echo "MOD_VERSION=$(grep '^mod_version=' gradle.properties | cut -d= -f2)" >> "$GITHUB_ENV"
       - name: Install Gradle 9.2.1
