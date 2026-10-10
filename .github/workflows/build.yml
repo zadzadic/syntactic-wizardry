@@ -580,6 +580,11 @@ jobs:
           cat .build/v0.3.76.part00 .build/v0.3.76.part01 .build/v0.3.76.part02 .build/v0.3.76.part03 | base64 -d | gzip -d > /tmp/v0.3.76.patch
           git apply --check /tmp/v0.3.76.patch
           git apply /tmp/v0.3.76.patch
+      - name: Fix v0.3.76 Elder Gnome renderer import
+        if: ${{ hashFiles('.build/v0.3.76-elder-renderer-compilefix.patch') != '' }}
+        run: |
+          git apply --check .build/v0.3.76-elder-renderer-compilefix.patch
+          git apply .build/v0.3.76-elder-renderer-compilefix.patch
       - name: Read mod version
         run: echo "MOD_VERSION=$(grep '^mod_version=' gradle.properties | cut -d= -f2)" >> "$GITHUB_ENV"
       - name: Install Gradle 9.2.1
