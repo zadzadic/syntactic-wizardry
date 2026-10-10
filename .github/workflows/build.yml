@@ -574,6 +574,12 @@ jobs:
           base64 -d .build/v0.3.75-gnome.patch.gz.b64 | gzip -d > /tmp/v0.3.75-gnome.patch
           git apply --check /tmp/v0.3.75-gnome.patch
           git apply /tmp/v0.3.75-gnome.patch
+      - name: Apply v0.3.76 Elder Gnome and village-defense patch
+        if: ${{ hashFiles('.build/v0.3.76.part00') != '' }}
+        run: |
+          cat .build/v0.3.76.part00 .build/v0.3.76.part01 .build/v0.3.76.part02 .build/v0.3.76.part03 | base64 -d | gzip -d > /tmp/v0.3.76.patch
+          git apply --check /tmp/v0.3.76.patch
+          git apply /tmp/v0.3.76.patch
       - name: Read mod version
         run: echo "MOD_VERSION=$(grep '^mod_version=' gradle.properties | cut -d= -f2)" >> "$GITHUB_ENV"
       - name: Install Gradle 9.2.1
