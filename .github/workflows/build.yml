@@ -585,6 +585,12 @@ jobs:
         run: |
           git apply --check .build/v0.3.76-elder-renderer-compilefix.patch
           git apply .build/v0.3.76-elder-renderer-compilefix.patch
+      - name: Apply v0.3.77 Gnome skeletal animations
+        if: ${{ hashFiles('.build/v0.3.77.part00') != '' }}
+        run: |
+          cat .build/v0.3.77.part00 .build/v0.3.77.part01 .build/v0.3.77.part02 .build/v0.3.77.part03 .build/v0.3.77.part04 .build/v0.3.77.part05 | base64 -d | gzip -d > /tmp/v0.3.77-gnome-animations.patch
+          git apply --check /tmp/v0.3.77-gnome-animations.patch
+          git apply /tmp/v0.3.77-gnome-animations.patch
       - name: Read mod version
         run: echo "MOD_VERSION=$(grep '^mod_version=' gradle.properties | cut -d= -f2)" >> "$GITHUB_ENV"
       - name: Install Gradle 9.2.1
