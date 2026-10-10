@@ -1,0 +1,51 @@
+--- a/src/main/java/com/proxpero/syntacticwizardry/ElderGnomeEntity.java
++++ b/src/main/java/com/proxpero/syntacticwizardry/ElderGnomeEntity.java
+@@ -18,6 +18,8 @@
+ /** Elder's three combat spells use the mod's existing spell effect backends. */
+ public final class ElderGnomeEntity extends GnomeEntity {
+     public static final float MAX_MANA = 100.0F;
++    /** A quarter Mana each second at the normal 20 TPS server tick rate. */
++    private static final float MANA_REGEN_PER_SECOND = 0.25F;
+     private static final String MANA_KEY = "sw_gnome_elder_mana";
+     private int pushCooldown;
+     private int damageCooldown;
+@@ -47,6 +49,13 @@
+     @Override public void aiStep() {
+         super.aiStep();
+         if (!(level() instanceof ServerLevel server) || !isAlive()) return;
++        // Regenerate while alive, regardless of combat state; never exceed max Mana.
++        if (tickCount % 20 == 0) {
++            float currentMana = mana();
++            if (currentMana < MAX_MANA)
++                getPersistentData().putFloat(MANA_KEY,
++                        Math.min(MAX_MANA, currentMana + MANA_REGEN_PER_SECOND));
++        }
+         if (!getMainHandItem().is(SyntacticWizardry.IRON_RUNECASTER.get()))
+             setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(SyntacticWizardry.IRON_RUNECASTER.get()));
+         if (pushCooldown > 0) --pushCooldown;
+--- a/gradle.properties
++++ b/gradle.properties
+@@ -11,7 +11,7 @@
+ mod_id=syntacticwizardry
+ mod_name=Syntactic Wizardry
+ mod_license=All Rights Reserved
+-mod_version=0.3.78
++mod_version=0.3.79
+ mod_group_id=com.proxpero.syntacticwizardry
+ 
+ # build_marker=v0.2.85
+\ No newline at end of file
+--- a/GNOME_ELDER.md
++++ b/GNOME_ELDER.md
+@@ -4,6 +4,10 @@
+ 
+ Elder editable geometry is `model-sources/gnome_elder.bbmodel` with custom polygon meshes (71 parts/2428 triangles). Bake to `assets/syntacticwizardry/meshes/gnome_elder.swmesh` with `python3 tools/bake_gnome_elder_mesh.py`. Texture: `textures/entity/gnome_elder.png`. It wears a blue robe/hood and holds a sculpted Iron Runecaster. The entity also has an Iron Runecaster in main hand for game data. This model uses the custom triangle renderer rather than a standard GeckoLib cuboid export.
+ 
+-During combat the Elder uses its spells through the existing Push (`MoveEffect`), Physical Damage (`DamageEffect`), and Alter (`AlterEffect`) backends. Push: Target Entities / Push 4, 5 mana, 70-tick cooldown, range 5. Damage: Target Entities / Physical 6, 21 mana, 45-tick cooldown, range 14. Alter: Sphere Radius 2 / Strength +1, Speed +1, Toughness +1; cast only if no player overlaps the sphere; only village allies gain the bonuses; 30 seconds duration and 600-tick cooldown. Cost is derived from SpellManaCost's standard sphere voxel count. Default and maximum Elder Mana is 100; Mana is persistent and consumed. No Mana regeneration is implemented until its rules are defined.
++During combat the Elder uses its spells through the existing Push (`MoveEffect`), Physical Damage (`DamageEffect`), and Alter (`AlterEffect`) backends. Push: Target Entities / Push 4, 5 mana, 70-tick cooldown, range 5. Damage: Target Entities / Physical 6, 21 mana, 45-tick cooldown, range 14. Alter: Sphere Radius 2 / Strength +1, Speed +1, Toughness +1; cast only if no player overlaps the sphere; only village allies gain the bonuses; 30 seconds duration and 600-tick cooldown. Cost is derived from SpellManaCost's standard sphere voxel count. Default and maximum Elder Mana is 100; Mana is persistent and consumed. The Elder regenerates Mana as specified below.
+ 
+ **Not implemented:** Gnome Village structure generation or guaranteeing precisely one Elder per generated village. That requires a separate worldgen design. This release supports group affiliation of manually spawned Gnomes.
++
++## v0.3.79: Passive Mana regeneration
++
++The Elder regenerates 0.25 Mana per second (0.25 every 20 server ticks). Regeneration happens outside and during combat, persists across saves, and stops at 100 Mana. Regular Gnomes currently have no Mana resource.
