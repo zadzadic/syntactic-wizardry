@@ -597,6 +597,11 @@ jobs:
           cat .build/v0.3.78.part00 .build/v0.3.78.part01 .build/v0.3.78.part02 .build/v0.3.78.part03 .build/v0.3.78.part04 .build/v0.3.78.part05 | base64 -d | gzip -d > /tmp/v0.3.78.patch
           git apply --check /tmp/v0.3.78.patch
           git apply /tmp/v0.3.78.patch
+      - name: Apply v0.3.79 Elder Gnome Mana regeneration
+        if: ${{ hashFiles('.build/v0.3.79-gnome-mana.patch') != '' }}
+        run: |
+          git apply --check .build/v0.3.79-gnome-mana.patch
+          git apply .build/v0.3.79-gnome-mana.patch
       - name: Read mod version
         run: echo "MOD_VERSION=$(grep '^mod_version=' gradle.properties | cut -d= -f2)" >> "$GITHUB_ENV"
       - name: Install Gradle 9.2.1
