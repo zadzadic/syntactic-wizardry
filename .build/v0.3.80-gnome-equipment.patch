@@ -1,0 +1,492 @@
+diff --git a/GNOME_PROFESSIONS.md b/GNOME_PROFESSIONS.md
+new file mode 100644
+index 0000000..0a98e8e
+--- /dev/null
++++ b/GNOME_PROFESSIONS.md
+@@ -0,0 +1,9 @@
++# Gnome profession equipment (v0.3.80)
++
++- Grower: unchanged base Gnome entity and mesh.
++- Delver: same Gnome mesh and animations, with vanilla Iron Pickaxe in its main hand.
++- Smith: same Gnome mesh and animations, with a new Smith's Hammer item in its main hand.
++- Both use the existing neutral Gnome AI, collective village defense, and 0.8 × 1.0 hitboxes.
++- Client renderer draws the held ItemStack anchored at the animated right-hand pivot. No geometry is added to the Gnome model.
++- Separate Delver and Smith spawn eggs allow testing before village generation is implemented.
++- No profession trades, block work, or village generation are implemented by this change.
+diff --git a/gradle.properties b/gradle.properties
+index 59377fe..ff530d9 100644
+--- a/gradle.properties
++++ b/gradle.properties
+@@ -11,7 +11,7 @@ loader_version_range=[1,)
+ mod_id=syntacticwizardry
+ mod_name=Syntactic Wizardry
+ mod_license=All Rights Reserved
+-mod_version=0.3.79
++mod_version=0.3.80
+ mod_group_id=com.proxpero.syntacticwizardry
+ 
+ # build_marker=v0.2.85
+\ No newline at end of file
+diff --git a/src/main/java/com/proxpero/syntacticwizardry/GnomeDelverEntity.java b/src/main/java/com/proxpero/syntacticwizardry/GnomeDelverEntity.java
+new file mode 100644
+index 0000000..f4a2222
+--- /dev/null
++++ b/src/main/java/com/proxpero/syntacticwizardry/GnomeDelverEntity.java
+@@ -0,0 +1,21 @@
++package com.proxpero.syntacticwizardry;
++
++import net.minecraft.world.entity.EntityType;
++import net.minecraft.world.entity.EquipmentSlot;
++import net.minecraft.world.item.ItemStack;
++import net.minecraft.world.item.Items;
++import net.minecraft.world.level.Level;
++
++/** A village Delver. Uses the standard Gnome model with a real iron pickaxe. */
++public final class GnomeDelverEntity extends GnomeEntity {
++    public GnomeDelverEntity(EntityType<? extends GnomeDelverEntity> type, Level level) {
++        super(type, level);
++    }
++
++    @Override public void aiStep() {
++        super.aiStep();
++        if (!level().isClientSide() && !getMainHandItem().is(Items.IRON_PICKAXE)) {
++            setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_PICKAXE));
++        }
++    }
++}
+diff --git a/src/main/java/com/proxpero/syntacticwizardry/GnomeSmithEntity.java b/src/main/java/com/proxpero/syntacticwizardry/GnomeSmithEntity.java
+new file mode 100644
+index 0000000..472d390
+--- /dev/null
++++ b/src/main/java/com/proxpero/syntacticwizardry/GnomeSmithEntity.java
+@@ -0,0 +1,20 @@
++package com.proxpero.syntacticwizardry;
++
++import net.minecraft.world.entity.EntityType;
++import net.minecraft.world.entity.EquipmentSlot;
++import net.minecraft.world.item.ItemStack;
++import net.minecraft.world.level.Level;
++
++/** A village Smith. Uses the standard Gnome model with a held smithing hammer. */
++public final class GnomeSmithEntity extends GnomeEntity {
++    public GnomeSmithEntity(EntityType<? extends GnomeSmithEntity> type, Level level) {
++        super(type, level);
++    }
++
++    @Override public void aiStep() {
++        super.aiStep();
++        if (!level().isClientSide() && !getMainHandItem().is(SyntacticWizardry.SMITH_HAMMER.get())) {
++            setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(SyntacticWizardry.SMITH_HAMMER.get()));
++        }
++    }
++}
+diff --git a/src/main/java/com/proxpero/syntacticwizardry/SyntacticWizardry.java b/src/main/java/com/proxpero/syntacticwizardry/SyntacticWizardry.java
+index ba9867e..6005e0f 100644
+--- a/src/main/java/com/proxpero/syntacticwizardry/SyntacticWizardry.java
++++ b/src/main/java/com/proxpero/syntacticwizardry/SyntacticWizardry.java
+@@ -63,6 +63,9 @@ public final class SyntacticWizardry {
+  public static final DeferredHolder<Fluid,BaseFlowingFluid.Source> ALCHEMICAL_POTION_FLUID=FLUIDS.register("alchemical_potion",()->new BaseFlowingFluid.Source(alchemicalPotionFluidProperties()));
+  public static final DeferredHolder<Fluid,BaseFlowingFluid.Flowing> FLOWING_ALCHEMICAL_POTION_FLUID=FLUIDS.register("flowing_alchemical_potion",()->new BaseFlowingFluid.Flowing(alchemicalPotionFluidProperties()));
+  public static final DeferredItem<DeferredSpawnEggItem> GNOME_ELDER_SPAWN_EGG=ITEMS.register("gnome_elder_spawn_egg",()->new DeferredSpawnEggItem(SyntacticWizardry.GNOME_ELDER::get,0x3154A0,0xAEB5C2,new Item.Properties()));
++ public static final DeferredItem<DeferredSpawnEggItem> GNOME_DELVER_SPAWN_EGG=ITEMS.register("gnome_delver_spawn_egg",()->new DeferredSpawnEggItem(SyntacticWizardry.GNOME_DELVER::get,0x5D4635,0x90989B,new Item.Properties()));
++ public static final DeferredItem<DeferredSpawnEggItem> GNOME_SMITH_SPAWN_EGG=ITEMS.register("gnome_smith_spawn_egg",()->new DeferredSpawnEggItem(SyntacticWizardry.GNOME_SMITH::get,0x704730,0xB4A38B,new Item.Properties()));
++ public static final DeferredItem<Item> SMITH_HAMMER=ITEMS.register("smith_hammer",()->new Item(new Item.Properties().stacksTo(1)));
+  public static final DeferredItem<DeferredSpawnEggItem> GNOME_SPAWN_EGG=ITEMS.register("gnome_spawn_egg",()->new DeferredSpawnEggItem(SyntacticWizardry.GNOME::get,0x795039,0xC3B7A6,new Item.Properties()));
+  public static final DeferredItem<Item> ENCHANTED_LEATHER=ITEMS.register("enchanted_leather",()->new Item(new Item.Properties()));
+  public static final DeferredItem<AlchemicalDictionaryItem> ALCHEMICAL_DICTIONARY=ITEMS.register("alchemical_dictionary",()->new AlchemicalDictionaryItem(new Item.Properties().stacksTo(1)));
+@@ -138,6 +141,8 @@ public final class SyntacticWizardry {
+  public static final DeferredItem<BlockItem> TEMPORARY_BLOCK_ITEM=ITEMS.register("temporary_block",()->new BlockItem(TEMPORARY_BLOCK.get(),new Item.Properties()));
+  public static final DeferredItem<BlockItem> MATURE_CRYSTAL_ITEM=ITEMS.register("mature_crystal",()->new BlockItem(MATURE_CRYSTAL.get(),new Item.Properties()));
+  public static final DeferredHolder<EntityType<?>,EntityType<ElderGnomeEntity>> GNOME_ELDER=ENTITIES.register("gnome_elder",()->EntityType.Builder.<ElderGnomeEntity>of(ElderGnomeEntity::new,MobCategory.CREATURE).sized(0.8F,1.0F).clientTrackingRange(8).updateInterval(3).build("gnome_elder"));
++ public static final DeferredHolder<EntityType<?>,EntityType<GnomeDelverEntity>> GNOME_DELVER=ENTITIES.register("gnome_delver",()->EntityType.Builder.<GnomeDelverEntity>of(GnomeDelverEntity::new,MobCategory.CREATURE).sized(0.8F,1.0F).clientTrackingRange(8).updateInterval(3).build("gnome_delver"));
++ public static final DeferredHolder<EntityType<?>,EntityType<GnomeSmithEntity>> GNOME_SMITH=ENTITIES.register("gnome_smith",()->EntityType.Builder.<GnomeSmithEntity>of(GnomeSmithEntity::new,MobCategory.CREATURE).sized(0.8F,1.0F).clientTrackingRange(8).updateInterval(3).build("gnome_smith"));
+  public static final DeferredHolder<EntityType<?>,EntityType<GnomeEntity>> GNOME=ENTITIES.register("gnome",()->EntityType.Builder.<GnomeEntity>of(GnomeEntity::new,MobCategory.CREATURE).sized(0.8F,1.0F).clientTrackingRange(8).updateInterval(3).build("gnome"));
+  public static final DeferredHolder<EntityType<?>,EntityType<SpellMissile>> SPELL_MISSILE=ENTITIES.register("spell_missile",()->EntityType.Builder.<SpellMissile>of(SpellMissile::new,MobCategory.MISC).sized(0.25F,0.25F).clientTrackingRange(8).updateInterval(1).build("spell_missile"));
+  public static final DeferredHolder<EntityType<?>,EntityType<AlchemicalPotionProjectile>> ALCHEMICAL_POTION_PROJECTILE=ENTITIES.register("alchemical_potion_projectile",()->EntityType.Builder.<AlchemicalPotionProjectile>of(AlchemicalPotionProjectile::new,MobCategory.MISC).sized(0.25F,0.25F).clientTrackingRange(8).updateInterval(10).build("alchemical_potion_projectile"));
+@@ -219,7 +224,7 @@ public final class SyntacticWizardry {
+  public static final DeferredHolder<MenuType<?>,MenuType<ChargedManaCompassMenu>> CHARGED_MANA_COMPASS_MENU=MENUS.register("charged_mana_compass",()->IMenuTypeExtension.create(ChargedManaCompassMenu::client));
+  public static final DeferredHolder<MenuType<?>,MenuType<FocusSpellMenu>> FOCUS_SPELL_MENU=MENUS.register("focus_spells",()->IMenuTypeExtension.create(FocusSpellMenu::client));
+  public static final DeferredHolder<MenuType<?>,MenuType<RunecasterMenu>> RUNECASTER_MENU=MENUS.register("runecaster",()->IMenuTypeExtension.create((id,inv,data)->RunecasterMenu.client(id,inv)));
+- public static final DeferredHolder<CreativeModeTab,CreativeModeTab> SYNTACTIC_WIZARDRY_TAB=CREATIVE_TABS.register("syntactic_wizardry",()->CreativeModeTab.builder().title(Component.translatable("itemGroup.syntacticwizardry")).icon(()->SCRIBES_LECTERN_ITEM.get().getDefaultInstance()).displayItems((parameters,output)->{output.accept(SCRIBES_LECTERN_ITEM.get());output.accept(CARVING_STATION_ITEM.get());output.accept(ALCHEMY_GRINDSTONE_ITEM.get());output.accept(ALCHEMY_BELLOWS_ITEM.get());output.accept(ALCHEMY_ALEMBIC_ITEM.get());output.accept(ALCHEMICAL_DICTIONARY.get());output.accept(GLASS_BULLET.get());output.accept(GNOME_SPAWN_EGG.get());output.accept(GNOME_ELDER_SPAWN_EGG.get());output.accept(TATTERED_NOTES.get());output.accept(RESEARCH_NOTES.get());output.accept(ARCANE_THEORIES.get());output.accept(PotionContents.createItemStack(Items.POTION,AWAKENING_POTION));output.accept(PotionContents.createItemStack(Items.SPLASH_POTION,AWAKENING_POTION));output.accept(PotionContents.createItemStack(Items.LINGERING_POTION,AWAKENING_POTION));output.accept(ENCHANTED_LEATHER.get());output.accept(CLOTH_HOOD.get());output.accept(CLOTH_UPPER_ROBE.get());output.accept(CLOTH_LOWER_ROBE.get());output.accept(HEAVY_HOOD.get());output.accept(HEAVY_UPPER_ROBE.get());output.accept(HEAVY_LOWER_ROBE.get());output.accept(LEATHER_HOOD.get());output.accept(LEATHER_UPPER_ROBE.get());output.accept(LEATHER_LOWER_ROBE.get());output.accept(WIZARDS_HOOD.get());output.accept(WIZARDS_UPPER_ROBE.get());output.accept(WIZARDS_LOWER_ROBE.get());output.accept(GOLDEN_ORB_ITEM.get());output.accept(SPELL_RANDOMIZER_ITEM.get());output.accept(TEMPORARY_BLOCK_ITEM.get());output.accept(MATURE_CRYSTAL_ITEM.get());output.accept(MISSILE_SHAPE.get());output.accept(SPHERE_SHAPE.get());output.accept(BOX_SHAPE.get());output.accept(CONE_SHAPE.get());output.accept(TOUCH_SHAPE.get());output.accept(TARGET_SHAPE.get());output.accept(DAMAGE_EFFECT.get());output.accept(DIG_EFFECT.get());output.accept(HIGH_MANA_COMPASS.get());output.accept(CHARGED_MANA_COMPASS.get());output.accept(WAND.get());output.accept(STRUCTURE_DEBUG_TOOL.get());output.accept(IRON_RUNESTONE.get());output.accept(GOLD_RUNESTONE.get());output.accept(EMERALD_RUNESTONE.get());output.accept(DIAMOND_RUNESTONE.get());output.accept(CARVED_STAFF.get());output.accept(WOOD_RUNECASTER_HEAD.get());output.accept(IRON_RUNECASTER_HEAD.get());output.accept(DIAMOND_RUNECASTER_HEAD.get());output.accept(NETHERITE_RUNECASTER_HEAD.get());output.accept(WOOD_RUNECASTER.get());output.accept(IRON_RUNECASTER.get());output.accept(DIAMOND_RUNECASTER.get());output.accept(NETHERITE_RUNECASTER.get());}).build());
++ public static final DeferredHolder<CreativeModeTab,CreativeModeTab> SYNTACTIC_WIZARDRY_TAB=CREATIVE_TABS.register("syntactic_wizardry",()->CreativeModeTab.builder().title(Component.translatable("itemGroup.syntacticwizardry")).icon(()->SCRIBES_LECTERN_ITEM.get().getDefaultInstance()).displayItems((parameters,output)->{output.accept(SCRIBES_LECTERN_ITEM.get());output.accept(CARVING_STATION_ITEM.get());output.accept(ALCHEMY_GRINDSTONE_ITEM.get());output.accept(ALCHEMY_BELLOWS_ITEM.get());output.accept(ALCHEMY_ALEMBIC_ITEM.get());output.accept(ALCHEMICAL_DICTIONARY.get());output.accept(GLASS_BULLET.get());output.accept(GNOME_SPAWN_EGG.get());output.accept(GNOME_DELVER_SPAWN_EGG.get());output.accept(GNOME_SMITH_SPAWN_EGG.get());output.accept(SMITH_HAMMER.get());output.accept(GNOME_ELDER_SPAWN_EGG.get());output.accept(TATTERED_NOTES.get());output.accept(RESEARCH_NOTES.get());output.accept(ARCANE_THEORIES.get());output.accept(PotionContents.createItemStack(Items.POTION,AWAKENING_POTION));output.accept(PotionContents.createItemStack(Items.SPLASH_POTION,AWAKENING_POTION));output.accept(PotionContents.createItemStack(Items.LINGERING_POTION,AWAKENING_POTION));output.accept(ENCHANTED_LEATHER.get());output.accept(CLOTH_HOOD.get());output.accept(CLOTH_UPPER_ROBE.get());output.accept(CLOTH_LOWER_ROBE.get());output.accept(HEAVY_HOOD.get());output.accept(HEAVY_UPPER_ROBE.get());output.accept(HEAVY_LOWER_ROBE.get());output.accept(LEATHER_HOOD.get());output.accept(LEATHER_UPPER_ROBE.get());output.accept(LEATHER_LOWER_ROBE.get());output.accept(WIZARDS_HOOD.get());output.accept(WIZARDS_UPPER_ROBE.get());output.accept(WIZARDS_LOWER_ROBE.get());output.accept(GOLDEN_ORB_ITEM.get());output.accept(SPELL_RANDOMIZER_ITEM.get());output.accept(TEMPORARY_BLOCK_ITEM.get());output.accept(MATURE_CRYSTAL_ITEM.get());output.accept(MISSILE_SHAPE.get());output.accept(SPHERE_SHAPE.get());output.accept(BOX_SHAPE.get());output.accept(CONE_SHAPE.get());output.accept(TOUCH_SHAPE.get());output.accept(TARGET_SHAPE.get());output.accept(DAMAGE_EFFECT.get());output.accept(DIG_EFFECT.get());output.accept(HIGH_MANA_COMPASS.get());output.accept(CHARGED_MANA_COMPASS.get());output.accept(WAND.get());output.accept(STRUCTURE_DEBUG_TOOL.get());output.accept(IRON_RUNESTONE.get());output.accept(GOLD_RUNESTONE.get());output.accept(EMERALD_RUNESTONE.get());output.accept(DIAMOND_RUNESTONE.get());output.accept(CARVED_STAFF.get());output.accept(WOOD_RUNECASTER_HEAD.get());output.accept(IRON_RUNECASTER_HEAD.get());output.accept(DIAMOND_RUNECASTER_HEAD.get());output.accept(NETHERITE_RUNECASTER_HEAD.get());output.accept(WOOD_RUNECASTER.get());output.accept(IRON_RUNECASTER.get());output.accept(DIAMOND_RUNECASTER.get());output.accept(NETHERITE_RUNECASTER.get());}).build());
+  private static java.util.List<DeferredHolder<MobEffect,MobEffect>> createProtectionStatusEffects(){
+   java.util.ArrayList<DeferredHolder<MobEffect,MobEffect>> effects=new java.util.ArrayList<>();
+   for(int percent=10;percent<=100;percent+=10){
+@@ -246,6 +251,6 @@ public final class SyntacticWizardry {
+  }
+  private static ArmorItem robePiece(Holder<ArmorMaterial> material,ArmorItem.Type type,float spellDiscount){return new RobeArmorItem(material,type,new Item.Properties().durability(type.getDurability(5)),spellDiscount);}
+  private static ScribesLecternMenu createScribesLecternMenu(int id,Inventory inv,RegistryFriendlyByteBuf data){return new ScribesLecternMenu(id,inv);}
+- private static void registerGnomeAttributes(EntityAttributeCreationEvent event){event.put(GNOME.get(),GnomeEntity.createAttributes().build());event.put(GNOME_ELDER.get(),ElderGnomeEntity.createAttributes().build());}
++ private static void registerGnomeAttributes(EntityAttributeCreationEvent event){event.put(GNOME.get(),GnomeEntity.createAttributes().build());event.put(GNOME_DELVER.get(),GnomeDelverEntity.createAttributes().build());event.put(GNOME_SMITH.get(),GnomeSmithEntity.createAttributes().build());event.put(GNOME_ELDER.get(),ElderGnomeEntity.createAttributes().build());}
+  public SyntacticWizardry(IEventBus bus){FLUID_TYPES.register(bus);FLUIDS.register(bus);BLOCKS.register(bus);ARMOR_MATERIALS.register(bus);MOB_EFFECTS.register(bus);POTIONS.register(bus);ITEMS.register(bus);ENTITIES.register(bus);BLOCK_ENTITY_TYPES.register(bus);MENUS.register(bus);CREATIVE_TABS.register(bus);GLOBAL_LOOT_MODIFIER_SERIALIZERS.register(bus);bus.addListener(SyntacticWizardry::registerGnomeAttributes);OptionalCreateCompat.init(bus);net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(AwakeningPotionBrewing::register);}
+ }
+diff --git a/src/main/java/com/proxpero/syntacticwizardry/client/ClientEvents.java b/src/main/java/com/proxpero/syntacticwizardry/client/ClientEvents.java
+index 54f9f6a..702f9e5 100644
+--- a/src/main/java/com/proxpero/syntacticwizardry/client/ClientEvents.java
++++ b/src/main/java/com/proxpero/syntacticwizardry/client/ClientEvents.java
+@@ -17,7 +17,7 @@ public final class ClientEvents {
+  @SubscribeEvent public static void clientSetup(FMLClientSetupEvent e){e.enqueueWork(()->{ItemProperties.register(SyntacticWizardry.HIGH_MANA_COMPASS.get(),ResourceLocation.fromNamespaceAndPath(SyntacticWizardry.MOD_ID,"high_mana_angle"),(stack,level,entity,seed)->HighManaCompassClientState.angle(entity));ItemProperties.register(SyntacticWizardry.CHARGED_MANA_COMPASS.get(),ResourceLocation.fromNamespaceAndPath(SyntacticWizardry.MOD_ID,"charged_mana_angle"),(stack,level,entity,seed)->ChargedManaCompassClientState.angle(stack,entity));});}
+  @SubscribeEvent public static void registerScreens(RegisterMenuScreensEvent e){e.register(SyntacticWizardry.RESEARCH_DESK_MENU.get(),ResearchDeskScreen::new);e.register(SyntacticWizardry.ALCHEMICAL_DICTIONARY_MENU.get(),AlchemicalDictionaryScreen::new);e.register(SyntacticWizardry.ALCHEMY_GRINDSTONE_MENU.get(),AlchemyGrindstoneScreen::new);e.register(SyntacticWizardry.SCRIBES_LECTERN_MENU.get(),ScribesLecternScreen::new);e.register(SyntacticWizardry.CARVING_STATION_MENU.get(),CarvingStationScreen::new);e.register(SyntacticWizardry.GOLDEN_ORB_MENU.get(),GoldenOrbScreen::new);e.register(SyntacticWizardry.SPELL_RANDOMIZER_MENU.get(),SpellRandomizerScreen::new);e.register(SyntacticWizardry.DIMENSIONAL_STORAGE_MENU.get(),DimensionalStorageScreen::new);e.register(SyntacticWizardry.HIGH_MANA_COMPASS_MENU.get(),HighManaCompassScreen::new);e.register(SyntacticWizardry.CHARGED_MANA_COMPASS_MENU.get(),ChargedManaCompassScreen::new);e.register(SyntacticWizardry.FOCUS_SPELL_MENU.get(),FocusSpellScreen::new);e.register(SyntacticWizardry.RUNECASTER_MENU.get(),RunecasterScreen::new);}
+  @SubscribeEvent public static void registerRenderers(EntityRenderersEvent.RegisterRenderers e){
+-  e.registerEntityRenderer(SyntacticWizardry.GNOME.get(),GnomeRenderer::new);e.registerEntityRenderer(SyntacticWizardry.GNOME_ELDER.get(),ElderGnomeRenderer::new);
++  e.registerEntityRenderer(SyntacticWizardry.GNOME.get(),GnomeRenderer::new);e.registerEntityRenderer(SyntacticWizardry.GNOME_DELVER.get(),GnomeRenderer::new);e.registerEntityRenderer(SyntacticWizardry.GNOME_SMITH.get(),GnomeRenderer::new);e.registerEntityRenderer(SyntacticWizardry.GNOME_ELDER.get(),ElderGnomeRenderer::new);
+   e.registerEntityRenderer(SyntacticWizardry.SPELL_MISSILE.get(),SpellMissileRenderer::new);
+   e.registerEntityRenderer(SyntacticWizardry.ALCHEMICAL_POTION_PROJECTILE.get(),ThrownItemRenderer::new);
+   e.registerEntityRenderer(SyntacticWizardry.GLASS_BULLET_PROJECTILE.get(),GlassBulletRenderer::new);
+diff --git a/src/main/java/com/proxpero/syntacticwizardry/client/GnomeAnimatedMesh.java b/src/main/java/com/proxpero/syntacticwizardry/client/GnomeAnimatedMesh.java
+index 5400673..22c4d20 100644
+--- a/src/main/java/com/proxpero/syntacticwizardry/client/GnomeAnimatedMesh.java
++++ b/src/main/java/com/proxpero/syntacticwizardry/client/GnomeAnimatedMesh.java
+@@ -4,6 +4,10 @@ import com.mojang.blaze3d.vertex.PoseStack;
+ import com.mojang.blaze3d.vertex.VertexConsumer;
+ import com.mojang.math.Axis;
+ import net.minecraft.util.Mth;
++import net.minecraft.client.Minecraft;
++import net.minecraft.client.renderer.MultiBufferSource;
++import net.minecraft.world.item.ItemDisplayContext;
++import net.minecraft.world.item.ItemStack;
+ import net.minecraft.world.entity.LivingEntity;
+ import java.io.BufferedInputStream;
+ import java.io.DataInputStream;
+@@ -75,9 +79,16 @@ final class GnomeAnimatedMesh {
+         }
+     }
+ 
+-    /** Uses vanilla walk animation, airborne state and synced attack-swing progress. */
++    /** The Elder retains its modeled Runecaster; only profession Gnomes draw held items. */
+     void render(LivingEntity gnome, float partialTick, PoseStack pose,
+                 VertexConsumer consumer, int light, int overlay, boolean elder) {
++        render(gnome, partialTick, pose, consumer, light, overlay, elder, null);
++    }
++
++    /** Uses vanilla walk animation, airborne state and synced attack-swing progress. */
++    void render(LivingEntity gnome, float partialTick, PoseStack pose,
++                VertexConsumer consumer, int light, int overlay, boolean elder,
++                MultiBufferSource buffers) {
+         float walkSpeed = Math.min(1.0F, gnome.walkAnimation.speed(partialTick));
+         // Vanilla limb phase (0.6662) covers multiple blocks per stride on a
+         // one-block-tall Gnome. Use a short, speed-driven stride of roughly
+@@ -134,11 +145,39 @@ final class GnomeAnimatedMesh {
+         draw(LEFT_ARM, pose, consumer, light, overlay, leftArm, 0, -0.025F);
+         draw(RIGHT_ARM, pose, consumer, light, overlay, rightArm,
+                 elder ? -0.16F * strike : 0F, 0.025F);
++        // Equipment must follow the arm's animated pivot, not float at the root.
++        if (buffers != null && !elder && !gnome.getMainHandItem().isEmpty()) {
++            renderHeldTool(gnome, pose, buffers, light, overlay, rightArm, 0.025F);
++        }
+         draw(HEAD, pose, consumer, light, overlay, headPitch, headYaw, 0);
+         pose.popPose();
+         pose.popPose();
+     }
+ 
++    /** Render Minecraft's actual main-hand ItemStack, with the right hand's transforms. */
++    private static void renderHeldTool(LivingEntity gnome, PoseStack pose,
++                                       MultiBufferSource buffers, int light, int overlay,
++                                       float armPitch, float armRoll) {
++        ItemStack held = gnome.getMainHandItem();
++        if (held.isEmpty()) return;
++        pose.pushPose();
++        float[] pivot = PIVOTS[RIGHT_ARM];
++        pose.translate(pivot[0] / 16F, pivot[1] / 16F, pivot[2] / 16F);
++        if (armRoll != 0F) pose.mulPose(Axis.ZP.rotation(armRoll));
++        if (armPitch != 0F) pose.mulPose(Axis.XP.rotation(armPitch));
++        pose.translate(-pivot[0] / 16F, -pivot[1] / 16F, -pivot[2] / 16F);
++        // Original sculpted right hand: X=3.84..6.30, Y=3.65..5.29, Z=-1.54..1.15.
++        // Place the tool grip at the middle of the palm, not on the wrist.
++        pose.translate(5.05D / 16D, 4.30D / 16D, -0.6D / 16D);
++        pose.mulPose(Axis.XP.rotationDegrees(-90F));
++        pose.mulPose(Axis.YP.rotationDegrees(180F));
++        pose.scale(0.72F, 0.72F, 0.72F);
++        Minecraft.getInstance().getItemRenderer().renderStatic(
++                held, ItemDisplayContext.THIRD_PERSON_RIGHT_HAND,
++                light, overlay, pose, buffers, gnome.level(), gnome.getId());
++        pose.popPose();
++    }
++
+     private void draw(int bone, PoseStack pose, VertexConsumer out, int light, int overlay,
+                       float rotX, float rotY, float rotZ) {
+         float[] values = bones[bone];
+diff --git a/src/main/java/com/proxpero/syntacticwizardry/client/GnomeRenderer.java b/src/main/java/com/proxpero/syntacticwizardry/client/GnomeRenderer.java
+index 12c53df..029e62c 100644
+--- a/src/main/java/com/proxpero/syntacticwizardry/client/GnomeRenderer.java
++++ b/src/main/java/com/proxpero/syntacticwizardry/client/GnomeRenderer.java
+@@ -12,7 +12,7 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
+ import net.minecraft.resources.ResourceLocation;
+ 
+ /** Draws the original polygon mesh. Unlike ModelPart, this supports shaped mesh faces. */
+-public final class GnomeRenderer extends EntityRenderer<GnomeEntity> {
++public final class GnomeRenderer<T extends GnomeEntity> extends EntityRenderer<T> {
+     private static final ResourceLocation TEXTURE =
+             ResourceLocation.fromNamespaceAndPath("syntacticwizardry", "textures/entity/gnome.png");
+ 
+@@ -22,18 +22,18 @@ public final class GnomeRenderer extends EntityRenderer<GnomeEntity> {
+     }
+ 
+     @Override
+-    public ResourceLocation getTextureLocation(GnomeEntity entity) {
++    public ResourceLocation getTextureLocation(T entity) {
+         return TEXTURE;
+     }
+ 
+     @Override
+-    public void render(GnomeEntity entity, float yaw, float partialTick, PoseStack pose,
++    public void render(T entity, float yaw, float partialTick, PoseStack pose,
+                        MultiBufferSource buffers, int packedLight) {
+         pose.pushPose();
+         // Model-space front is -Z; the mob's forward direction follows the vanilla convention.
+         pose.mulPose(Axis.YP.rotationDegrees(180.0F - yaw));
+         VertexConsumer vertices = buffers.getBuffer(RenderType.entityCutoutNoCull(TEXTURE));
+-        GnomeMesh.INSTANCE.render(entity, partialTick, pose, vertices, packedLight, OverlayTexture.NO_OVERLAY, false);
++        GnomeMesh.INSTANCE.render(entity, partialTick, pose, vertices, packedLight, OverlayTexture.NO_OVERLAY, false, buffers);
+         pose.popPose();
+         super.render(entity, yaw, partialTick, pose, buffers, packedLight);
+     }
+diff --git a/src/main/resources/assets/syntacticwizardry/lang/en_us.json b/src/main/resources/assets/syntacticwizardry/lang/en_us.json
+index 72a0961..64adab8 100644
+--- a/src/main/resources/assets/syntacticwizardry/lang/en_us.json
++++ b/src/main/resources/assets/syntacticwizardry/lang/en_us.json
+@@ -125,5 +125,10 @@
+   "menu.syntacticwizardry.research_desk": "Research Desk",
+   "menu.syntacticwizardry.runecaster": "Runecaster",
+   "entity.syntacticwizardry.gnome_elder": "Elder Gnome",
+-  "item.syntacticwizardry.gnome_elder_spawn_egg": "Elder Gnome Spawn Egg"
++  "item.syntacticwizardry.gnome_elder_spawn_egg": "Elder Gnome Spawn Egg",
++  "entity.syntacticwizardry.gnome_delver": "Gnome Delver",
++  "entity.syntacticwizardry.gnome_smith": "Gnome Smith",
++  "item.syntacticwizardry.gnome_delver_spawn_egg": "Gnome Delver Spawn Egg",
++  "item.syntacticwizardry.gnome_smith_spawn_egg": "Gnome Smith Spawn Egg",
++  "item.syntacticwizardry.smith_hammer": "Smith's Hammer"
+ }
+diff --git a/src/main/resources/assets/syntacticwizardry/models/item/smith_hammer.json b/src/main/resources/assets/syntacticwizardry/models/item/smith_hammer.json
+new file mode 100644
+index 0000000..d2603fd
+--- /dev/null
++++ b/src/main/resources/assets/syntacticwizardry/models/item/smith_hammer.json
+@@ -0,0 +1,227 @@
++{
++  "textures": {
++    "particle": "minecraft:block/iron_block",
++    "head": "minecraft:block/iron_block",
++    "handle": "minecraft:block/spruce_planks",
++    "band": "minecraft:block/gray_concrete"
++  },
++  "elements": [
++    {
++      "from": [
++        7,
++        0,
++        7
++      ],
++      "to": [
++        9,
++        12,
++        9
++      ],
++      "faces": {
++        "north": {
++          "texture": "#handle"
++        },
++        "south": {
++          "texture": "#handle"
++        },
++        "east": {
++          "texture": "#handle"
++        },
++        "west": {
++          "texture": "#handle"
++        },
++        "up": {
++          "texture": "#handle"
++        },
++        "down": {
++          "texture": "#handle"
++        }
++      }
++    },
++    {
++      "from": [
++        3.5,
++        10.5,
++        5.8
++      ],
++      "to": [
++        12.5,
++        14.7,
++        10.2
++      ],
++      "faces": {
++        "north": {
++          "texture": "#head"
++        },
++        "south": {
++          "texture": "#head"
++        },
++        "east": {
++          "texture": "#head"
++        },
++        "west": {
++          "texture": "#head"
++        },
++        "up": {
++          "texture": "#head"
++        },
++        "down": {
++          "texture": "#head"
++        }
++      }
++    },
++    {
++      "from": [
++        6.75,
++        9.0,
++        6.65
++      ],
++      "to": [
++        9.25,
++        11.2,
++        9.35
++      ],
++      "faces": {
++        "north": {
++          "texture": "#band"
++        },
++        "south": {
++          "texture": "#band"
++        },
++        "east": {
++          "texture": "#band"
++        },
++        "west": {
++          "texture": "#band"
++        },
++        "up": {
++          "texture": "#band"
++        },
++        "down": {
++          "texture": "#band"
++        }
++      }
++    }
++  ],
++  "display": {
++    "thirdperson_righthand": {
++      "rotation": [
++        0,
++        90,
++        0
++      ],
++      "translation": [
++        0,
++        0,
++        0
++      ],
++      "scale": [
++        0.7,
++        0.7,
++        0.7
++      ]
++    },
++    "thirdperson_lefthand": {
++      "rotation": [
++        0,
++        -90,
++        0
++      ],
++      "translation": [
++        0,
++        0,
++        0
++      ],
++      "scale": [
++        0.7,
++        0.7,
++        0.7
++      ]
++    },
++    "firstperson_righthand": {
++      "rotation": [
++        0,
++        -90,
++        0
++      ],
++      "translation": [
++        0,
++        0,
++        0
++      ],
++      "scale": [
++        0.75,
++        0.75,
++        0.75
++      ]
++    },
++    "firstperson_lefthand": {
++      "rotation": [
++        0,
++        90,
++        0
++      ],
++      "translation": [
++        0,
++        0,
++        0
++      ],
++      "scale": [
++        0.75,
++        0.75,
++        0.75
++      ]
++    },
++    "gui": {
++      "rotation": [
++        30,
++        225,
++        0
++      ],
++      "translation": [
++        0,
++        0,
++        0
++      ],
++      "scale": [
++        0.85,
++        0.85,
++        0.85
++      ]
++    },
++    "ground": {
++      "rotation": [
++        0,
++        0,
++        0
++      ],
++      "translation": [
++        0,
++        2,
++        0
++      ],
++      "scale": [
++        0.55,
++        0.55,
++        0.55
++      ]
++    },
++    "fixed": {
++      "rotation": [
++        0,
++        0,
++        0
++      ],
++      "translation": [
++        0,
++        0,
++        0
++      ],
++      "scale": [
++        0.8,
++        0.8,
++        0.8
++      ]
++    }
++  }
++}
