@@ -602,6 +602,11 @@ jobs:
         run: |
           git apply --check .build/v0.3.79-gnome-mana.patch
           git apply .build/v0.3.79-gnome-mana.patch
+      - name: Apply v0.3.80 Gnome equipment
+        if: ${{ hashFiles('.build/v0.3.80-gnome-equipment.patch') != '' }}
+        run: |
+          git apply --check .build/v0.3.80-gnome-equipment.patch
+          git apply .build/v0.3.80-gnome-equipment.patch
       - name: Read mod version
         run: echo "MOD_VERSION=$(grep '^mod_version=' gradle.properties | cut -d= -f2)" >> "$GITHUB_ENV"
       - name: Install Gradle 9.2.1
