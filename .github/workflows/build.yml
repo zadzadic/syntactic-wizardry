@@ -665,6 +665,11 @@ jobs:
         run: |
           git apply --check .build/v0.3.91-gnome-behavior-trading.patch
           git apply .build/v0.3.91-gnome-behavior-trading.patch
+      - name: Apply v0.3.92 Gnome Bed crafting recipe
+        if: ${{ hashFiles('.build/v0.3.92-gnome-bed-recipe.patch') != '' }}
+        run: |
+          git apply --check .build/v0.3.92-gnome-bed-recipe.patch
+          git apply .build/v0.3.92-gnome-bed-recipe.patch
       - name: Read mod version
         run: echo "MOD_VERSION=$(grep '^mod_version=' gradle.properties | cut -d= -f2)" >> "$GITHUB_ENV"
       - name: Install Gradle 9.2.1
