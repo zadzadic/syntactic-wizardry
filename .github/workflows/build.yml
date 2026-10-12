@@ -623,6 +623,11 @@ jobs:
         run: |
           git apply --check .build/v0.3.83-consume-nodes.patch
           git apply .build/v0.3.83-consume-nodes.patch
+      - name: Apply v0.3.84 underground Gnome Village worldgen
+        if: ${{ hashFiles('.build/v0.3.84-villages.patch') != '' }}
+        run: |
+          git apply --check .build/v0.3.84-villages.patch
+          git apply .build/v0.3.84-villages.patch
       - name: Read mod version
         run: echo "MOD_VERSION=$(grep '^mod_version=' gradle.properties | cut -d= -f2)" >> "$GITHUB_ENV"
       - name: Install Gradle 9.2.1
