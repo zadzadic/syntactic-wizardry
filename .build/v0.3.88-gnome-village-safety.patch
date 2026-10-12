@@ -1,0 +1,318 @@
+diff --git a/DESIGN.md b/DESIGN.md
+index 3d72e96..0e156c4 100644
+--- a/DESIGN.md
++++ b/DESIGN.md
+@@ -1349,3 +1349,7 @@ The old 5-block effect-origin clamp in `ConduitPlannerState` was removed.
+ The 3×3×3 Armillary is formed by right-clicking its central **vanilla Amethyst Block** with the **Wand**. Arrange 13 ingredient blocks on the same height in a 7×7 cross pattern. The exact source export is retained in `data/syntacticwizardry/rituals/armillary_formation.json`.
+ 
+ Relative to the amethyst: four Gold Blocks at the cardinal adjacent positions; four Lapis Blocks on the four inner diagonals; and four Copper Blocks three blocks away along the cardinal axes. The two layers above the central 3×3 must be empty. The world layer below the pattern is not checked. On a valid cast the outer four copper markers are consumed, the eight inner Gold/Lapis blocks turn into bottom Cut Copper Slabs, and the central amethyst becomes the Armillary controller. All ingredients are validated before any world changes. The existing armillary planner and geometry remain unchanged.
++
++### Version 0.3.88 – Underground Gnome Village safety
++
++Gnome villages generate a closed, torch-lit structure with a double-oak-door entry corridor leading to a pre-existing natural cavern. Village candidates lacking a safe nearby dry cavern are skipped. Zombies and skeletons target Gnomes as prey. All Gnome variants are valid targets. Existing Gnome defense and professions remain unchanged.
+diff --git a/GNOME_VILLAGE_GENERATION.md b/GNOME_VILLAGE_GENERATION.md
+index 29f8f55..04d6460 100644
+--- a/GNOME_VILLAGE_GENERATION.md
++++ b/GNOME_VILLAGE_GENERATION.md
+@@ -11,3 +11,12 @@
+ - Room ceilings are three blocks above their floor. Rooms on consecutive levels are separated by five blocks.
+ - Villages spawn 8–12 ordinary Gnomes. The existing village population manager establishes one Elder per eight ordinary Gnomes, rounded up. Workstation professions operate unchanged.
+ - The provisional 24-block horizontal/12-block vertical village-home search still applies. This change does not yet add structural repair blueprints or retroactive regeneration in existing chunks.
++
++## v0.3.88 safety, hostility and cavern access
++
++- Village worldgen now requires a nearby pre-existing natural, dry cave with a solid floor and at least a small connected open pocket. Cave discovery runs **before** any village blocks are placed, so generated interiors cannot be mistaken for caverns. Village candidates without a suitable cave in the nearby search area are skipped.
++- The lowest communal level gains a new outward, roofed 3-block-wide tunnel with reinforced stone-brick side walls. Its last cells open into the discovered cavern. A set of **two adjacent oak doors**, with upper/lower halves and opposing hinges, closes its inner entrance; a stone jamb fills the third hallway lane.
++- Other village corridors receive solid side walls where they do not intersect rooms/shaft junctions. This seals accidental openings into nearby caves.
++- Corridors have post-construction wall torches every six distinct pathway cells (rather than unreliable provisional torches on exterior cave stone). Every room gets four supported wall torches. Existing recessed shaft Glowstone remains unchanged.
++- Zombies (including subclasses) and all vanilla skeleton variants target Gnomes through the normal AI target-goal selector, while retaining normal player priority. Neutral Gnomes still retaliate and alert village allies when attacked.
++- New generation only. Existing generated villages remain unchanged.
+diff --git a/gradle.properties b/gradle.properties
+index fd8f279..1687007 100644
+--- a/gradle.properties
++++ b/gradle.properties
+@@ -11,7 +11,7 @@ loader_version_range=[1,)
+ mod_id=syntacticwizardry
+ mod_name=Syntactic Wizardry
+ mod_license=All Rights Reserved
+-mod_version=0.3.87
++mod_version=0.3.88
+ mod_group_id=com.proxpero.syntacticwizardry
+ 
+ # build_marker=v0.2.85
+\ No newline at end of file
+diff --git a/src/main/java/com/proxpero/syntacticwizardry/GnomeVillageFeature.java b/src/main/java/com/proxpero/syntacticwizardry/GnomeVillageFeature.java
+index f0725fd..ad46daf 100644
+--- a/src/main/java/com/proxpero/syntacticwizardry/GnomeVillageFeature.java
++++ b/src/main/java/com/proxpero/syntacticwizardry/GnomeVillageFeature.java
+@@ -7,6 +7,9 @@ import net.minecraft.util.RandomSource;
+ import net.minecraft.world.level.WorldGenLevel;
+ import net.minecraft.world.level.block.Blocks;
+ import net.minecraft.world.level.block.StairBlock;
++import net.minecraft.world.level.block.DoorBlock;
++import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
++import net.minecraft.world.level.block.state.properties.DoorHingeSide;
+ import net.minecraft.world.level.block.WallTorchBlock;
+ import net.minecraft.world.level.block.state.BlockState;
+ import net.minecraft.world.level.levelgen.Heightmap;
+@@ -41,7 +44,12 @@ public final class GnomeVillageFeature extends Feature<NoneFeatureConfiguration>
+             BlockPos sample = origin.offset(dx, 0, dz);
+             if (!level.getFluidState(sample).isEmpty() || level.getBlockState(sample).is(Blocks.BEDROCK)) return false;
+         }
+-        new Builder(level, origin, context.random()).build();
++        // Discover a pre-existing dry cave before carving the settlement. A sealed
++        // village without a natural exit is not a valid generation site.
++        Builder builder = new Builder(level, origin, context.random());
++        Builder.Cavern mouth = builder.findNaturalCavern();
++        if (mouth == null) return false;
++        builder.build(mouth);
+         return true;
+     }
+ 
+@@ -52,6 +60,7 @@ public final class GnomeVillageFeature extends Feature<NoneFeatureConfiguration>
+         private final List<BlockPos> spawnSites = new ArrayList<>();
+         private record Room(int x, int z, int y, int rx, int rz, String kind) {}
+         private record Point(int x, int z) {}
++        private record Cavern(int x, int floorY, int z, Direction exitSide) {}
+ 
+         Builder(WorldGenLevel world, BlockPos center, RandomSource random) {
+             this.world = world;
+@@ -66,6 +75,51 @@ public final class GnomeVillageFeature extends Feature<NoneFeatureConfiguration>
+         private void clear(int x, int y, int z) { set(x, y, z, AIR); }
+         private void path(int x, int y, int z) { set(x, y, z, PATH); }
+ 
++        /** Identify a dry natural cavern, not a room excavated by village generation.
++         * Search on the three unused sides of the shaft; north contains the room galleries.
++         * A qualifying cavern has a solid floor and a pocket of several connected air cells.
++         */
++        private Cavern findNaturalCavern() {
++            Cavern best = null;
++            int bestScore = Integer.MAX_VALUE;
++            for (int x = -20; x <= 20; x++) for (int z = -20; z <= 20; z++) {
++                int radius2 = x*x + z*z;
++                if (radius2 < 14*14 || radius2 > 20*20) continue;
++                // Avoid the existing north-facing galleries and residences.
++                if (z < -7) continue;
++                Direction side = Math.abs(x) > Math.abs(z)
++                        ? (x > 0 ? Direction.EAST : Direction.WEST) : Direction.SOUTH;
++                for (int floorY = -2; floorY <= 2; floorY++) {
++                    int open = 0;
++                    if (!dryCaveCell(x, floorY, z)) continue;
++                    for (int xx = -2; xx <= 2; xx++) for (int zz = -2; zz <= 2; zz++) {
++                        if (xx*xx + zz*zz > 6) continue;
++                        if (dryCaveCell(x+xx, floorY, z+zz)) open++;
++                    }
++                    if (open < 8) continue;
++                    // Prefer a nearby cavern with multiple safe floor cells.
++                    int score = radius2*10 + Math.abs(floorY)*25 - open*4;
++                    if (score < bestScore) {
++                        best = new Cavern(x, floorY, z, side);
++                        bestScore = score;
++                    }
++                }
++            }
++            return best;
++        }
++
++        private boolean dryCaveCell(int x, int floorY, int z) {
++            BlockPos floor = at(x, floorY, z);
++            BlockPos lower = floor.above();
++            BlockPos upper = lower.above();
++            BlockState rock = world.getBlockState(floor);
++            return rock.isSolidRender(world, floor)
++                    && world.getBlockState(lower).isAir()
++                    && world.getBlockState(upper).isAir()
++                    && world.getFluidState(lower).isEmpty()
++                    && world.getFluidState(upper).isEmpty();
++        }
++
+         /** Eleven-block-wide open shaft, bounded by a cylindrical stone-brick wall. */
+         private void shaft() {
+             for (int x = -7; x <= 7; x++) for (int z = -7; z <= 7; z++) {
+@@ -86,7 +140,7 @@ public final class GnomeVillageFeature extends Feature<NoneFeatureConfiguration>
+                 for (int z = -room.rz()-1; z <= room.rz()+1; z++) {
+                     double ellipse = (double)(x*x)/(room.rx()*room.rx())
+                             + (double)(z*z)/(room.rz()*room.rz());
+-                    if (ellipse > 1.48) continue;
++                    if (ellipse > 1.90) continue;
+                     int px = room.x()+x, pz = room.z()+z, y = room.y();
+                     if (ellipse <= 1.0) {
+                         set(px, y, pz, FLOOR);
+@@ -124,17 +178,29 @@ public final class GnomeVillageFeature extends Feature<NoneFeatureConfiguration>
+                     clear(x, level+2, z);
+                     set(x, level+3, z, WALL);
+                 }
+-                // Regular lighting stays off the floor and avoids endpoints and room furnishings.
+-                if (i > 6 && i < route.size()-7 && i % 9 == 0) {
+-                    int x = p.x() + (eastWest ? 0 : 2);
+-                    int z = p.z() + (eastWest ? 2 : 0);
+-                    Direction facing = eastWest ? Direction.NORTH : Direction.WEST;
+-                    BlockState torch = Blocks.WALL_TORCH.defaultBlockState()
+-                            .setValue(WallTorchBlock.FACING, facing);
+-                    BlockPos where = at(x, level+2, z);
+-                    if (torch.canSurvive(world, where)) set(x, level+2, z, torch);
++                // Reinforce the two side walls so pre-existing caves cannot open a
++                // passage into the village. The first and last cells form junctions.
++                if (i >= 3 && i < route.size()-3) {
++                    for (int side : new int[]{-2, 2}) {
++                        int x = p.x() + (eastWest ? 0 : side);
++                        int z = p.z() + (eastWest ? side : 0);
++                        for (int h = 0; h <= 3; h++) set(x, level+h, z, WALL);
++                    }
+                 }
+             }
++            for (int i=4; i<route.size()-4; i+=6) {
++                Point p=route.get(i);
++                Point previous=route.get(Math.max(0,i-1));
++                Point next=route.get(Math.min(route.size()-1,i+1));
++                boolean eastWest=Math.abs(next.x()-previous.x()) >= Math.abs(next.z()-previous.z());
++                int x=p.x()+(eastWest?0:1), z=p.z()+(eastWest?1:0);
++                Direction facing=eastWest?Direction.NORTH:Direction.WEST;
++                BlockState torch=Blocks.WALL_TORCH.defaultBlockState()
++                        .setValue(WallTorchBlock.FACING,facing);
++                BlockPos where=at(x,level+2,z);
++                if (world.getBlockState(where).isAir() && torch.canSurvive(world,where))
++                    set(x,level+2,z,torch);
++            }
+         }
+ 
+         /** One two-block-wide spiral ascending five blocks in each full revolution. */
+@@ -201,6 +267,104 @@ public final class GnomeVillageFeature extends Feature<NoneFeatureConfiguration>
+             }
+         }
+ 
++        /** Four wall-mounted torches illuminate each chamber without occupying beds,
++         * Anvils, mushroom plots, or the central walking area.
++         */
++        private void lightRoom(Room room) {
++            int y = room.y() + 2;
++            int[][] lamps = {{room.x()-room.rx(),room.z(),1},
++                    {room.x()+room.rx(),room.z(),3},
++                    {room.x(),room.z()-room.rz(),2},
++                    {room.x(),room.z()+room.rz(),0}};
++            Direction[] directions = {Direction.NORTH,Direction.EAST,Direction.SOUTH,Direction.WEST};
++            for (int[] loc : lamps) {
++                int x=loc[0], z=loc[1];
++                BlockState torch = Blocks.WALL_TORCH.defaultBlockState()
++                        .setValue(WallTorchBlock.FACING, directions[loc[2]]);
++                BlockPos pos=at(x,y,z);
++                // The support cell must be solid even if a cave intersects the room.
++                BlockPos support = pos.relative(directions[loc[2]].getOpposite());
++                set(support.getX()-center.getX(), support.getY()-center.getY(),
++                        support.getZ()-center.getZ(), WALL);
++                if (world.getBlockState(pos).isAir() && torch.canSurvive(world,pos)) set(x,y,z,torch);
++            }
++        }
++
++        /** The departure gallery has a continuous stone enclosure and connects to
++         * an already existing cave. Only the last three cells open into cave air.
++         */
++        private void cavernExit(Cavern cave) {
++            Direction side = cave.exitSide();
++            // Begin with a straight, five-block vestibule so both doors always
++            // align with the excavated passage regardless of the cavern's angle.
++            List<Point> route = new ArrayList<>();
++            for (int r=7; r<=11; r++) route.add(new Point(side.getStepX()*r,side.getStepZ()*r));
++            int sx=side.getStepX()*11, sz=side.getStepZ()*11;
++            int cx=side.getStepX()*14+cave.x()/4;
++            int cz=side.getStepZ()*14+cave.z()/4;
++            for (int i=1;i<=256;i++) {
++                double t=i/256.0, u=1-t;
++                int x=(int)Math.round(u*u*sx+2*u*t*cx+t*t*cave.x());
++                int z=(int)Math.round(u*u*sz+2*u*t*cz+t*t*cave.z());
++                Point p=new Point(x,z);
++                if (!route.get(route.size()-1).equals(p)) route.add(p);
++            }
++            for (int i=0;i<route.size();i++) {
++                Point p=route.get(i);
++                Point prev=route.get(Math.max(0,i-1));
++                Point next=route.get(Math.min(route.size()-1,i+1));
++                boolean eastWest=Math.abs(next.x()-prev.x()) >= Math.abs(next.z()-prev.z());
++                int floorY=(int)Math.round((double)i*cave.floorY()/Math.max(1,route.size()-1));
++                for (int sideOffset=-1;sideOffset<=1;sideOffset++) {
++                    int x=p.x()+(eastWest?0:sideOffset), z=p.z()+(eastWest?sideOffset:0);
++                    path(x,floorY,z);
++                    clear(x,floorY+1,z);
++                    clear(x,floorY+2,z);
++                    // Do not cap the last opening: it connects directly into
++                    // the pre-existing natural cavern instead of ending blind.
++                    if (i < route.size()-3) set(x,floorY+3,z,WALL);
++                }
++                if (i >= 2 && i < route.size()-3) {
++                    for (int off : new int[]{-2,2}) {
++                        int x=p.x()+(eastWest?0:off), z=p.z()+(eastWest?off:0);
++                        for (int h=0;h<=3;h++) set(x,floorY+h,z,WALL);
++                    }
++                }
++            }
++            for (int i=5; i<route.size()-4; i+=6) {
++                Point p=route.get(i);
++                Point prev=route.get(Math.max(0,i-1));
++                Point next=route.get(Math.min(route.size()-1,i+1));
++                boolean eastWest=Math.abs(next.x()-prev.x()) >= Math.abs(next.z()-prev.z());
++                int floorY=(int)Math.round((double)i*cave.floorY()/Math.max(1,route.size()-1));
++                int x=p.x()+(eastWest?0:1), z=p.z()+(eastWest?1:0);
++                Direction facing=eastWest?Direction.NORTH:Direction.WEST;
++                BlockState torch=Blocks.WALL_TORCH.defaultBlockState()
++                        .setValue(WallTorchBlock.FACING,facing);
++                BlockPos pos=at(x,floorY+2,z);
++                if (world.getBlockState(pos).isAir() && torch.canSurvive(world,pos))
++                    set(x,floorY+2,z,torch);
++            }
++            // Double oak doors at the shaft-facing end of this passage.
++            // The third lane is a solid jamb. Both doors have upper and lower halves.
++            int doorX=side.getStepX()*9, doorZ=side.getStepZ()*9;
++            for (int off=-1;off<=1;off++) {
++                int x=doorX+(side.getAxis()==Direction.Axis.Z?off:0);
++                int z=doorZ+(side.getAxis()==Direction.Axis.X?off:0);
++                if (off==1) {
++                    set(x,1,z,WALL);
++                    set(x,2,z,WALL);
++                } else {
++                    DoorHingeSide hinge=off==-1?DoorHingeSide.LEFT:DoorHingeSide.RIGHT;
++                    BlockState door=Blocks.OAK_DOOR.defaultBlockState()
++                            .setValue(DoorBlock.FACING,side)
++                            .setValue(DoorBlock.HINGE,hinge);
++                    set(x,1,z,door.setValue(DoorBlock.HALF,DoubleBlockHalf.LOWER));
++                    set(x,2,z,door.setValue(DoorBlock.HALF,DoubleBlockHalf.UPPER));
++                }
++            }
++        }
++
+         private void furnish(Room room) {
+             int x = room.x(), z = room.z(), y = room.y();
+             switch (room.kind()) {
+@@ -253,7 +417,7 @@ public final class GnomeVillageFeature extends Feature<NoneFeatureConfiguration>
+             }
+         }
+ 
+-        private void build() {
++        private void build(Cavern cave) {
+             shaft();
+             List<Room> rooms = List.of(
+                     new Room(-16,-16,0,4,4,"store"),
+@@ -271,7 +435,11 @@ public final class GnomeVillageFeature extends Feature<NoneFeatureConfiguration>
+             }
+             curvedTunnel(10,0,-7,3,-16,0,-23);
+             spiralStairs();
+-            for (Room room : rooms) furnish(room);
++            cavernExit(cave);
++            for (Room room : rooms) {
++                furnish(room);
++                lightRoom(room);
++            }
+             // The node remains attainable from the bottom plaza, above the floor dais.
+             for (int x=-2;x<=2;x++) for (int z=-2;z<=2;z++)
+                 if (x*x+z*z<=4) set(x,0,z,Blocks.POLISHED_DEEPSLATE.defaultBlockState());
+diff --git a/src/main/resources/syntacticwizardry.mixins.json b/src/main/resources/syntacticwizardry.mixins.json
+index e023422..37edca4 100644
+--- a/src/main/resources/syntacticwizardry.mixins.json
++++ b/src/main/resources/syntacticwizardry.mixins.json
+@@ -17,6 +17,7 @@
+     "NaturalSpawnerDistanceMixin",
+     "LocalMobCapLuminalBridgeMixin",
+     "LightEngineAccessor",
++    "GnomeMobTargetSelectorAccessor",
+     "BlockLightEngineMixin",
+     "CreateMillstoneAlchemyMixin",
+     "CreateCrushingAlchemyMixin",
