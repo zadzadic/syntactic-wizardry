@@ -1,6 +1,6 @@
 diff --git a/GNOME_VILLAGE_GENERATION.md b/GNOME_VILLAGE_GENERATION.md
 new file mode 100644
-index 0000000..43e88a8
+index 0000000..85a60e2
 --- /dev/null
 +++ b/GNOME_VILLAGE_GENERATION.md
 @@ -0,0 +1,10 @@
@@ -11,7 +11,7 @@ index 0000000..43e88a8
 +- The hall contains a new Geomantic Node, independent of natural geodes. The node retains the v0.3.83 one-time wand attunement reward and is consumed on use.
 +- Other chambers include a mushroom farm (mycelium, mushrooms, composter), a smithy (anvil, furnace, blast furnace), two residential chambers, and a workshop/storehouse.
 +- Floors are dressed in polished andesite; paths use deepslate tiles. Passages have solid walls, overhead cover, periodic wooden supports and torches.
-+- Each village generates 8-12 ordinary Gnomes and exactly `ceil(ordinary / 8)` Elders. The existing village-ID and workstation assignment system assigns the Smith and Grower. Remaining ordinary Gnomes act as Delvers.
++- Each village generates 8-12 ordinary Gnomes. The existing village population manager adds `ceil(ordinary / 8)` Elders as residents register. The existing village-ID and workstation assignment system assigns the Smith and Grower. Remaining ordinary Gnomes act as Delvers.
 +- Generation is limited to new chunks. Existing chunks are not retroactively modified.
 +- Villages have no surface entrance in this release. Delver architectural repair and relighting beyond the initial generation still need a persistent structural blueprint; foreign player/Enderman block removal and workstation restoration remain implemented from earlier versions.
 diff --git a/gradle.properties b/gradle.properties
@@ -30,10 +30,10 @@ index 7fcba3e..6c9c648 100644
 \ No newline at end of file
 diff --git a/src/main/java/com/proxpero/syntacticwizardry/GnomeVillageFeature.java b/src/main/java/com/proxpero/syntacticwizardry/GnomeVillageFeature.java
 new file mode 100644
-index 0000000..cb86a4d
+index 0000000..e83a06e
 --- /dev/null
 +++ b/src/main/java/com/proxpero/syntacticwizardry/GnomeVillageFeature.java
-@@ -0,0 +1,236 @@
+@@ -0,0 +1,231 @@
 +package com.proxpero.syntacticwizardry;
 +
 +import com.mojang.serialization.Codec;
@@ -259,14 +259,9 @@ index 0000000..cb86a4d
 +                gnome.moveTo(site.getX()+0.5,site.getY(),site.getZ()+0.5,random.nextFloat()*360F,0);
 +                world.addFreshEntity(gnome);
 +            }
-+            for(int i=0;i<(residents+7)/8;i++) {
-+                ElderGnomeEntity elder=SyntacticWizardry.GNOME_ELDER.get().create(world.getLevel());
-+                if(elder==null) continue;
-+                elder.setVillage(village,center);
-+                BlockPos pos=spawnSites.get(i%2);
-+                elder.moveTo(pos.getX()+0.5,pos.getY(),pos.getZ()+0.5,random.nextFloat()*360F,0);
-+                world.addFreshEntity(elder);
-+            }
++            // The already implemented population manager creates ceil(residents / 8) Elders
++            // after Gnomes register. Spawning them here would race registration and duplicate them.
++
 +        }
 +    }
 +}
