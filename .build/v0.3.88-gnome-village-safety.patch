@@ -41,6 +41,44 @@ index fd8f279..1687007 100644
  
  # build_marker=v0.2.85
 \ No newline at end of file
+diff --git a/src/main/java/com/proxpero/syntacticwizardry/GnomeHostilityEvents.java b/src/main/java/com/proxpero/syntacticwizardry/GnomeHostilityEvents.java
+new file mode 100644
+index 0000000..69d653a
+--- /dev/null
++++ b/src/main/java/com/proxpero/syntacticwizardry/GnomeHostilityEvents.java
+@@ -0,0 +1,32 @@
++package com.proxpero.syntacticwizardry;
++
++import com.proxpero.syntacticwizardry.mixin.GnomeMobTargetSelectorAccessor;
++import net.minecraft.world.entity.Mob;
++import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
++import net.minecraft.world.entity.monster.AbstractSkeleton;
++import net.minecraft.world.entity.monster.Zombie;
++import net.neoforged.bus.api.SubscribeEvent;
++import net.neoforged.fml.common.EventBusSubscriber;
++import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
++
++import java.util.Collections;
++import java.util.Set;
++import java.util.WeakHashMap;
++
++/** Vanilla zombies and skeletons actively select all Gnome variants as targets. */
++@EventBusSubscriber(modid = SyntacticWizardry.MOD_ID, bus = EventBusSubscriber.Bus.GAME)
++public final class GnomeHostilityEvents {
++    private static final Set<Mob> INITIALIZED = Collections.newSetFromMap(new WeakHashMap<>());
++    private GnomeHostilityEvents() {}
++
++    @SubscribeEvent
++    public static void onJoin(EntityJoinLevelEvent event) {
++        if (event.getLevel().isClientSide()) return;
++        if (!(event.getEntity() instanceof Zombie || event.getEntity() instanceof AbstractSkeleton)) return;
++        Mob monster = (Mob) event.getEntity();
++        if (!INITIALIZED.add(monster)) return;
++        // Vanilla player and villager priorities stay intact. Gnomes are additional prey.
++        ((GnomeMobTargetSelectorAccessor) monster).syntacticwizardry$getTargetSelector()
++                .addGoal(3, new NearestAttackableTargetGoal<>(monster, GnomeEntity.class, true));
++    }
++}
 diff --git a/src/main/java/com/proxpero/syntacticwizardry/GnomeVillageFeature.java b/src/main/java/com/proxpero/syntacticwizardry/GnomeVillageFeature.java
 index f0725fd..ad46daf 100644
 --- a/src/main/java/com/proxpero/syntacticwizardry/GnomeVillageFeature.java
@@ -304,6 +342,25 @@ index f0725fd..ad46daf 100644
              // The node remains attainable from the bottom plaza, above the floor dais.
              for (int x=-2;x<=2;x++) for (int z=-2;z<=2;z++)
                  if (x*x+z*z<=4) set(x,0,z,Blocks.POLISHED_DEEPSLATE.defaultBlockState());
+diff --git a/src/main/java/com/proxpero/syntacticwizardry/mixin/GnomeMobTargetSelectorAccessor.java b/src/main/java/com/proxpero/syntacticwizardry/mixin/GnomeMobTargetSelectorAccessor.java
+new file mode 100644
+index 0000000..543e6b9
+--- /dev/null
++++ b/src/main/java/com/proxpero/syntacticwizardry/mixin/GnomeMobTargetSelectorAccessor.java
+@@ -0,0 +1,13 @@
++package com.proxpero.syntacticwizardry.mixin;
++
++import net.minecraft.world.entity.Mob;
++import net.minecraft.world.entity.ai.goal.GoalSelector;
++import org.spongepowered.asm.mixin.Mixin;
++import org.spongepowered.asm.mixin.gen.Accessor;
++
++/** Exposes vanilla hostile mobs' goal selector for Gnome targeting. */
++@Mixin(Mob.class)
++public interface GnomeMobTargetSelectorAccessor {
++    @Accessor("targetSelector")
++    GoalSelector syntacticwizardry$getTargetSelector();
++}
 diff --git a/src/main/resources/syntacticwizardry.mixins.json b/src/main/resources/syntacticwizardry.mixins.json
 index e023422..37edca4 100644
 --- a/src/main/resources/syntacticwizardry.mixins.json
