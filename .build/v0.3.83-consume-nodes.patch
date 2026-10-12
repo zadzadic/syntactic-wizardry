@@ -1,0 +1,105 @@
+diff --git a/GEOMANTIC_NODES.md b/GEOMANTIC_NODES.md
+index d01ade5..f810134 100644
+--- a/GEOMANTIC_NODES.md
++++ b/GEOMANTIC_NODES.md
+@@ -1,10 +1,12 @@
+-# Geomantic Nodes (v0.3.82)
++# Geomantic Nodes (v0.3.83)
+ - Use the approved second Blockbench model (`geomantic_node_model_v2`): one irregular stone lump with protruding amethyst crystals, approximately one block wide.
+ - A node appears during generation of each vanilla amethyst geode. It is installed inside the geode's air cavity near the origin.
+ - A Node is a block entity with custom-mesh rendering, slow rotation, and gentle hovering motion.
+ - Wand right-click grants **+5 permanent maximum Mana** and **+1 Arcane Knowledge** to the player.
+-- Attunement works once per player per Node; other players can use the same Node once.
+-- Rewards require an Awakened player. Claimed player UUIDs persist in the Node block entity across saves.
+-- The maximum Mana bonus also survives player death.
++- A successful attunement consumes and removes the Node immediately. The Node cannot be used by another player.
++- Rewards require an Awakened player. Unawakened players cannot consume the Node.
++- Existing per-player claim NBT remains backward-compatible but is no longer used because attunement removes the Node.
++- The permanent maximum Mana bonus also survives player death.
++- Node consumption does not drop a block item; it vanishes on use.
+ - These nodes are independent of High Mana Zones.
+ - Gnome village generation is not implemented yet. Future village generation will create its own Node rather than require a natural geode.
+diff --git a/gradle.properties b/gradle.properties
+index 8735c66..7fcba3e 100644
+--- a/gradle.properties
++++ b/gradle.properties
+@@ -11,7 +11,7 @@ loader_version_range=[1,)
+ mod_id=syntacticwizardry
+ mod_name=Syntactic Wizardry
+ mod_license=All Rights Reserved
+-mod_version=0.3.82
++mod_version=0.3.83
+ mod_group_id=com.proxpero.syntacticwizardry
+ 
+ # build_marker=v0.2.85
+\ No newline at end of file
+diff --git a/src/main/java/com/proxpero/syntacticwizardry/GeomanticNodeBlock.java b/src/main/java/com/proxpero/syntacticwizardry/GeomanticNodeBlock.java
+index 8bd280e..5ba5efb 100644
+--- a/src/main/java/com/proxpero/syntacticwizardry/GeomanticNodeBlock.java
++++ b/src/main/java/com/proxpero/syntacticwizardry/GeomanticNodeBlock.java
+@@ -31,23 +31,28 @@ public final class GeomanticNodeBlock extends Block implements EntityBlock {
+     @Override public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) { return Shapes.empty(); }
+     @Override public BlockEntity newBlockEntity(BlockPos pos, BlockState state) { return new GeomanticNodeBlockEntity(pos, state); }
+ 
++    /** Permanently consume this node and award the first successful attunement. */
++    public static void attune(ServerPlayer player, Level level, BlockPos pos) {
++        if (level.isClientSide()) return;
++        if (!ManaService.isUnlocked(player)) {
++            player.displayClientMessage(Component.literal("You must be Awakened to commune with a Geomantic Node."), true);
++            return;
++        }
++        // Remove the block BEFORE granting the reward. A consumed node cannot be
++        // activated a second time, by this player or by anyone else.
++        if (!level.getBlockState(pos).is(GeomanticNodeRegistry.block())
++                || !level.removeBlock(pos, false)) return;
++        ManaService.setMaxManaBonus(player, ManaService.getMaxManaBonus(player) + 5.0F);
++        ArcaneResearchProgress.grantKnowledge(player, 1);
++        player.displayClientMessage(Component.literal("Geomantic attunement: +5 maximum Mana, +1 Arcane Knowledge. The Node is consumed."), false);
++    }
++
+     @Override protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level,
+             BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+         if (!stack.is(SyntacticWizardry.WAND.get())) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+         if (level.isClientSide()) return ItemInteractionResult.SUCCESS;
+         if (!(player instanceof ServerPlayer serverPlayer)) return ItemInteractionResult.FAIL;
+-        if (!ManaService.isUnlocked(serverPlayer)) {
+-            serverPlayer.displayClientMessage(Component.literal("You must be Awakened to commune with a Geomantic Node."), true);
+-            return ItemInteractionResult.SUCCESS;
+-        }
+-        if (!(level.getBlockEntity(pos) instanceof GeomanticNodeBlockEntity node)) return ItemInteractionResult.FAIL;
+-        if (!node.claim(serverPlayer.getUUID())) {
+-            serverPlayer.displayClientMessage(Component.literal("You have already drawn knowledge from this Geomantic Node."), true);
+-            return ItemInteractionResult.SUCCESS;
+-        }
+-        ManaService.setMaxManaBonus(serverPlayer, ManaService.getMaxManaBonus(serverPlayer) + 5.0F);
+-        ArcaneResearchProgress.grantKnowledge(serverPlayer, 1);
+-        serverPlayer.displayClientMessage(Component.literal("Geomantic attunement: +5 maximum Mana, +1 Arcane Knowledge."), false);
++        attune(serverPlayer, level, pos);
+         return ItemInteractionResult.SUCCESS;
+     }
+ }
+diff --git a/src/main/java/com/proxpero/syntacticwizardry/GeomanticNodeInteractEvents.java b/src/main/java/com/proxpero/syntacticwizardry/GeomanticNodeInteractEvents.java
+index 35614e2..0750c45 100644
+--- a/src/main/java/com/proxpero/syntacticwizardry/GeomanticNodeInteractEvents.java
++++ b/src/main/java/com/proxpero/syntacticwizardry/GeomanticNodeInteractEvents.java
+@@ -20,19 +20,7 @@ public final class GeomanticNodeInteractEvents {
+         event.setCancellationResult(InteractionResult.sidedSuccess(event.getLevel().isClientSide()));
+         if (event.getLevel().isClientSide()) return;
+         if (event.getEntity() instanceof net.minecraft.server.level.ServerPlayer player) {
+-            if (!ManaService.isUnlocked(player)) {
+-                player.displayClientMessage(net.minecraft.network.chat.Component.literal("You must be Awakened to commune with a Geomantic Node."), true);
+-                return;
+-            }
+-            if (event.getLevel().getBlockEntity(event.getPos()) instanceof GeomanticNodeBlockEntity node) {
+-                if (!node.claim(player.getUUID())) {
+-                    player.displayClientMessage(net.minecraft.network.chat.Component.literal("This Geomantic Node has already attuned to you."), true);
+-                    return;
+-                }
+-                ManaService.setMaxManaBonus(player, ManaService.getMaxManaBonus(player) + 5.0F);
+-                ArcaneResearchProgress.grantKnowledge(player, 1);
+-                player.displayClientMessage(net.minecraft.network.chat.Component.literal("Geomantic attunement: +5 maximum Mana, +1 Arcane Knowledge."), false);
+-            }
++            GeomanticNodeBlock.attune(player, event.getLevel(), event.getPos());
+         }
+     }
+ }
