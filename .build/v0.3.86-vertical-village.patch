@@ -1,0 +1,489 @@
+diff --git a/GNOME_VILLAGE_GENERATION.md b/GNOME_VILLAGE_GENERATION.md
+index 85a60e2..29f8f55 100644
+--- a/GNOME_VILLAGE_GENERATION.md
++++ b/GNOME_VILLAGE_GENERATION.md
+@@ -1,10 +1,13 @@
+-# Underground Gnome Villages (v0.3.84)
++# Underground Gnome Villages (v0.3.86)
+ 
+-- Villages generate underground in the Overworld using a dedicated NeoForge world-generation feature. Chance: approximately one placement attempt per 144 chunks, further limited by solid-rock, depth and fluid safety checks.
+-- Every settlement consists of a central ellipsoid hall, four primary connecting tunnels and a variable side tunnel connecting a second residence.
+-- The hall contains a new Geomantic Node, independent of natural geodes. The node retains the v0.3.83 one-time wand attunement reward and is consumed on use.
+-- Other chambers include a mushroom farm (mycelium, mushrooms, composter), a smithy (anvil, furnace, blast furnace), two residential chambers, and a workshop/storehouse.
+-- Floors are dressed in polished andesite; paths use deepslate tiles. Passages have solid walls, overhead cover, periodic wooden supports and torches.
+-- Each village generates 8-12 ordinary Gnomes. The existing village population manager adds `ceil(ordinary / 8)` Elders as residents register. The existing village-ID and workstation assignment system assigns the Smith and Grower. Remaining ordinary Gnomes act as Delvers.
+-- Generation is limited to new chunks. Existing chunks are not retroactively modified.
+-- Villages have no surface entrance in this release. Delver architectural repair and relighting beyond the initial generation still need a persistent structural blueprint; foreign player/Enderman block removal and workstation restoration remain implemented from earlier versions.
++- Villages generate in new Overworld chunks, with the existing approximately one-in-144 placement attempt and underground safety checks.
++- A single open central cylindrical shaft has an interior radius of five blocks (approximately eleven blocks across), with 17 blocks of vertical clearance from floor to roof.
++- Three floors/entrance elevations are at offsets Y+0, Y+5, and Y+10, with no solid intermediate slabs across the center.
++- A two-block-wide spiral staircase follows the inside of the shaft wall. One circuit gains five blocks of height. Landings connect the spiral with north-facing corridor entrances on all three levels.
++- Eighteen recessed Glowstone lamps illuminate the shaft: six lamps per level, five blocks apart vertically. The middle ring is staggered around the circumference. None protrude into the stairs or block the entrances.
++- A Geomantic Node hangs above the lower communal plaza at Y+3. Wand attunement still consumes the node and grants the established bonuses.
++- Each level has curved, branching three-block-wide passages with two blocks of clear headroom. Tunnels are carved as continuous sampled quadratic curves, with covered roofs and periodic torch lighting.
++- Lowest level: storehouse and workshop. Middle level: mushroom farm with a Composter and a smithy with an Anvil. Upper level: two residences with Gnome Beds and separate Elder quarters.
++- Room ceilings are three blocks above their floor. Rooms on consecutive levels are separated by five blocks.
++- Villages spawn 8–12 ordinary Gnomes. The existing village population manager establishes one Elder per eight ordinary Gnomes, rounded up. Workstation professions operate unchanged.
++- The provisional 24-block horizontal/12-block vertical village-home search still applies. This change does not yet add structural repair blueprints or retroactive regeneration in existing chunks.
+diff --git a/gradle.properties b/gradle.properties
+index 5651381..82ede6e 100644
+--- a/gradle.properties
++++ b/gradle.properties
+@@ -11,7 +11,7 @@ loader_version_range=[1,)
+ mod_id=syntacticwizardry
+ mod_name=Syntactic Wizardry
+ mod_license=All Rights Reserved
+-mod_version=0.3.85
++mod_version=0.3.86
+ mod_group_id=com.proxpero.syntacticwizardry
+ 
+ # build_marker=v0.2.85
+\ No newline at end of file
+diff --git a/src/main/java/com/proxpero/syntacticwizardry/GnomeVillageFeature.java b/src/main/java/com/proxpero/syntacticwizardry/GnomeVillageFeature.java
+index 9f025d2..f0725fd 100644
+--- a/src/main/java/com/proxpero/syntacticwizardry/GnomeVillageFeature.java
++++ b/src/main/java/com/proxpero/syntacticwizardry/GnomeVillageFeature.java
+@@ -4,52 +4,44 @@ import com.mojang.serialization.Codec;
+ import net.minecraft.core.BlockPos;
+ import net.minecraft.core.Direction;
+ import net.minecraft.util.RandomSource;
+-import net.minecraft.world.entity.Entity;
+ import net.minecraft.world.level.WorldGenLevel;
+ import net.minecraft.world.level.block.Blocks;
++import net.minecraft.world.level.block.StairBlock;
+ import net.minecraft.world.level.block.WallTorchBlock;
+ import net.minecraft.world.level.block.state.BlockState;
+ import net.minecraft.world.level.levelgen.Heightmap;
+ import net.minecraft.world.level.levelgen.feature.Feature;
+ import net.minecraft.world.level.levelgen.feature.FeaturePlaceContext;
+ import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration;
+-import net.minecraft.server.level.ServerLevel;
+ 
+ import java.util.ArrayList;
+ import java.util.List;
+ import java.util.UUID;
+ 
+-/** A real underground settlement. Rooms and passages are carved into existing stone. */
++/** Carved underground settlements with a three-level cylindrical communal shaft. */
+ public final class GnomeVillageFeature extends Feature<NoneFeatureConfiguration> {
+     private static final BlockState AIR = Blocks.CAVE_AIR.defaultBlockState();
+     private static final BlockState FLOOR = Blocks.POLISHED_ANDESITE.defaultBlockState();
+     private static final BlockState PATH = Blocks.DEEPSLATE_TILES.defaultBlockState();
+-    private static final BlockState FRAME = Blocks.SPRUCE_LOG.defaultBlockState();
+-    private final List<BlockPos> spawnSites = new ArrayList<>();
+-    private WorldGenLevel world;
+-    private BlockPos home;
+-    private RandomSource random;
++    private static final BlockState WALL = Blocks.STONE_BRICKS.defaultBlockState();
++    private static final int[] LEVELS = {0, 5, 10};
+ 
+     public GnomeVillageFeature(Codec<NoneFeatureConfiguration> codec) { super(codec); }
+ 
+     @Override public boolean place(FeaturePlaceContext<NoneFeatureConfiguration> context) {
+         WorldGenLevel level = context.level();
+-        RandomSource rng = context.random();
+         BlockPos origin = context.origin().offset(8, 0, 8);
+         int y = origin.getY();
+-        // Remain in the Overworld's underground strata. Do not expose the village at the surface.
+-        if (y < -35 || y > 26 || level.getHeight(Heightmap.Types.WORLD_SURFACE_WG, origin.getX(), origin.getZ()) < y + 19)
+-            return false;
++        // Leave at least 19 blocks of solid overburden above the center.
++        if (y < -35 || y > 26 || level.getHeight(Heightmap.Types.WORLD_SURFACE_WG,
++                origin.getX(), origin.getZ()) < y + 19) return false;
+         BlockState central = level.getBlockState(origin);
+         if (!(central.is(Blocks.STONE) || central.is(Blocks.DEEPSLATE) || central.is(Blocks.TUFF))) return false;
+-        // Reject fluid caves and other open structures. Worldgen must never flood a village.
+         for (int dx = -14; dx <= 14; dx += 7) for (int dz = -14; dz <= 14; dz += 7) {
+             BlockPos sample = origin.offset(dx, 0, dz);
+             if (!level.getFluidState(sample).isEmpty() || level.getBlockState(sample).is(Blocks.BEDROCK)) return false;
+         }
+-        // Feature instances are registry singletons. Never keep world-generation state on the Feature.
+-        Builder builder = new Builder(level, origin, rng);
+-        builder.build();
++        new Builder(level, origin, context.random()).build();
+         return true;
+     }
+ 
+@@ -58,174 +50,251 @@ public final class GnomeVillageFeature extends Feature<NoneFeatureConfiguration>
+         private final BlockPos center;
+         private final RandomSource random;
+         private final List<BlockPos> spawnSites = new ArrayList<>();
+-        private final List<BlockPos> homes = new ArrayList<>();
+-        private record Room(int dx, int dz, int rx, int rz, int height, String kind) {}
++        private record Room(int x, int z, int y, int rx, int rz, String kind) {}
++        private record Point(int x, int z) {}
+ 
+-        private Builder(WorldGenLevel world, BlockPos center, RandomSource random) {
+-            this.world = world; this.center = center; this.random = random;
++        Builder(WorldGenLevel world, BlockPos center, RandomSource random) {
++            this.world = world;
++            this.center = center;
++            this.random = random;
+         }
+         private BlockPos at(int x, int y, int z) { return center.offset(x, y, z); }
+         private void set(int x, int y, int z, BlockState state) {
+-            BlockPos pos = at(x,y,z);
+-            if (!world.getBlockState(pos).is(Blocks.BEDROCK)) world.setBlock(pos,state,2);
++            BlockPos pos = at(x, y, z);
++            if (!world.getBlockState(pos).is(Blocks.BEDROCK)) world.setBlock(pos, state, 2);
+         }
+-        private void clear(int x,int y,int z) { set(x,y,z,AIR); }
+-        private void floor(int x,int z,BlockState state) { set(x,0,z,state); }
++        private void clear(int x, int y, int z) { set(x, y, z, AIR); }
++        private void path(int x, int y, int z) { set(x, y, z, PATH); }
+ 
+-        /** Hollow ellipsoid with stone walls; structural floors remain solid at y=0. */
+-        private void chamber(Room room) {
+-            int rx=room.rx(), rz=room.rz(), h=room.height();
+-            for (int x=-rx-1;x<=rx+1;x++) for(int z=-rz-1;z<=rz+1;z++) {
+-                double planar=(x*x/((double)rx*rx))+(z*z/((double)rz*rz));
+-                if(planar>1.18) continue;
+-                int floorY=0;
+-                int maxY=(int)Math.floor(h*Math.sqrt(Math.max(0,1-Math.min(1,planar*0.58))));
+-                if(planar<=1) {
+-                    for(int y=floorY+1;y<=maxY;y++) clear(room.dx()+x,y,room.dz()+z);
+-                    floor(room.dx()+x,room.dz()+z, FLOOR);
+-                    if(planar>0.80) set(room.dx()+x,maxY+1,room.dz()+z,Blocks.STONE_BRICKS.defaultBlockState());
+-                } else {
+-                    for(int y=1;y<=Math.max(2,maxY);y++) set(room.dx()+x,y,room.dz()+z,Blocks.STONE_BRICKS.defaultBlockState());
++        /** Eleven-block-wide open shaft, bounded by a cylindrical stone-brick wall. */
++        private void shaft() {
++            for (int x = -7; x <= 7; x++) for (int z = -7; z <= 7; z++) {
++                int r2 = x*x + z*z;
++                if (r2 <= 28) {
++                    set(x, 0, z, FLOOR);
++                    for (int y = 1; y <= 16; y++) clear(x, y, z);
++                    set(x, 17, z, WALL);
++                } else if (r2 <= 43) {
++                    for (int y = 0; y <= 17; y++) set(x, y, z, WALL);
+                 }
+             }
+         }
+-        /** Wide, walkable three-high passage with timber framing and floor path blocks. */
+-        private void tunnel(int ax,int az,int bx,int bz) {
+-            boolean eastWest = az==bz;
+-            int length = Math.max(Math.abs(bx-ax),Math.abs(bz-az));
+-            for(int k=0;k<=length;k++) {
+-                int x=ax+(bx>ax? k: bx<ax?-k:0);
+-                int z=az+(bz>az? k: bz<az?-k:0);
+-                for(int side=-2;side<=2;side++) {
+-                    int xx=x+(eastWest?0:side), zz=z+(eastWest?side:0);
+-                    if(Math.abs(side)<=1) {
+-                        floor(xx,zz,PATH);
+-                        for(int y=1;y<=4;y++) clear(xx,y,zz);
++
++        /** Three-block-high rooms, separately cut at each level's elevation. */
++        private void chamber(Room room) {
++            for (int x = -room.rx()-1; x <= room.rx()+1; x++)
++                for (int z = -room.rz()-1; z <= room.rz()+1; z++) {
++                    double ellipse = (double)(x*x)/(room.rx()*room.rx())
++                            + (double)(z*z)/(room.rz()*room.rz());
++                    if (ellipse > 1.48) continue;
++                    int px = room.x()+x, pz = room.z()+z, y = room.y();
++                    if (ellipse <= 1.0) {
++                        set(px, y, pz, FLOOR);
++                        for (int h = 1; h <= 3; h++) clear(px, y+h, pz);
++                        set(px, y+4, pz, WALL);
+                     } else {
+-                        for(int y=1;y<=4;y++) set(xx,y,zz,Blocks.STONE_BRICKS.defaultBlockState());
++                        for (int h = 0; h <= 4; h++) set(px, y+h, pz, WALL);
+                     }
+-                    set(xx,5,zz,Blocks.STONE_BRICKS.defaultBlockState());
+                 }
+-                if(k>2 && k<length-2 && k%5==0) {
+-                    for (int s : new int[]{-2,2}) {
+-                        int xx=x+(eastWest?0:s),zz=z+(eastWest?s:0);
+-                        for(int y=1;y<=4;y++) set(xx,y,zz,FRAME);
+-                    }
+-                    wallTorch(x,z,eastWest);
++        }
++
++        /** Curved three-wide tunnels with exactly two clear blocks above the walking floor. */
++        private void curvedTunnel(int level, double ax, double az, double cx, double cz,
++                                  double bx, double bz) {
++            // A quadratic Bezier curve becomes continuous integer cells through dense sampling.
++            List<Point> route = new ArrayList<>();
++            for (int i = 0; i <= 128; i++) {
++                double t = i / 128.0, s = 1.0-t;
++                int x = (int)Math.round(s*s*ax + 2*s*t*cx + t*t*bx);
++                int z = (int)Math.round(s*s*az + 2*s*t*cz + t*t*bz);
++                if (route.isEmpty() || route.get(route.size()-1).x()!=x || route.get(route.size()-1).z()!=z)
++                    route.add(new Point(x,z));
++            }
++            for (int i = 0; i < route.size(); i++) {
++                Point p = route.get(i);
++                Point previous = route.get(Math.max(0, i-1));
++                Point next = route.get(Math.min(route.size()-1, i+1));
++                int dx = next.x()-previous.x(), dz = next.z()-previous.z();
++                boolean eastWest = Math.abs(dx) >= Math.abs(dz);
++                for (int side = -1; side <= 1; side++) {
++                    int x = p.x() + (eastWest ? 0 : side);
++                    int z = p.z() + (eastWest ? side : 0);
++                    path(x, level, z);
++                    clear(x, level+1, z);
++                    clear(x, level+2, z);
++                    set(x, level+3, z, WALL);
++                }
++                // Regular lighting stays off the floor and avoids endpoints and room furnishings.
++                if (i > 6 && i < route.size()-7 && i % 9 == 0) {
++                    int x = p.x() + (eastWest ? 0 : 2);
++                    int z = p.z() + (eastWest ? 2 : 0);
++                    Direction facing = eastWest ? Direction.NORTH : Direction.WEST;
++                    BlockState torch = Blocks.WALL_TORCH.defaultBlockState()
++                            .setValue(WallTorchBlock.FACING, facing);
++                    BlockPos where = at(x, level+2, z);
++                    if (torch.canSurvive(world, where)) set(x, level+2, z, torch);
+                 }
+             }
+         }
+-        private void wallTorch(int x,int z,boolean eastWest) {
+-            int xx=x+(eastWest?0:1), zz=z+(eastWest?1:0);
+-            Direction face=eastWest?Direction.NORTH:Direction.WEST;
+-            BlockState torch=Blocks.WALL_TORCH.defaultBlockState().setValue(WallTorchBlock.FACING,face);
+-            BlockPos where=at(xx,3,zz);
+-            if(torch.canSurvive(world,where)) set(xx,3,zz,torch);
+-        }
+-        private void column(int x,int z,int height) {
+-            for(int y=1;y<=height;y++) set(x,y,z,FRAME);
++
++        /** One two-block-wide spiral ascending five blocks in each full revolution. */
++        private void spiralStairs() {
++            List<Point> ring = new ArrayList<>();
++            for (int i = 0; i <= 512; i++) {
++                double angle = -Math.PI/2 + (Math.PI*2*i)/512.0;
++                Point next = new Point((int)Math.round(4.35*Math.cos(angle)),
++                        (int)Math.round(4.35*Math.sin(angle)));
++                if (ring.size() > 0) {
++                    Point prev = ring.get(ring.size()-1);
++                    if (prev.equals(next)) continue;
++                    if (prev.x()!=next.x() && prev.z()!=next.z())
++                        ring.add(new Point(next.x(), prev.z())); // Never leave diagonal gaps.
++                }
++                ring.add(next);
++            }
++            if (ring.size() > 1 && ring.get(0).equals(ring.get(ring.size()-1)))
++                ring.remove(ring.size()-1);
++            int count = ring.size();
++            for (int i = 0; i <= count*2; i++) {
++                Point p = ring.get(i % count);
++                int height = i*5/count;
++                // Stair rises occur evenly around the circle; the last step is level ten.
++                int prior = i == 0 ? 0 : (i-1)*5/count;
++                Point before = ring.get((i+count-1)%count);
++                Point after = ring.get((i+1)%count);
++                int dx = p.x()-before.x(), dz = p.z()-before.z();
++                Direction direction = dx>0 ? Direction.EAST : dx<0 ? Direction.WEST
++                        : dz>0 ? Direction.SOUTH : Direction.NORTH;
++                BlockState tread = height>prior ? Blocks.POLISHED_ANDESITE_STAIRS.defaultBlockState()
++                        .setValue(StairBlock.FACING, direction) : FLOOR;
++                set(p.x(),height,p.z(),tread);
++                // The second lane lies toward the open center. The outer lane hugs the wall.
++                double distance = Math.sqrt(p.x()*p.x()+p.z()*p.z());
++                int innerX = (int)Math.round(p.x()*3.20/distance);
++                int innerZ = (int)Math.round(p.z()*3.20/distance);
++                set(innerX,height,innerZ,tread);
++                // Secure each tread to the stone wall instead of leaving a free-floating ramp.
++                int supportX = (int)Math.round(p.x()*5.25/distance);
++                int supportZ = (int)Math.round(p.z()*5.25/distance);
++                set(supportX,height,supportZ,WALL);
++            }
++            // Full-height landings connect the start of each spiral turn to the tunnels.
++            for (int y : LEVELS) for (int x = -1; x <= 1; x++) for (int z = -6; z <= -4; z++) {
++                set(x,y,z,FLOOR);
++                clear(x,y+1,z);
++                clear(x,y+2,z);
++            }
+         }
+-        private void lantern(int x,int z) {
+-            set(x,1,z,Blocks.TORCH.defaultBlockState());
++
++        /** Eighteen Glowstone blocks sit flush with the circular wall, six per level. */
++        private void illuminateShaft() {
++            for (int tier = 0; tier < LEVELS.length; tier++) {
++                // Offset the middle ring by 15 degrees; no Glowstone covers the north doors.
++                double offset = tier % 2 == 0 ? 0 : Math.PI/12;
++                for (int i = 0; i < 6; i++) {
++                    double angle = offset + i*Math.PI/3;
++                    int x = (int)Math.round(5.85*Math.cos(angle));
++                    int z = (int)Math.round(5.85*Math.sin(angle));
++                    if (Math.abs(x) <= 1 && z <= -5) continue;
++                    set(x, 2 + LEVELS[tier], z, Blocks.GLOWSTONE.defaultBlockState());
++                }
++            }
+         }
++
+         private void furnish(Room room) {
+-            int x=room.dx(),z=room.dz();
+-            switch(room.kind()) {
+-                case "hall" -> {
+-                    // Node stays in the air at eye height; consuming it leaves an empty central dais.
+-                    for(int i=-2;i<=2;i++) for(int j=-2;j<=2;j++) floor(x+i,z+j,Blocks.POLISHED_DEEPSLATE.defaultBlockState());
+-                    set(x,3,z,GeomanticNodeRegistry.block().defaultBlockState());
+-                    for(int s : new int[]{-5,5}) for(int t : new int[]{-5,5}) {
+-                        column(x+s,z+t,5); lantern(x+(s>0?4:-4),z+(t>0?4:-4));
+-                    }
+-                    spawnSites.add(at(x+3,1,z+3));
+-                    spawnSites.add(at(x-3,1,z-3));
+-                }
++            int x = room.x(), z = room.z(), y = room.y();
++            switch (room.kind()) {
+                 case "farm" -> {
+-                    for(int xx=-4;xx<=4;xx++) for(int zz=-3;zz<=3;zz++) {
+-                        if(xx==0 || zz==0) { floor(x+xx,z+zz,PATH); continue; }
+-                        floor(x+xx,z+zz,Blocks.MYCELIUM.defaultBlockState());
+-                        if ((xx+zz)%3==0) set(x+xx,1,z+zz,
+-                                ((xx+zz)&1)==0 ? Blocks.RED_MUSHROOM.defaultBlockState() : Blocks.BROWN_MUSHROOM.defaultBlockState());
++                    for (int dx=-3;dx<=3;dx++) for (int dz=-3;dz<=3;dz++) {
++                        if (dx==0 || dz==0) { path(x+dx,y,z+dz); continue; }
++                        set(x+dx,y,z+dz,Blocks.MYCELIUM.defaultBlockState());
++                        if ((dx+dz)%3==0) set(x+dx,y+1,z+dz,
++                                ((dx+dz)&1)==0 ? Blocks.RED_MUSHROOM.defaultBlockState()
++                                        : Blocks.BROWN_MUSHROOM.defaultBlockState());
+                     }
+-                    set(x-1,1,z-4,Blocks.COMPOSTER.defaultBlockState());
+-                    set(x+1,1,z-4,Blocks.BARREL.defaultBlockState());
+-                    lantern(x,z+3);
+-                    spawnSites.add(at(x,1,z+2));
++                    set(x-1,y+1,z-3,Blocks.COMPOSTER.defaultBlockState());
++                    set(x+1,y+1,z-3,Blocks.BARREL.defaultBlockState());
++                    spawnSites.add(at(x,y+1,z+2));
+                 }
+                 case "smith" -> {
+-                    set(x-3,1,z-3,Blocks.BLAST_FURNACE.defaultBlockState());
+-                    set(x-2,1,z-3,Blocks.FURNACE.defaultBlockState());
+-                    set(x-1,1,z-3,Blocks.ANVIL.defaultBlockState());
+-                    set(x+1,1,z-3,Blocks.GRINDSTONE.defaultBlockState());
+-                    set(x+3,1,z-3,Blocks.CRAFTING_TABLE.defaultBlockState());
+-                    set(x+3,1,z+2,Blocks.BARREL.defaultBlockState());
+-                    set(x-3,1,z+2,Blocks.CHEST.defaultBlockState());
+-                    lantern(x,z+3);
+-                    spawnSites.add(at(x,1,z+1));
++                    set(x-3,y+1,z-2,Blocks.BLAST_FURNACE.defaultBlockState());
++                    set(x-2,y+1,z-2,Blocks.FURNACE.defaultBlockState());
++                    set(x-1,y+1,z-2,Blocks.ANVIL.defaultBlockState());
++                    set(x+1,y+1,z-2,Blocks.GRINDSTONE.defaultBlockState());
++                    set(x+2,y+1,z-2,Blocks.CRAFTING_TABLE.defaultBlockState());
++                    set(x+3,y+1,z+2,Blocks.BARREL.defaultBlockState());
++                    spawnSites.add(at(x,y+1,z+1));
+                 }
+                 case "store" -> {
+-                    for(int xx=-3;xx<=3;xx+=3) {
+-                        set(x+xx,1,z+2,Blocks.BARREL.defaultBlockState());
+-                        set(x+xx,1,z-2,Blocks.CHEST.defaultBlockState());
++                    for (int dx : new int[]{-3,3}) {
++                        set(x+dx,y+1,z+2,Blocks.BARREL.defaultBlockState());
++                        set(x+dx,y+1,z-2,Blocks.CHEST.defaultBlockState());
+                     }
+-                    set(x,1,z+2,Blocks.CRAFTING_TABLE.defaultBlockState());
+-                    lantern(x,z-3);
+-                    spawnSites.add(at(x,1,z));
++                    set(x,y+1,z+2,Blocks.CRAFTING_TABLE.defaultBlockState());
++                    spawnSites.add(at(x,y+1,z));
++                }
++                case "workshop" -> {
++                    set(x-2,y+1,z-2,Blocks.CRAFTING_TABLE.defaultBlockState());
++                    set(x+2,y+1,z-2,Blocks.STONECUTTER.defaultBlockState());
++                    set(x-2,y+1,z+2,Blocks.BARREL.defaultBlockState());
++                    set(x+2,y+1,z+2,Blocks.FURNACE.defaultBlockState());
++                    spawnSites.add(at(x,y+1,z));
+                 }
+-                case "house" -> {
+-                    for(int zz=-2;zz<=2;zz+=4) {
+-                        set(x-2,1,z+zz,SyntacticWizardry.GNOME_BED.get().defaultBlockState());
+-                        set(x+2,1,z+zz,Blocks.BARREL.defaultBlockState());
++                case "house", "elder" -> {
++                    for (int dz : new int[]{-2,2}) {
++                        set(x-2,y+1,z+dz,SyntacticWizardry.GNOME_BED.get().defaultBlockState());
++                        set(x+2,y+1,z+dz,Blocks.BARREL.defaultBlockState());
+                     }
+-                    set(x,1,z-2,Blocks.CRAFTING_TABLE.defaultBlockState());
+-                    lantern(x+2,z+2);
+-                    spawnSites.add(at(x,1,z));
+-                    spawnSites.add(at(x+1,1,z+1));
++                    set(x,y+1,z-2,room.kind().equals("elder")
++                            ? Blocks.BOOKSHELF.defaultBlockState() : Blocks.CRAFTING_TABLE.defaultBlockState());
++                    spawnSites.add(at(x,y+1,z));
++                    spawnSites.add(at(x+1,y+1,z+1));
+                 }
+             }
+         }
++
+         private void build() {
+-            // The center is a tall carved hall. Side tunnels end in specialized chambers.
+-            List<Room> rooms=new ArrayList<>();
+-            rooms.add(new Room(0,0,6,6,8,"hall"));
+-            rooms.add(new Room(0,-15,5,5,6,"farm"));
+-            rooms.add(new Room(-15,0,5,5,6,"smith"));
+-            rooms.add(new Room(15,0,5,5,6,"house"));
+-            rooms.add(new Room(0,15,5,5,6,"store"));
+-            // Second residential chamber varies by seed. This remains within village boundaries.
+-            boolean northeast=random.nextBoolean();
+-            rooms.add(new Room(northeast?14:-14,northeast?-14:14,4,4,5,"house"));
+-            for(Room room:rooms) chamber(room);
+-            tunnel(0,-5,0,-15);
+-            tunnel(-5,0,-15,0);
+-            tunnel(5,0,15,0);
+-            tunnel(0,5,0,15);
+-            // Connect the diagonal residence with an L-shaped side corridor.
+-            int extraX=rooms.get(5).dx(), extraZ=rooms.get(5).dz();
+-            tunnel(extraX>0?15:-15,0,extraX,0);
+-            tunnel(extraX,0,extraX,extraZ);
+-            // Re-furnish AFTER passages: they should not erase beds, forges or farmland.
+-            for(Room room:rooms) furnish(room);
+-            // Main-hall approach points receive extra illumination.
+-            for(int[] loc:new int[][]{{0,7},{0,-7},{7,0},{-7,0}}) lantern(loc[0],loc[1]);
++            shaft();
++            List<Room> rooms = List.of(
++                    new Room(-16,-16,0,4,4,"store"),
++                    new Room(16,-16,0,4,4,"workshop"),
++                    new Room(-16,-16,5,4,4,"farm"),
++                    new Room(16,-16,5,4,4,"smith"),
++                    new Room(-16,-16,10,4,4,"house"),
++                    new Room(16,-16,10,4,4,"house"),
++                    new Room(0,-23,10,4,4,"elder"));
++            for (Room room : rooms) chamber(room);
++            // Each landing connects to a branching network with curved, narrow galleries.
++            for (int y : LEVELS) {
++                curvedTunnel(y,0,-7,-5,-13,-16,-16);
++                curvedTunnel(y,0,-7,5,-13,16,-16);
++            }
++            curvedTunnel(10,0,-7,3,-16,0,-23);
++            spiralStairs();
++            for (Room room : rooms) furnish(room);
++            // The node remains attainable from the bottom plaza, above the floor dais.
++            for (int x=-2;x<=2;x++) for (int z=-2;z<=2;z++)
++                if (x*x+z*z<=4) set(x,0,z,Blocks.POLISHED_DEEPSLATE.defaultBlockState());
++            set(0,3,0,GeomanticNodeRegistry.block().defaultBlockState());
++            illuminateShaft();
++            spawnSites.add(at(2,1,2));
++            spawnSites.add(at(-2,1,2));
+             populate();
+         }
++
+         private void populate() {
+-            // Every settlement has 8-12 standard Gnomes and ceil(count/8) Elders.
+-            UUID village=UUID.randomUUID();
+-            int residents=8+random.nextInt(5);
+-            for(int i=0;i<residents;i++) {
+-                BlockPos site=spawnSites.get(i%spawnSites.size());
+-                GnomeEntity gnome=SyntacticWizardry.GNOME.get().create(world.getLevel());
+-                if(gnome==null) continue;
++            UUID village = UUID.randomUUID();
++            int residents = 8 + random.nextInt(5);
++            for (int i=0;i<residents;i++) {
++                BlockPos site = spawnSites.get(i % spawnSites.size());
++                GnomeEntity gnome = SyntacticWizardry.GNOME.get().create(world.getLevel());
++                if (gnome == null) continue;
+                 gnome.setVillage(village,center);
+-                gnome.moveTo(site.getX()+0.5,site.getY(),site.getZ()+0.5,random.nextFloat()*360F,0);
++                gnome.moveTo(site.getX()+0.5,site.getY(),site.getZ()+0.5,
++                        random.nextFloat()*360F,0);
+                 world.addFreshEntity(gnome);
+             }
+-            // The already implemented population manager creates ceil(residents / 8) Elders
+-            // after Gnomes register. Spawning them here would race registration and duplicate them.
+-
++            // Existing population tracking spawns ceil(ordinary / 8) Elders after registration.
+         }
+     }
+ }
