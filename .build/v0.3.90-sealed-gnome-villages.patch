@@ -1,0 +1,289 @@
+diff --git a/GNOME_VILLAGE_GENERATION.md b/GNOME_VILLAGE_GENERATION.md
+index 04d6460..e9395eb 100644
+--- a/GNOME_VILLAGE_GENERATION.md
++++ b/GNOME_VILLAGE_GENERATION.md
+@@ -20,3 +20,10 @@
+ - Corridors have post-construction wall torches every six distinct pathway cells (rather than unreliable provisional torches on exterior cave stone). Every room gets four supported wall torches. Existing recessed shaft Glowstone remains unchanged.
+ - Zombies (including subclasses) and all vanilla skeleton variants target Gnomes through the normal AI target-goal selector, while retaining normal player priority. Neutral Gnomes still retaliate and alert village allies when attacked.
+ - New generation only. Existing generated villages remain unchanged.
++
++## v0.3.90 — sealed village, widened stair bends, rectangular rooms, Glowshrooms
++
++- Every intentional air pocket receives a solid-block shell where it borders natural cave air or fluid. Only the 2×2 portal at the end of the cavern entrance corridor is excluded. The existing pair of oak entrance doors remains.
++- Spiral stair construction uses one cardinally adjacent outer lane at every step, plus corner infill. Radial rounding no longer collapses the second lane.
++- All rooms remain axis-aligned rectangles. Galleries end at their entrance wall, not in the middle of the furnished room.
++- Newly placed luminous mushrooms are `syntacticwizardry:glowshroom` (light level 14), with renamed textures, models, item, loot table and translation. The previous Growshroom registry remains hidden and loadable for worlds saved with v0.3.89.
+diff --git a/gradle.properties b/gradle.properties
+index 2ff0f87..fd4578b 100644
+--- a/gradle.properties
++++ b/gradle.properties
+@@ -11,7 +11,7 @@ loader_version_range=[1,)
+ mod_id=syntacticwizardry
+ mod_name=Syntactic Wizardry
+ mod_license=All Rights Reserved
+-mod_version=0.3.89
++mod_version=0.3.90
+ mod_group_id=com.proxpero.syntacticwizardry
+ 
+ # build_marker=v0.2.85
+\ No newline at end of file
+diff --git a/src/main/java/com/proxpero/syntacticwizardry/GnomeVillageFeature.java b/src/main/java/com/proxpero/syntacticwizardry/GnomeVillageFeature.java
+index eebd56f..1578a69 100644
+--- a/src/main/java/com/proxpero/syntacticwizardry/GnomeVillageFeature.java
++++ b/src/main/java/com/proxpero/syntacticwizardry/GnomeVillageFeature.java
+@@ -19,7 +19,9 @@ import net.minecraft.world.level.levelgen.feature.FeaturePlaceContext;
+ import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration;
+ 
+ import java.util.ArrayList;
++import java.util.HashSet;
+ import java.util.List;
++import java.util.Set;
+ import java.util.UUID;
+ 
+ /** A tiered cavern village. All terraces face one continuous open central shaft. */
+@@ -55,6 +57,9 @@ public final class GnomeVillageFeature extends Feature<NoneFeatureConfiguration>
+         private final BlockPos center;
+         private final RandomSource random;
+         private final List<BlockPos> spawnSites = new ArrayList<>();
++        // Exact final excavated air cells. Used to enclose natural cave openings.
++        private final Set<BlockPos> interiorAir = new HashSet<>();
++        private final Set<BlockPos> caveMouth = new HashSet<>();
+         private record Point(int x, int z) {}
+         private record Cavern(int x, int floorY, int z, Direction side) {}
+         private record Room(int x, int z, int y, int rx, int rz, String purpose) {}
+@@ -65,13 +70,16 @@ public final class GnomeVillageFeature extends Feature<NoneFeatureConfiguration>
+         private BlockPos at(int x,int y,int z) { return center.offset(x,y,z); }
+         private void set(int x,int y,int z,BlockState state) {
+             BlockPos pos = at(x,y,z);
+-            if (!world.getBlockState(pos).is(Blocks.BEDROCK)) world.setBlock(pos,state,2);
++            if (world.getBlockState(pos).is(Blocks.BEDROCK)) return;
++            world.setBlock(pos,state,2);
++            if (state.isAir()) interiorAir.add(pos);
++            else interiorAir.remove(pos);
+         }
+         private void clear(int x,int y,int z) { set(x,y,z,AIR); }
+         private void glow(int x,int y,int z) {
+             BlockPos pos=at(x,y,z);
+             if (world.getBlockState(pos).isAir() && world.getBlockState(pos.below()).isSolidRender(world,pos.below()))
+-                set(x,y,z,SyntacticWizardry.GROWSHROOM.get().defaultBlockState());
++                set(x,y,z,SyntacticWizardry.GLOWSHROOM.get().defaultBlockState());
+         }
+ 
+         /** Check cave air before changing terrain. Existing generated rooms never qualify. */
+@@ -152,7 +160,7 @@ public final class GnomeVillageFeature extends Feature<NoneFeatureConfiguration>
+             return route;
+         }
+ 
+-        /** Two separate, wall-cut, two-wide ramps each climbing precisely five blocks. */
++        /** Two-cardinal-cell minimum at every stair step, including curved corners. */
+         private void spiral(int baseY,int radius,Direction entrance) {
+             List<Point> ring=circle(radius,entrance);
+             int n=ring.size();
+@@ -169,16 +177,22 @@ public final class GnomeVillageFeature extends Feature<NoneFeatureConfiguration>
+                 BlockState tread=elevation>prevHeight
+                         ? Blocks.POLISHED_ANDESITE_STAIRS.defaultBlockState().setValue(StairBlock.FACING,direction)
+                         : FLOOR;
+-                // Both lanes are adjacent radial cells. One is cut into the rock wall.
+-                double d=Math.hypot(p.x(),p.z());
+-                for(int lane=0;lane<2;lane++) {
+-                    int x=lane==0?p.x():(int)Math.round(p.x()*(radius+1.0)/d);
+-                    int z=lane==0?p.z():(int)Math.round(p.z()*(radius+1.0)/d);
+-                    set(x,elevation,z,tread);
+-                    for(int h=1;h<=3;h++) clear(x,elevation+h,z);
++                // Never scale/round the outward lane. Doing so previously collapsed
++                // the second lane or detached it at 45-degree turns.
++                stampStair(p.x(),p.z(),elevation,tread);
++                int ax=Integer.signum(p.x()), az=Integer.signum(p.z());
++                if(Math.abs(p.x())>=Math.abs(p.z()))
++                    stampStair(p.x()+ax,p.z(),elevation,tread);
++                if(Math.abs(p.z())>=Math.abs(p.x()))
++                    stampStair(p.x(),p.z()+az,elevation,tread);
++                // At corner transitions fill both outward cardinal neighbors.
++                // This keeps the second lane continuous through the bend.
++                if(Math.abs(Math.abs(p.x())-Math.abs(p.z()))==1) {
++                    stampStair(p.x()+ax,p.z(),elevation,tread);
++                    stampStair(p.x(),p.z()+az,elevation,tread);
+                 }
+             }
+-            // Landings join the spiral to the annular gallery without a gap.
++            // Two-wide landing connects the stair to the gallery at its top.
+             int top=baseY+5;
+             for(int across=-1;across<=1;across++) for(int forward=radius;forward<=radius+2;forward++) {
+                 int x=entrance.getStepX()*forward + (entrance.getAxis()==Direction.Axis.Z?across:0);
+@@ -188,6 +202,11 @@ public final class GnomeVillageFeature extends Feature<NoneFeatureConfiguration>
+             }
+         }
+ 
++        private void stampStair(int x,int z,int elevation,BlockState tread) {
++            set(x,elevation,z,tread);
++            for(int h=1;h<=3;h++) clear(x,elevation+h,z);
++        }
++
+         private void chamber(Room room) {
+             for(int dx=-room.rx()-1;dx<=room.rx()+1;dx++)
+                 for(int dz=-room.rz()-1;dz<=room.rz()+1;dz++) {
+@@ -262,6 +281,19 @@ public final class GnomeVillageFeature extends Feature<NoneFeatureConfiguration>
+                 int y=(int)Math.round((double)i*cave.floorY()/Math.max(1,route.size()-1));
+                 glow(p.x()+(ew?0:1),y+1,p.z()+(ew?1:0));
+             }
++            // The cave-side face is the only allowed unsealed air interface.
++            // Preserve a 2x2 opening immediately past the final corridor cell.
++            Point last=route.get(route.size()-1);
++            Point previous=route.get(route.size()-2);
++            boolean eastWest=Math.abs(last.x()-previous.x())>=Math.abs(last.z()-previous.z());
++            int dx=Integer.signum(last.x()-previous.x());
++            int dz=Integer.signum(last.z()-previous.z());
++            if(dx==0 && dz==0) {dx=side.getStepX();dz=side.getStepZ();}
++            for(int d=1;d<=2;d++) for(int lane=0;lane<2;lane++) for(int h=1;h<=2;h++) {
++                int x=last.x()+dx*d+(eastWest?0:lane);
++                int z=last.z()+dz*d+(eastWest?lane:0);
++                caveMouth.add(at(x,cave.floorY()+h,z));
++            }
+             // Both door halves face the cave. Opposing hinges form a paired entrance.
+             int sx9=side.getStepX()*8,sz9=side.getStepZ()*8;
+             for(int lane=0;lane<2;lane++) {
+@@ -381,13 +413,15 @@ public final class GnomeVillageFeature extends Feature<NoneFeatureConfiguration>
+                     new Room(-20,12,10,5,5,"farm"));
+             for(Room r:middle)chamber(r);
+             for(Room r:upper)chamber(r);
+-            gallery(5,0,-9,-3,-15,0,-21);
+-            gallery(5,9,0,15,-3,21,0);
+-            gallery(5,0,9,3,15,0,21);
+-            gallery(5,-9,0,-15,3,-21,0);
+-            gallery(10,0,-11,-2,-17,0,-23);
+-            gallery(10,10,6,16,8,20,12);
+-            gallery(10,-10,6,-16,8,-20,12);
++            // End each tunnel at a rectangular room's outer wall, not its center.
++            // This preserves four straight walls and rectangular open floor space.
++            gallery(5,0,-9,-2,-12,0,-15);
++            gallery(5,9,0,12,-2,15,0);
++            gallery(5,0,9,2,12,0,15);
++            gallery(5,-9,0,-12,2,-15,0);
++            gallery(10,0,-11,-1,-14,0,-17);
++            gallery(10,10,6,13,8,14,11);
++            gallery(10,-10,6,-13,8,-14,11);
+             spiral(0,6,exit.side());
+             spiral(5,9,Direction.NORTH);
+             // Only this Y+0 opening reaches a natural cavern. No lower rooms exist.
+@@ -400,9 +434,34 @@ public final class GnomeVillageFeature extends Feature<NoneFeatureConfiguration>
+             ceiling();
+             for(int x:new int[]{-3,3})for(int z:new int[]{-3,3})glow(x,1,z);
+             spawnSites.add(at(2,1,2));spawnSites.add(at(-2,1,2));
++            encloseVillage();
+             populate();
+         }
+ 
++        /** Seal every air/fluid leak from generated rooms and galleries into natural caves.
++         * The two-by-two cavern mouth is the sole exception. The shell is generated
++         * after stairways, corridors, doors, and furniture, so intersections are sealed
++         * without overwriting intended connections or the open central shaft.
++         */
++        private void encloseVillage() {
++            List<BlockPos> shell=new ArrayList<>();
++            for(BlockPos interior:interiorAir) {
++                if(!world.getBlockState(interior).isAir()) continue;
++                for(Direction dir:Direction.values()) {
++                    BlockPos neighbor=interior.relative(dir);
++                    if(interiorAir.contains(neighbor) || caveMouth.contains(neighbor)) continue;
++                    BlockState state=world.getBlockState(neighbor);
++                    if(state.isAir() || !world.getFluidState(neighbor).isEmpty())
++                        shell.add(neighbor);
++                }
++            }
++            for(BlockPos pos:shell) {
++                if(caveMouth.contains(pos) || interiorAir.contains(pos)) continue;
++                if(world.getBlockState(pos).isAir() || !world.getFluidState(pos).isEmpty())
++                    world.setBlock(pos,WALL,2);
++            }
++        }
++
+         private void populate() {
+             UUID village=UUID.randomUUID();
+             int population=8+random.nextInt(5);
+diff --git a/src/main/java/com/proxpero/syntacticwizardry/SyntacticWizardry.java b/src/main/java/com/proxpero/syntacticwizardry/SyntacticWizardry.java
+index 2d28198..563b766 100644
+--- a/src/main/java/com/proxpero/syntacticwizardry/SyntacticWizardry.java
++++ b/src/main/java/com/proxpero/syntacticwizardry/SyntacticWizardry.java
+@@ -99,7 +99,8 @@ public final class SyntacticWizardry {
+  public static final DeferredBlock<SpellRandomizerBlock> SPELL_RANDOMIZER=BLOCKS.register("spell_randomizer",()->new SpellRandomizerBlock(Block.Properties.ofFullCopy(Blocks.ENCHANTING_TABLE).strength(-1.0F,3600000.0F)));
+  public static final DeferredBlock<RuneBlock> RUNE_BLOCK=BLOCKS.register("rune",()->new RuneBlock(Block.Properties.of().noCollission().noOcclusion().strength(0.0F)));
+  public static final DeferredBlock<Block> TEMPORARY_BLOCK=BLOCKS.register("temporary_block",()->new Block(Block.Properties.of().instabreak().noOcclusion().noLootTable().isSuffocating((state,level,pos)->false).isViewBlocking((state,level,pos)->false).isRedstoneConductor((state,level,pos)->false)));
+- public static final DeferredBlock<Block> GROWSHROOM=BLOCKS.register("growshroom",()->new Block(Block.Properties.of().noCollission().noOcclusion().instabreak().lightLevel(state->14).sound(net.minecraft.world.level.block.SoundType.GRASS)));
++ public static final DeferredBlock<Block> GLOWSHROOM=BLOCKS.register("glowshroom",()->new Block(Block.Properties.of().noCollission().noOcclusion().instabreak().lightLevel(state->14).sound(net.minecraft.world.level.block.SoundType.GRASS)));
++ @Deprecated public static final DeferredBlock<Block> LEGACY_GROWSHROOM=BLOCKS.register("growshroom",()->new Block(Block.Properties.of().noCollission().noOcclusion().instabreak().lightLevel(state->14).sound(net.minecraft.world.level.block.SoundType.GRASS)));
+  public static final DeferredBlock<GnomeBedBlock> GNOME_BED=BLOCKS.register("gnome_bed",()->new GnomeBedBlock(Block.Properties.ofFullCopy(Blocks.RED_WOOL).noOcclusion().strength(0.3F)));
+  public static final DeferredBlock<MatureCrystalBlock> MATURE_CRYSTAL=BLOCKS.register("mature_crystal",()->new MatureCrystalBlock(Block.Properties.ofFullCopy(Blocks.AMETHYST_BLOCK).strength(2.0F).noOcclusion()));
+  public static final DeferredBlock<ResearchDeskBlock> RESEARCH_DESK_TABLE=BLOCKS.register("research_desk_table",()->new ResearchDeskBlock(Block.Properties.ofFullCopy(Blocks.CRAFTING_TABLE).noOcclusion().noLootTable(),false));
+@@ -143,7 +144,8 @@ public final class SyntacticWizardry {
+  public static final DeferredItem<BlockItem> GOLDEN_ORB_ITEM=ITEMS.register("golden_orb",()->new BlockItem(GOLDEN_ORB.get(),new Item.Properties()));
+  public static final DeferredItem<BlockItem> SPELL_RANDOMIZER_ITEM=ITEMS.register("spell_randomizer",()->new BlockItem(SPELL_RANDOMIZER.get(),new Item.Properties()));
+  public static final DeferredItem<BlockItem> TEMPORARY_BLOCK_ITEM=ITEMS.register("temporary_block",()->new BlockItem(TEMPORARY_BLOCK.get(),new Item.Properties()));
+- public static final DeferredItem<BlockItem> GROWSHROOM_ITEM=ITEMS.register("growshroom",()->new BlockItem(GROWSHROOM.get(),new Item.Properties()));
++ public static final DeferredItem<BlockItem> GLOWSHROOM_ITEM=ITEMS.register("glowshroom",()->new BlockItem(GLOWSHROOM.get(),new Item.Properties()));
++ @Deprecated public static final DeferredItem<BlockItem> LEGACY_GROWSHROOM_ITEM=ITEMS.register("growshroom",()->new BlockItem(LEGACY_GROWSHROOM.get(),new Item.Properties()));
+  public static final DeferredItem<BlockItem> GNOME_BED_ITEM=ITEMS.register("gnome_bed",()->new BlockItem(GNOME_BED.get(),new Item.Properties()));
+  public static final DeferredItem<BlockItem> MATURE_CRYSTAL_ITEM=ITEMS.register("mature_crystal",()->new BlockItem(MATURE_CRYSTAL.get(),new Item.Properties()));
+  public static final DeferredHolder<EntityType<?>,EntityType<ElderGnomeEntity>> GNOME_ELDER=ENTITIES.register("gnome_elder",()->EntityType.Builder.<ElderGnomeEntity>of(ElderGnomeEntity::new,MobCategory.CREATURE).sized(0.8F,1.0F).clientTrackingRange(8).updateInterval(3).build("gnome_elder"));
+@@ -230,7 +232,7 @@ public final class SyntacticWizardry {
+  public static final DeferredHolder<MenuType<?>,MenuType<ChargedManaCompassMenu>> CHARGED_MANA_COMPASS_MENU=MENUS.register("charged_mana_compass",()->IMenuTypeExtension.create(ChargedManaCompassMenu::client));
+  public static final DeferredHolder<MenuType<?>,MenuType<FocusSpellMenu>> FOCUS_SPELL_MENU=MENUS.register("focus_spells",()->IMenuTypeExtension.create(FocusSpellMenu::client));
+  public static final DeferredHolder<MenuType<?>,MenuType<RunecasterMenu>> RUNECASTER_MENU=MENUS.register("runecaster",()->IMenuTypeExtension.create((id,inv,data)->RunecasterMenu.client(id,inv)));
+- public static final DeferredHolder<CreativeModeTab,CreativeModeTab> SYNTACTIC_WIZARDRY_TAB=CREATIVE_TABS.register("syntactic_wizardry",()->CreativeModeTab.builder().title(Component.translatable("itemGroup.syntacticwizardry")).icon(()->SCRIBES_LECTERN_ITEM.get().getDefaultInstance()).displayItems((parameters,output)->{output.accept(SCRIBES_LECTERN_ITEM.get());output.accept(CARVING_STATION_ITEM.get());output.accept(ALCHEMY_GRINDSTONE_ITEM.get());output.accept(ALCHEMY_BELLOWS_ITEM.get());output.accept(ALCHEMY_ALEMBIC_ITEM.get());output.accept(ALCHEMICAL_DICTIONARY.get());output.accept(GLASS_BULLET.get());output.accept(GNOME_BED_ITEM.get());output.accept(GROWSHROOM_ITEM.get());output.accept(GNOME_SPAWN_EGG.get());output.accept(GNOME_DELVER_SPAWN_EGG.get());output.accept(GNOME_SMITH_SPAWN_EGG.get());output.accept(SMITH_HAMMER.get());output.accept(GNOME_ELDER_SPAWN_EGG.get());output.accept(TATTERED_NOTES.get());output.accept(RESEARCH_NOTES.get());output.accept(ARCANE_THEORIES.get());output.accept(PotionContents.createItemStack(Items.POTION,AWAKENING_POTION));output.accept(PotionContents.createItemStack(Items.SPLASH_POTION,AWAKENING_POTION));output.accept(PotionContents.createItemStack(Items.LINGERING_POTION,AWAKENING_POTION));output.accept(ENCHANTED_LEATHER.get());output.accept(CLOTH_HOOD.get());output.accept(CLOTH_UPPER_ROBE.get());output.accept(CLOTH_LOWER_ROBE.get());output.accept(HEAVY_HOOD.get());output.accept(HEAVY_UPPER_ROBE.get());output.accept(HEAVY_LOWER_ROBE.get());output.accept(LEATHER_HOOD.get());output.accept(LEATHER_UPPER_ROBE.get());output.accept(LEATHER_LOWER_ROBE.get());output.accept(WIZARDS_HOOD.get());output.accept(WIZARDS_UPPER_ROBE.get());output.accept(WIZARDS_LOWER_ROBE.get());output.accept(GOLDEN_ORB_ITEM.get());output.accept(SPELL_RANDOMIZER_ITEM.get());output.accept(TEMPORARY_BLOCK_ITEM.get());output.accept(MATURE_CRYSTAL_ITEM.get());output.accept(MISSILE_SHAPE.get());output.accept(SPHERE_SHAPE.get());output.accept(BOX_SHAPE.get());output.accept(CONE_SHAPE.get());output.accept(TOUCH_SHAPE.get());output.accept(TARGET_SHAPE.get());output.accept(DAMAGE_EFFECT.get());output.accept(DIG_EFFECT.get());output.accept(HIGH_MANA_COMPASS.get());output.accept(CHARGED_MANA_COMPASS.get());output.accept(WAND.get());output.accept(STRUCTURE_DEBUG_TOOL.get());output.accept(IRON_RUNESTONE.get());output.accept(GOLD_RUNESTONE.get());output.accept(EMERALD_RUNESTONE.get());output.accept(DIAMOND_RUNESTONE.get());output.accept(CARVED_STAFF.get());output.accept(WOOD_RUNECASTER_HEAD.get());output.accept(IRON_RUNECASTER_HEAD.get());output.accept(DIAMOND_RUNECASTER_HEAD.get());output.accept(NETHERITE_RUNECASTER_HEAD.get());output.accept(WOOD_RUNECASTER.get());output.accept(IRON_RUNECASTER.get());output.accept(DIAMOND_RUNECASTER.get());output.accept(NETHERITE_RUNECASTER.get());}).build());
++ public static final DeferredHolder<CreativeModeTab,CreativeModeTab> SYNTACTIC_WIZARDRY_TAB=CREATIVE_TABS.register("syntactic_wizardry",()->CreativeModeTab.builder().title(Component.translatable("itemGroup.syntacticwizardry")).icon(()->SCRIBES_LECTERN_ITEM.get().getDefaultInstance()).displayItems((parameters,output)->{output.accept(SCRIBES_LECTERN_ITEM.get());output.accept(CARVING_STATION_ITEM.get());output.accept(ALCHEMY_GRINDSTONE_ITEM.get());output.accept(ALCHEMY_BELLOWS_ITEM.get());output.accept(ALCHEMY_ALEMBIC_ITEM.get());output.accept(ALCHEMICAL_DICTIONARY.get());output.accept(GLASS_BULLET.get());output.accept(GNOME_BED_ITEM.get());output.accept(GLOWSHROOM_ITEM.get());output.accept(GNOME_SPAWN_EGG.get());output.accept(GNOME_DELVER_SPAWN_EGG.get());output.accept(GNOME_SMITH_SPAWN_EGG.get());output.accept(SMITH_HAMMER.get());output.accept(GNOME_ELDER_SPAWN_EGG.get());output.accept(TATTERED_NOTES.get());output.accept(RESEARCH_NOTES.get());output.accept(ARCANE_THEORIES.get());output.accept(PotionContents.createItemStack(Items.POTION,AWAKENING_POTION));output.accept(PotionContents.createItemStack(Items.SPLASH_POTION,AWAKENING_POTION));output.accept(PotionContents.createItemStack(Items.LINGERING_POTION,AWAKENING_POTION));output.accept(ENCHANTED_LEATHER.get());output.accept(CLOTH_HOOD.get());output.accept(CLOTH_UPPER_ROBE.get());output.accept(CLOTH_LOWER_ROBE.get());output.accept(HEAVY_HOOD.get());output.accept(HEAVY_UPPER_ROBE.get());output.accept(HEAVY_LOWER_ROBE.get());output.accept(LEATHER_HOOD.get());output.accept(LEATHER_UPPER_ROBE.get());output.accept(LEATHER_LOWER_ROBE.get());output.accept(WIZARDS_HOOD.get());output.accept(WIZARDS_UPPER_ROBE.get());output.accept(WIZARDS_LOWER_ROBE.get());output.accept(GOLDEN_ORB_ITEM.get());output.accept(SPELL_RANDOMIZER_ITEM.get());output.accept(TEMPORARY_BLOCK_ITEM.get());output.accept(MATURE_CRYSTAL_ITEM.get());output.accept(MISSILE_SHAPE.get());output.accept(SPHERE_SHAPE.get());output.accept(BOX_SHAPE.get());output.accept(CONE_SHAPE.get());output.accept(TOUCH_SHAPE.get());output.accept(TARGET_SHAPE.get());output.accept(DAMAGE_EFFECT.get());output.accept(DIG_EFFECT.get());output.accept(HIGH_MANA_COMPASS.get());output.accept(CHARGED_MANA_COMPASS.get());output.accept(WAND.get());output.accept(STRUCTURE_DEBUG_TOOL.get());output.accept(IRON_RUNESTONE.get());output.accept(GOLD_RUNESTONE.get());output.accept(EMERALD_RUNESTONE.get());output.accept(DIAMOND_RUNESTONE.get());output.accept(CARVED_STAFF.get());output.accept(WOOD_RUNECASTER_HEAD.get());output.accept(IRON_RUNECASTER_HEAD.get());output.accept(DIAMOND_RUNECASTER_HEAD.get());output.accept(NETHERITE_RUNECASTER_HEAD.get());output.accept(WOOD_RUNECASTER.get());output.accept(IRON_RUNECASTER.get());output.accept(DIAMOND_RUNECASTER.get());output.accept(NETHERITE_RUNECASTER.get());}).build());
+  private static java.util.List<DeferredHolder<MobEffect,MobEffect>> createProtectionStatusEffects(){
+   java.util.ArrayList<DeferredHolder<MobEffect,MobEffect>> effects=new java.util.ArrayList<>();
+   for(int percent=10;percent<=100;percent+=10){
+diff --git a/src/main/resources/assets/syntacticwizardry/blockstates/glowshroom.json b/src/main/resources/assets/syntacticwizardry/blockstates/glowshroom.json
+new file mode 100644
+index 0000000..6f88def
+--- /dev/null
++++ b/src/main/resources/assets/syntacticwizardry/blockstates/glowshroom.json
+@@ -0,0 +1 @@
++{"variants":{"":{"model":"syntacticwizardry:block/glowshroom"}}}
+diff --git a/src/main/resources/assets/syntacticwizardry/lang/en_us.json b/src/main/resources/assets/syntacticwizardry/lang/en_us.json
+index 60a0267..93d2181 100644
+--- a/src/main/resources/assets/syntacticwizardry/lang/en_us.json
++++ b/src/main/resources/assets/syntacticwizardry/lang/en_us.json
+@@ -133,5 +133,6 @@
+   "item.syntacticwizardry.smith_hammer": "Smith's Hammer",
+   "block.syntacticwizardry.geomantic_node": "Geomantic Node",
+   "block.syntacticwizardry.gnome_bed": "Gnome Bed",
+-  "block.syntacticwizardry.growshroom": "Growshroom"
++  "block.syntacticwizardry.growshroom": "Glowshroom",
++  "block.syntacticwizardry.glowshroom": "Glowshroom"
+ }
+diff --git a/src/main/resources/assets/syntacticwizardry/models/block/glowshroom.json b/src/main/resources/assets/syntacticwizardry/models/block/glowshroom.json
+new file mode 100644
+index 0000000..1fb6925
+--- /dev/null
++++ b/src/main/resources/assets/syntacticwizardry/models/block/glowshroom.json
+@@ -0,0 +1 @@
++{"parent":"minecraft:block/cross","render_type":"minecraft:cutout","textures":{"cross":"syntacticwizardry:block/glowshroom","particle":"syntacticwizardry:block/glowshroom"}}
+diff --git a/src/main/resources/assets/syntacticwizardry/models/item/glowshroom.json b/src/main/resources/assets/syntacticwizardry/models/item/glowshroom.json
+new file mode 100644
+index 0000000..529cd23
+--- /dev/null
++++ b/src/main/resources/assets/syntacticwizardry/models/item/glowshroom.json
+@@ -0,0 +1 @@
++{"parent":"minecraft:item/generated","textures":{"layer0":"syntacticwizardry:block/glowshroom"}}
+diff --git a/src/main/resources/assets/syntacticwizardry/textures/block/glowshroom.png b/src/main/resources/assets/syntacticwizardry/textures/block/glowshroom.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..6e3d5475435913377d0cb1481a742790051886bd
+GIT binary patch
+literal 224
+zcmeAS@N?(olHy`uVBq!ia0vp^0wB!61|;P_|4#%`%ROBjLn`JZCrGf0FuTPFg{J%c
+zIdA&!u)$9q?wB=ak1#pgwjG$HfBpaNLiywyU$1hx-kA~E{P4|vX&w+Tw3$^<TX5{_
+zfA;^vMeB}D|ITAx!Sb-i*R9&kjg5`1O;cWA)@I9lMm~QPeNO1Si7PmjrS^hL;)eO!
+zX@Z9tBn<k`9L~CM^66v_b|s@30ec_q-!@H+83>xQx7dYk^<jze65!dxD8kI(E~6D>
+T)$-;i(8&y*u6{1-oD!M<S=CZK
+
+literal 0
+HcmV?d00001
+
+diff --git a/src/main/resources/data/syntacticwizardry/loot_table/blocks/glowshroom.json b/src/main/resources/data/syntacticwizardry/loot_table/blocks/glowshroom.json
+new file mode 100644
+index 0000000..4cb4038
+--- /dev/null
++++ b/src/main/resources/data/syntacticwizardry/loot_table/blocks/glowshroom.json
+@@ -0,0 +1 @@
++{"type":"minecraft:block","pools":[{"rolls":1,"entries":[{"type":"minecraft:item","name":"syntacticwizardry:glowshroom"}],"conditions":[{"condition":"minecraft:survives_explosion"}]}]}
