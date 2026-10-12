@@ -1,0 +1,444 @@
+diff --git a/GNOME_VILLAGE_WORKSTATIONS.md b/GNOME_VILLAGE_WORKSTATIONS.md
+new file mode 100644
+index 0000000..42a3b3d
+--- /dev/null
++++ b/GNOME_VILLAGE_WORKSTATIONS.md
+@@ -0,0 +1,12 @@
++# Gnome workstation assignment (v0.3.81)
++
++- Each spawned standard Gnome begins without a workstation profession and performs Delver duties using a vanilla iron pickaxe.
++- Within the provisional village area (24 blocks horizontally and 12 vertically around the saved village home), a free anvil assigns one Gnome as a Smith; a free vanilla composter assigns one as a Grower.
++- Both professions are persistent and exclusive. Destroying the workstation does not change its owner or profession.
++- A Smith/Grower walks to its missing station and restores its saved block state if the space is air. If obstructed, it waits until the obstruction is removed.
++- Player- and Enderman-placed blocks within the village area are tracked. Unassigned Gnomes on Delver duty remove such foreign blocks without removing original or self-placed village blocks.
++- Every 8 ordinary Gnomes (rounded up) require an Elder. Elders do not count toward this ratio. Missing Elders are spawned, and existing Elders are never demoted or deleted when population falls.
++- Population, workstation claims, and tracked foreign block placements persist in per-dimension SavedData across unload and reload.
++- Legacy `gnome_smith` and `gnome_delver` entity IDs remain registered for save compatibility, but they now use the same workstation assignment logic as ordinary Gnomes. Their spawn eggs are still available.
++- The actual underground Gnome Village world generator and blueprint boundaries are not yet implemented. This version uses a bounded radius around each village's saved home as a temporary area.
++- Only player- and Enderman-placed blocks are currently identified as foreign; terrain/worldgen repairs and path/torch maintenance will require a structural blueprint in a later release.
+diff --git a/gradle.properties b/gradle.properties
+index ff530d9..66913ad 100644
+--- a/gradle.properties
++++ b/gradle.properties
+@@ -11,7 +11,7 @@ loader_version_range=[1,)
+ mod_id=syntacticwizardry
+ mod_name=Syntactic Wizardry
+ mod_license=All Rights Reserved
+-mod_version=0.3.80
++mod_version=0.3.81
+ mod_group_id=com.proxpero.syntacticwizardry
+ 
+ # build_marker=v0.2.85
+\ No newline at end of file
+diff --git a/src/main/java/com/proxpero/syntacticwizardry/GnomeDelverEntity.java b/src/main/java/com/proxpero/syntacticwizardry/GnomeDelverEntity.java
+index f4a2222..92c4665 100644
+--- a/src/main/java/com/proxpero/syntacticwizardry/GnomeDelverEntity.java
++++ b/src/main/java/com/proxpero/syntacticwizardry/GnomeDelverEntity.java
+@@ -1,21 +1,11 @@
+ package com.proxpero.syntacticwizardry;
+ 
+ import net.minecraft.world.entity.EntityType;
+-import net.minecraft.world.entity.EquipmentSlot;
+-import net.minecraft.world.item.ItemStack;
+-import net.minecraft.world.item.Items;
+ import net.minecraft.world.level.Level;
+ 
+-/** A village Delver. Uses the standard Gnome model with a real iron pickaxe. */
++/** Compatibility registration. Profession is now selected by a claimed village workstation. */
+ public final class GnomeDelverEntity extends GnomeEntity {
+     public GnomeDelverEntity(EntityType<? extends GnomeDelverEntity> type, Level level) {
+         super(type, level);
+     }
+-
+-    @Override public void aiStep() {
+-        super.aiStep();
+-        if (!level().isClientSide() && !getMainHandItem().is(Items.IRON_PICKAXE)) {
+-            setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_PICKAXE));
+-        }
+-    }
+ }
+diff --git a/src/main/java/com/proxpero/syntacticwizardry/GnomeEntity.java b/src/main/java/com/proxpero/syntacticwizardry/GnomeEntity.java
+index 0554c3e..f9b75c0 100644
+--- a/src/main/java/com/proxpero/syntacticwizardry/GnomeEntity.java
++++ b/src/main/java/com/proxpero/syntacticwizardry/GnomeEntity.java
+@@ -1,6 +1,12 @@
+ package com.proxpero.syntacticwizardry;
+ 
+ import net.minecraft.core.BlockPos;
++import net.minecraft.world.entity.EquipmentSlot;
++import net.minecraft.world.item.ItemStack;
++import net.minecraft.world.item.Items;
++import net.minecraft.world.level.block.Block;
++import net.minecraft.world.level.block.Blocks;
++import net.minecraft.world.level.block.state.BlockState;
+ import net.minecraft.nbt.CompoundTag;
+ import net.minecraft.server.level.ServerLevel;
+ import net.minecraft.world.damagesource.DamageSource;
+@@ -26,6 +32,11 @@ public class GnomeEntity extends PathfinderMob {
+     private static final String VILLAGE_ID = "sw_gnome_village_id";
+     private static final String HOME = "sw_gnome_home";
+     private int settleCooldown = 4;
++    private static final String PROFESSION = "sw_gnome_profession";
++    private static final String PROFESSION_NONE = "none";
++    private static final String PROFESSION_SMITH = "smith";
++    private static final String PROFESSION_GROWER = "grower";
++
+     // Minecraft sends vanilla arm swings inconsistently for spell-casting mobs.
+     // A dedicated entity event ensures every nearby client sees each attack.
+     private static final byte GNOME_ATTACK_EVENT = 65;
+@@ -65,7 +76,29 @@ public class GnomeEntity extends PathfinderMob {
+         getPersistentData().putLong(HOME, home.asLong());
+     }
+ 
+-    private void ensureVillage() {
++    public BlockPos villageHome() {
++        return getPersistentData().contains(HOME)
++                ? BlockPos.of(getPersistentData().getLong(HOME)) : blockPosition();
++    }
++
++    public String gnomeProfession() {
++        if (this instanceof ElderGnomeEntity) return "elder";
++        String role = getPersistentData().getString(PROFESSION);
++        return PROFESSION_SMITH.equals(role) || PROFESSION_GROWER.equals(role) ? role : PROFESSION_NONE;
++    }
++
++    private void syncEquipment() {
++        if (this instanceof ElderGnomeEntity) return;
++        ItemStack required = switch (gnomeProfession()) {
++            case PROFESSION_SMITH -> new ItemStack(SyntacticWizardry.SMITH_HAMMER.get());
++            case PROFESSION_GROWER -> ItemStack.EMPTY;
++            default -> new ItemStack(Items.IRON_PICKAXE); // No assigned workstation means Delver duty.
++        };
++        if (!ItemStack.isSameItemSameComponents(getMainHandItem(), required))
++            setItemSlot(EquipmentSlot.MAINHAND, required);
++    }
++
++    protected void ensureVillage() {
+         if (villageId() != null || !(level() instanceof ServerLevel server)) return;
+         for (GnomeEntity neighbor : server.getEntitiesOfClass(GnomeEntity.class,
+                 getBoundingBox().inflate(20.0D, 8.0D, 20.0D),
+@@ -82,6 +115,20 @@ public class GnomeEntity extends PathfinderMob {
+         if (--settleCooldown <= 0) {
+             settleCooldown = 40;
+             ensureVillage();
++            if (villageId() != null && level() instanceof ServerLevel server) {
++                GnomeVillageData data = GnomeVillageData.get(server);
++                boolean elder = this instanceof ElderGnomeEntity;
++                data.register(getUUID(), villageId(), elder, villageHome());
++                if (!elder) {
++                    GnomeVillageData.Claim claim = data.claimFor(getUUID());
++                    if (claim == null) claim = data.findAndClaim(server, villageId(), getUUID(), villageHome(), blockPosition());
++                    if (claim != null) getPersistentData().putString(PROFESSION, claim.profession());
++                    syncEquipment();
++                    if (claim != null) repairWorkstation(server, claim);
++                    else maintainForeignBlocks(server, data);
++                }
++                if (!elder && data.count(villageId(), false) > 0) ensureElderCount(server, data);
++            }
+             if (getTarget() == null && getPersistentData().contains(HOME)) {
+                 BlockPos home = BlockPos.of(getPersistentData().getLong(HOME));
+                 if (blockPosition().distSqr(home) > 24 * 24)
+@@ -90,6 +137,61 @@ public class GnomeEntity extends PathfinderMob {
+         }
+     }
+ 
++    private void repairWorkstation(ServerLevel server, GnomeVillageData.Claim claim) {
++        if (getTarget() != null || !server.isLoaded(claim.pos())) return;
++        BlockState existing = server.getBlockState(claim.pos());
++        boolean correct = PROFESSION_SMITH.equals(claim.profession())
++                ? existing.is(Blocks.ANVIL) || existing.is(Blocks.CHIPPED_ANVIL) || existing.is(Blocks.DAMAGED_ANVIL)
++                : existing.is(Blocks.COMPOSTER);
++        if (correct || !existing.isAir()) return; // Occupied: let a Delver remove the obstruction.
++        if (blockPosition().distSqr(claim.pos()) > 9) {
++            getNavigation().moveTo(claim.pos().getX() + .5, claim.pos().getY(), claim.pos().getZ() + .5, 0.8D);
++            return;
++        }
++        BlockState saved = Block.stateById(claim.stateId());
++        if (saved.isAir()) saved = PROFESSION_SMITH.equals(claim.profession())
++                ? Blocks.ANVIL.defaultBlockState() : Blocks.COMPOSTER.defaultBlockState();
++        server.setBlockAndUpdate(claim.pos(), saved);
++    }
++
++    private void maintainForeignBlocks(ServerLevel server, GnomeVillageData data) {
++        if (getTarget() != null) return;
++        GnomeVillageData.ForeignBlock foreign = data.nearestForeign(villageId(), blockPosition());
++        if (foreign == null || !server.isLoaded(foreign.pos())) return;
++        BlockState state = server.getBlockState(foreign.pos());
++        if (state.isAir() || Block.getId(state) != foreign.stateId()) {
++            data.clearForeign(villageId(), foreign.pos());
++            return;
++        }
++        if (blockPosition().distSqr(foreign.pos()) > 12.25D) {
++            getNavigation().moveTo(foreign.pos().getX() + .5, foreign.pos().getY(), foreign.pos().getZ() + .5, 0.85D);
++            return;
++        }
++        // Only tracked player/Enderman placements can be removed. Villages' own blocks stay untouched.
++        if (server.destroyBlock(foreign.pos(), true, this)) data.clearForeign(villageId(), foreign.pos());
++    }
++
++    private void ensureElderCount(ServerLevel server, GnomeVillageData data) {
++        int ordinary = data.count(villageId(), false);
++        int required = (ordinary + 7) / 8;
++        int missing = required - data.count(villageId(), true);
++        // Add missing Elders, but never demote or remove an existing Elder.
++        for (int i = 0; i < missing; i++) {
++            ElderGnomeEntity elder = SyntacticWizardry.GNOME_ELDER.get().create(server);
++            if (elder == null) break;
++            elder.moveTo(getX(), getY(), getZ(), getYRot(), 0);
++            elder.setVillage(villageId(), villageHome());
++            data.register(elder.getUUID(), villageId(), true, villageHome());
++            if (!server.addFreshEntity(elder)) { data.retire(elder.getUUID()); break; }
++        }
++    }
++
++    @Override public void die(DamageSource source) {
++        if (!level().isClientSide() && level() instanceof ServerLevel server)
++            GnomeVillageData.get(server).retire(getUUID());
++        super.die(source);
++    }
++
+     @Override public boolean hurt(DamageSource source, float amount) {
+         boolean damaged = super.hurt(source, amount);
+         if (damaged && !level().isClientSide() && source.getEntity() instanceof LivingEntity attacker
+diff --git a/src/main/java/com/proxpero/syntacticwizardry/GnomeSmithEntity.java b/src/main/java/com/proxpero/syntacticwizardry/GnomeSmithEntity.java
+index 472d390..3251a35 100644
+--- a/src/main/java/com/proxpero/syntacticwizardry/GnomeSmithEntity.java
++++ b/src/main/java/com/proxpero/syntacticwizardry/GnomeSmithEntity.java
+@@ -1,20 +1,11 @@
+ package com.proxpero.syntacticwizardry;
+ 
+ import net.minecraft.world.entity.EntityType;
+-import net.minecraft.world.entity.EquipmentSlot;
+-import net.minecraft.world.item.ItemStack;
+ import net.minecraft.world.level.Level;
+ 
+-/** A village Smith. Uses the standard Gnome model with a held smithing hammer. */
++/** Compatibility registration. Profession is now selected by a claimed village workstation. */
+ public final class GnomeSmithEntity extends GnomeEntity {
+     public GnomeSmithEntity(EntityType<? extends GnomeSmithEntity> type, Level level) {
+         super(type, level);
+     }
+-
+-    @Override public void aiStep() {
+-        super.aiStep();
+-        if (!level().isClientSide() && !getMainHandItem().is(SyntacticWizardry.SMITH_HAMMER.get())) {
+-            setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(SyntacticWizardry.SMITH_HAMMER.get()));
+-        }
+-    }
+ }
+diff --git a/src/main/java/com/proxpero/syntacticwizardry/GnomeVillageData.java b/src/main/java/com/proxpero/syntacticwizardry/GnomeVillageData.java
+new file mode 100644
+index 0000000..f6ea150
+--- /dev/null
++++ b/src/main/java/com/proxpero/syntacticwizardry/GnomeVillageData.java
+@@ -0,0 +1,184 @@
++package com.proxpero.syntacticwizardry;
++
++import net.minecraft.core.BlockPos;
++import net.minecraft.core.HolderLookup;
++import net.minecraft.nbt.CompoundTag;
++import net.minecraft.nbt.ListTag;
++import net.minecraft.nbt.Tag;
++import net.minecraft.server.level.ServerLevel;
++import net.minecraft.util.datafix.DataFixTypes;
++import net.minecraft.world.level.block.Block;
++import net.minecraft.world.level.block.Blocks;
++import net.minecraft.world.level.block.state.BlockState;
++import net.minecraft.world.level.saveddata.SavedData;
++
++import java.util.ArrayList;
++import java.util.Comparator;
++import java.util.HashMap;
++import java.util.HashSet;
++import java.util.List;
++import java.util.Map;
++import java.util.Set;
++import java.util.UUID;
++
++/** Persistent village membership, exclusive workstation ownership, and foreign block tracking. */
++public final class GnomeVillageData extends SavedData {
++    private static final String DATA_NAME = "syntacticwizardry_gnome_villages_v1";
++    // Until world generation supplies explicit boundaries, use a finite area around the saved village home.
++    public static final int RADIUS = 24;
++    public static final int HEIGHT = 12;
++
++    public record Resident(UUID village, boolean elder, BlockPos home) {}
++    public record Claim(UUID village, UUID owner, String profession, BlockPos pos, int stateId) {}
++    public record ForeignBlock(UUID village, BlockPos pos, int stateId) {}
++
++    private final Map<UUID, Resident> members = new HashMap<>();
++    private final Map<UUID, Claim> claims = new HashMap<>();
++    private final Map<UUID, Map<Long, ForeignBlock>> foreignBlocks = new HashMap<>();
++    private final Map<UUID, Scan> scans = new HashMap<>();
++    private record Scan(long time, BlockPos home, List<BlockPos> anvils, List<BlockPos> composters) {}
++
++    public static Factory<GnomeVillageData> factory() {
++        return new Factory<>(GnomeVillageData::new, GnomeVillageData::load, DataFixTypes.SAVED_DATA_COMMAND_STORAGE);
++    }
++    public static GnomeVillageData get(ServerLevel level) {
++        return level.getDataStorage().computeIfAbsent(factory(), DATA_NAME);
++    }
++    public static GnomeVillageData load(CompoundTag root, HolderLookup.Provider registries) {
++        GnomeVillageData data = new GnomeVillageData();
++        ListTag residents = root.getList("Residents", Tag.TAG_COMPOUND);
++        for (int i = 0; i < residents.size(); i++) {
++            CompoundTag tag = residents.getCompound(i);
++            if (!tag.hasUUID("Id") || !tag.hasUUID("Village")) continue;
++            data.members.put(tag.getUUID("Id"), new Resident(tag.getUUID("Village"),
++                    tag.getBoolean("Elder"), BlockPos.of(tag.getLong("Home"))));
++        }
++        ListTag work = root.getList("Workstations", Tag.TAG_COMPOUND);
++        for (int i = 0; i < work.size(); i++) {
++            CompoundTag tag = work.getCompound(i);
++            if (!tag.hasUUID("Owner") || !tag.hasUUID("Village")) continue;
++            UUID owner = tag.getUUID("Owner");
++            data.claims.put(owner, new Claim(tag.getUUID("Village"), owner,
++                    tag.getString("Profession"), BlockPos.of(tag.getLong("Pos")), tag.getInt("State")));
++        }
++        ListTag placed = root.getList("ForeignBlocks", Tag.TAG_COMPOUND);
++        for (int i = 0; i < placed.size(); i++) {
++            CompoundTag tag = placed.getCompound(i);
++            if (!tag.hasUUID("Village")) continue;
++            UUID village = tag.getUUID("Village");
++            ForeignBlock block = new ForeignBlock(village, BlockPos.of(tag.getLong("Pos")), tag.getInt("State"));
++            data.foreignBlocks.computeIfAbsent(village, unused -> new HashMap<>()).put(block.pos().asLong(), block);
++        }
++        return data;
++    }
++    @Override public CompoundTag save(CompoundTag root, HolderLookup.Provider registries) {
++        ListTag residents = new ListTag();
++        for (Map.Entry<UUID, Resident> entry : members.entrySet()) {
++            CompoundTag tag = new CompoundTag();
++            tag.putUUID("Id", entry.getKey()); tag.putUUID("Village", entry.getValue().village());
++            tag.putBoolean("Elder", entry.getValue().elder()); tag.putLong("Home", entry.getValue().home().asLong());
++            residents.add(tag);
++        }
++        root.put("Residents", residents);
++        ListTag work = new ListTag();
++        for (Claim c : claims.values()) {
++            CompoundTag tag = new CompoundTag(); tag.putUUID("Owner", c.owner());
++            tag.putUUID("Village", c.village()); tag.putString("Profession", c.profession());
++            tag.putLong("Pos", c.pos().asLong()); tag.putInt("State", c.stateId()); work.add(tag);
++        }
++        root.put("Workstations", work);
++        ListTag placed = new ListTag();
++        for (Map<Long, ForeignBlock> blocks : foreignBlocks.values()) for (ForeignBlock b : blocks.values()) {
++            CompoundTag tag = new CompoundTag(); tag.putUUID("Village", b.village());
++            tag.putLong("Pos", b.pos().asLong()); tag.putInt("State", b.stateId()); placed.add(tag);
++        }
++        root.put("ForeignBlocks", placed);
++        return root;
++    }
++    public static boolean inside(BlockPos pos, BlockPos home) {
++        return Math.abs(pos.getX() - home.getX()) <= RADIUS
++                && Math.abs(pos.getY() - home.getY()) <= HEIGHT
++                && Math.abs(pos.getZ() - home.getZ()) <= RADIUS;
++    }
++    public void register(UUID id, UUID village, boolean elder, BlockPos home) {
++        Resident previous = members.get(id);
++        Resident now = new Resident(village, elder, home);
++        if (!now.equals(previous)) { members.put(id, now); setDirty(); }
++    }
++    public void retire(UUID id) {
++        if (members.remove(id) != null) setDirty();
++        if (claims.remove(id) != null) setDirty();
++    }
++    public int count(UUID village, boolean elder) {
++        int result = 0;
++        for (Resident member : members.values()) if (village.equals(member.village()) && member.elder() == elder) result++;
++        return result;
++    }
++    public Claim claimFor(UUID id) { return claims.get(id); }
++    private boolean taken(UUID village, BlockPos pos) {
++        for (Claim c : claims.values()) if (village.equals(c.village()) && c.pos().equals(pos)) return true;
++        return false;
++    }
++    public Claim claim(UUID village, UUID owner, String profession, BlockPos pos, BlockState state) {
++        Claim old = claims.get(owner);
++        if (old != null || taken(village, pos)) return old;
++        Claim c = new Claim(village, owner, profession, pos.immutable(), Block.getId(state));
++        claims.put(owner, c); setDirty(); return c;
++    }
++    private Scan scan(ServerLevel level, UUID village, BlockPos home) {
++        Scan cached = scans.get(village);
++        long now = level.getGameTime();
++        if (cached != null && cached.home().equals(home) && now - cached.time() < 100) return cached;
++        List<BlockPos> anvils = new ArrayList<>(), composters = new ArrayList<>();
++        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
++        for (int dx = -RADIUS; dx <= RADIUS; dx++) for (int dz = -RADIUS; dz <= RADIUS; dz++) {
++            for (int dy = -HEIGHT; dy <= HEIGHT; dy++) {
++                pos.set(home.getX()+dx, home.getY()+dy, home.getZ()+dz);
++                if (!level.isLoaded(pos)) continue;
++                BlockState state = level.getBlockState(pos);
++                if (state.is(Blocks.ANVIL) || state.is(Blocks.CHIPPED_ANVIL) || state.is(Blocks.DAMAGED_ANVIL))
++                    anvils.add(pos.immutable());
++                else if (state.is(Blocks.COMPOSTER)) composters.add(pos.immutable());
++            }
++        }
++        Scan result = new Scan(now, home.immutable(), anvils, composters);
++        scans.put(village, result); return result;
++    }
++    public Claim findAndClaim(ServerLevel level, UUID village, UUID owner, BlockPos home, BlockPos gnome) {
++        Claim current = claims.get(owner);
++        if (current != null) return current;
++        Scan available = scan(level, village, home);
++        // Smiths get first refusal on anvils. Next unassigned residents may become Growers.
++        for (String role : List.of("smith", "grower")) {
++            List<BlockPos> positions = new ArrayList<>(role.equals("smith") ? available.anvils() : available.composters());
++            positions.sort(Comparator.comparingDouble(pos -> pos.distSqr(gnome)));
++            for (BlockPos pos : positions) {
++                if (taken(village, pos) || !level.isLoaded(pos)) continue;
++                BlockState state = level.getBlockState(pos);
++                if ((role.equals("smith") && !(state.is(Blocks.ANVIL) || state.is(Blocks.CHIPPED_ANVIL) || state.is(Blocks.DAMAGED_ANVIL)))
++                        || (role.equals("grower") && !state.is(Blocks.COMPOSTER))) continue;
++                return claim(village, owner, role, pos, state);
++            }
++        }
++        return null;
++    }
++    public void recordForeignBlock(ServerLevel level, BlockPos pos) {
++        // Only players and Endermen trigger this method. Village-placed blocks are never recorded.
++        for (Resident member : members.values()) {
++            UUID village = member.village();
++            if (!inside(pos, member.home())) continue;
++            Map<Long, ForeignBlock> blocks = foreignBlocks.computeIfAbsent(village, unused -> new HashMap<>());
++            blocks.put(pos.asLong(), new ForeignBlock(village, pos.immutable(), Block.getId(level.getBlockState(pos))));
++            setDirty();
++        }
++    }
++    public ForeignBlock nearestForeign(UUID village, BlockPos from) {
++        Map<Long, ForeignBlock> blocks = foreignBlocks.get(village);
++        if (blocks == null) return null;
++        return blocks.values().stream().min(Comparator.comparingDouble(b -> b.pos().distSqr(from))).orElse(null);
++    }
++    public void clearForeign(UUID village, BlockPos pos) {
++        Map<Long, ForeignBlock> blocks = foreignBlocks.get(village);
++        if (blocks != null && blocks.remove(pos.asLong()) != null) setDirty();
++    }
++}
+diff --git a/src/main/java/com/proxpero/syntacticwizardry/GnomeVillagePlacementEvents.java b/src/main/java/com/proxpero/syntacticwizardry/GnomeVillagePlacementEvents.java
+new file mode 100644
+index 0000000..8ad801f
+--- /dev/null
++++ b/src/main/java/com/proxpero/syntacticwizardry/GnomeVillagePlacementEvents.java
+@@ -0,0 +1,20 @@
++package com.proxpero.syntacticwizardry;
++
++import net.minecraft.server.level.ServerLevel;
++import net.minecraft.world.entity.monster.EnderMan;
++import net.minecraft.world.entity.player.Player;
++import net.neoforged.bus.api.SubscribeEvent;
++import net.neoforged.fml.common.EventBusSubscriber;
++import net.neoforged.neoforge.event.level.BlockEvent;
++
++/** Only foreign placements are removed. Generated structures and Gnome repairs are protected. */
++@EventBusSubscriber(modid = SyntacticWizardry.MOD_ID, bus = EventBusSubscriber.Bus.GAME)
++public final class GnomeVillagePlacementEvents {
++    private GnomeVillagePlacementEvents() {}
++    @SubscribeEvent
++    public static void onPlace(BlockEvent.EntityPlaceEvent event) {
++        if (!(event.getLevel() instanceof ServerLevel level)) return;
++        if (!(event.getEntity() instanceof Player || event.getEntity() instanceof EnderMan)) return;
++        GnomeVillageData.get(level).recordForeignBlock(level, event.getPos());
++    }
++}
