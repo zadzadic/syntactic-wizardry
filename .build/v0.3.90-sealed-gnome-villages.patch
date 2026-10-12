@@ -1,12 +1,11 @@
 diff --git a/GNOME_VILLAGE_GENERATION.md b/GNOME_VILLAGE_GENERATION.md
-index 04d6460..e9395eb 100644
+index 9e2815f..441422e 100644
 --- a/GNOME_VILLAGE_GENERATION.md
 +++ b/GNOME_VILLAGE_GENERATION.md
-@@ -20,3 +20,10 @@
- - Corridors have post-construction wall torches every six distinct pathway cells (rather than unreliable provisional torches on exterior cave stone). Every room gets four supported wall torches. Existing recessed shaft Glowstone remains unchanged.
- - Zombies (including subclasses) and all vanilla skeleton variants target Gnomes through the normal AI target-goal selector, while retaining normal player priority. Neutral Gnomes still retaliate and alert village allies when attacked.
- - New generation only. Existing generated villages remain unchanged.
-+
+@@ -11,3 +11,9 @@ All generated village rooms and walkways are connected to a single tiered centra
+ - Lighting: new custom Growshroom plant blocks provide illumination (light level 14) in rooms, tunnels, and the lower plaza. No torches are placed by this feature.
+ - The existing underground site and natural cavern checks, population counts, professions, Gnome Beds, Geomantic Node rewards, and zombie/skeleton hostility remain.
+ - Only newly generated chunks can receive the new layout. Existing settlements are not changed.
 +## v0.3.90 — sealed village, widened stair bends, rectangular rooms, Glowshrooms
 +
 +- Every intentional air pocket receives a solid-block shell where it borders natural cave air or fluid. Only the 2×2 portal at the end of the cavern entrance corridor is excluded. The existing pair of oak entrance doors remains.
