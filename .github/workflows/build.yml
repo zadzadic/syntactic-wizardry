@@ -639,6 +639,11 @@ jobs:
         run: |
           git apply --check .build/v0.3.86-vertical-village.patch
           git apply .build/v0.3.86-vertical-village.patch
+      - name: Apply v0.3.87 Gnome Bed block registration crash fix
+        if: ${{ hashFiles('.build/v0.3.87-fix-gnome-bed-registration.patch') != '' }}
+        run: |
+          git apply --check .build/v0.3.87-fix-gnome-bed-registration.patch
+          git apply .build/v0.3.87-fix-gnome-bed-registration.patch
       - name: Read mod version
         run: echo "MOD_VERSION=$(grep '^mod_version=' gradle.properties | cut -d= -f2)" >> "$GITHUB_ENV"
       - name: Install Gradle 9.2.1
