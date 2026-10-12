@@ -1,0 +1,325 @@
+diff --git a/GNOME_VILLAGE_GENERATION.md b/GNOME_VILLAGE_GENERATION.md
+new file mode 100644
+index 0000000..43e88a8
+--- /dev/null
++++ b/GNOME_VILLAGE_GENERATION.md
+@@ -0,0 +1,10 @@
++# Underground Gnome Villages (v0.3.84)
++
++- Villages generate underground in the Overworld using a dedicated NeoForge world-generation feature. Chance: approximately one placement attempt per 144 chunks, further limited by solid-rock, depth and fluid safety checks.
++- Every settlement consists of a central ellipsoid hall, four primary connecting tunnels and a variable side tunnel connecting a second residence.
++- The hall contains a new Geomantic Node, independent of natural geodes. The node retains the v0.3.83 one-time wand attunement reward and is consumed on use.
++- Other chambers include a mushroom farm (mycelium, mushrooms, composter), a smithy (anvil, furnace, blast furnace), two residential chambers, and a workshop/storehouse.
++- Floors are dressed in polished andesite; paths use deepslate tiles. Passages have solid walls, overhead cover, periodic wooden supports and torches.
++- Each village generates 8-12 ordinary Gnomes and exactly `ceil(ordinary / 8)` Elders. The existing village-ID and workstation assignment system assigns the Smith and Grower. Remaining ordinary Gnomes act as Delvers.
++- Generation is limited to new chunks. Existing chunks are not retroactively modified.
++- Villages have no surface entrance in this release. Delver architectural repair and relighting beyond the initial generation still need a persistent structural blueprint; foreign player/Enderman block removal and workstation restoration remain implemented from earlier versions.
+diff --git a/gradle.properties b/gradle.properties
+index 7fcba3e..6c9c648 100644
+--- a/gradle.properties
++++ b/gradle.properties
+@@ -11,7 +11,7 @@ loader_version_range=[1,)
+ mod_id=syntacticwizardry
+ mod_name=Syntactic Wizardry
+ mod_license=All Rights Reserved
+-mod_version=0.3.83
++mod_version=0.3.84
+ mod_group_id=com.proxpero.syntacticwizardry
+ 
+ # build_marker=v0.2.85
+\ No newline at end of file
+diff --git a/src/main/java/com/proxpero/syntacticwizardry/GnomeVillageFeature.java b/src/main/java/com/proxpero/syntacticwizardry/GnomeVillageFeature.java
+new file mode 100644
+index 0000000..cb86a4d
+--- /dev/null
++++ b/src/main/java/com/proxpero/syntacticwizardry/GnomeVillageFeature.java
+@@ -0,0 +1,236 @@
++package com.proxpero.syntacticwizardry;
++
++import com.mojang.serialization.Codec;
++import net.minecraft.core.BlockPos;
++import net.minecraft.core.Direction;
++import net.minecraft.util.RandomSource;
++import net.minecraft.world.entity.Entity;
++import net.minecraft.world.level.WorldGenLevel;
++import net.minecraft.world.level.block.Blocks;
++import net.minecraft.world.level.block.WallTorchBlock;
++import net.minecraft.world.level.block.state.BlockState;
++import net.minecraft.world.level.levelgen.Heightmap;
++import net.minecraft.world.level.levelgen.feature.Feature;
++import net.minecraft.world.level.levelgen.feature.FeaturePlaceContext;
++import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration;
++import net.minecraft.server.level.ServerLevel;
++
++import java.util.ArrayList;
++import java.util.List;
++import java.util.UUID;
++
++/** A real underground settlement. Rooms and passages are carved into existing stone. */
++public final class GnomeVillageFeature extends Feature<NoneFeatureConfiguration> {
++    private static final BlockState AIR = Blocks.CAVE_AIR.defaultBlockState();
++    private static final BlockState FLOOR = Blocks.POLISHED_ANDESITE.defaultBlockState();
++    private static final BlockState PATH = Blocks.DEEPSLATE_TILES.defaultBlockState();
++    private static final BlockState FRAME = Blocks.SPRUCE_LOG.defaultBlockState();
++    private final List<BlockPos> spawnSites = new ArrayList<>();
++    private WorldGenLevel world;
++    private BlockPos home;
++    private RandomSource random;
++
++    public GnomeVillageFeature(Codec<NoneFeatureConfiguration> codec) { super(codec); }
++
++    @Override public boolean place(FeaturePlaceContext<NoneFeatureConfiguration> context) {
++        WorldGenLevel level = context.level();
++        RandomSource rng = context.random();
++        BlockPos origin = context.origin().offset(8, 0, 8);
++        int y = origin.getY();
++        // Remain in the Overworld's underground strata. Do not expose the village at the surface.
++        if (y < -35 || y > 26 || level.getHeight(Heightmap.Types.WORLD_SURFACE_WG, origin.getX(), origin.getZ()) < y + 19)
++            return false;
++        BlockState central = level.getBlockState(origin);
++        if (!(central.is(Blocks.STONE) || central.is(Blocks.DEEPSLATE) || central.is(Blocks.TUFF))) return false;
++        // Reject fluid caves and other open structures. Worldgen must never flood a village.
++        for (int dx = -14; dx <= 14; dx += 7) for (int dz = -14; dz <= 14; dz += 7) {
++            BlockPos sample = origin.offset(dx, 0, dz);
++            if (!level.getFluidState(sample).isEmpty() || level.getBlockState(sample).is(Blocks.BEDROCK)) return false;
++        }
++        // Feature instances are registry singletons. Never keep world-generation state on the Feature.
++        Builder builder = new Builder(level, origin, rng);
++        builder.build();
++        return true;
++    }
++
++    private static final class Builder {
++        private final WorldGenLevel world;
++        private final BlockPos center;
++        private final RandomSource random;
++        private final List<BlockPos> spawnSites = new ArrayList<>();
++        private final List<BlockPos> homes = new ArrayList<>();
++        private record Room(int dx, int dz, int rx, int rz, int height, String kind) {}
++
++        private Builder(WorldGenLevel world, BlockPos center, RandomSource random) {
++            this.world = world; this.center = center; this.random = random;
++        }
++        private BlockPos at(int x, int y, int z) { return center.offset(x, y, z); }
++        private void set(int x, int y, int z, BlockState state) {
++            BlockPos pos = at(x,y,z);
++            if (!world.getBlockState(pos).is(Blocks.BEDROCK)) world.setBlock(pos,state,2);
++        }
++        private void clear(int x,int y,int z) { set(x,y,z,AIR); }
++        private void floor(int x,int z,BlockState state) { set(x,0,z,state); }
++
++        /** Hollow ellipsoid with stone walls; structural floors remain solid at y=0. */
++        private void chamber(Room room) {
++            int rx=room.rx(), rz=room.rz(), h=room.height();
++            for (int x=-rx-1;x<=rx+1;x++) for(int z=-rz-1;z<=rz+1;z++) {
++                double planar=(x*x/((double)rx*rx))+(z*z/((double)rz*rz));
++                if(planar>1.18) continue;
++                int floorY=0;
++                int maxY=(int)Math.floor(h*Math.sqrt(Math.max(0,1-Math.min(1,planar*0.58))));
++                if(planar<=1) {
++                    for(int y=floorY+1;y<=maxY;y++) clear(room.dx()+x,y,room.dz()+z);
++                    floor(room.dx()+x,room.dz()+z, FLOOR);
++                    if(planar>0.80) set(room.dx()+x,maxY+1,room.dz()+z,Blocks.STONE_BRICKS.defaultBlockState());
++                } else {
++                    for(int y=1;y<=Math.max(2,maxY);y++) set(room.dx()+x,y,room.dz()+z,Blocks.STONE_BRICKS.defaultBlockState());
++                }
++            }
++        }
++        /** Wide, walkable three-high passage with timber framing and floor path blocks. */
++        private void tunnel(int ax,int az,int bx,int bz) {
++            boolean eastWest = az==bz;
++            int length = Math.max(Math.abs(bx-ax),Math.abs(bz-az));
++            for(int k=0;k<=length;k++) {
++                int x=ax+(bx>ax? k: bx<ax?-k:0);
++                int z=az+(bz>az? k: bz<az?-k:0);
++                for(int side=-2;side<=2;side++) {
++                    int xx=x+(eastWest?0:side), zz=z+(eastWest?side:0);
++                    if(Math.abs(side)<=1) {
++                        floor(xx,zz,PATH);
++                        for(int y=1;y<=4;y++) clear(xx,y,zz);
++                    } else {
++                        for(int y=1;y<=4;y++) set(xx,y,zz,Blocks.STONE_BRICKS.defaultBlockState());
++                    }
++                    set(xx,5,zz,Blocks.STONE_BRICKS.defaultBlockState());
++                }
++                if(k>2 && k<length-2 && k%5==0) {
++                    for (int s : new int[]{-2,2}) {
++                        int xx=x+(eastWest?0:s),zz=z+(eastWest?s:0);
++                        for(int y=1;y<=4;y++) set(xx,y,zz,FRAME);
++                    }
++                    wallTorch(x,z,eastWest);
++                }
++            }
++        }
++        private void wallTorch(int x,int z,boolean eastWest) {
++            int xx=x+(eastWest?0:1), zz=z+(eastWest?1:0);
++            Direction face=eastWest?Direction.NORTH:Direction.WEST;
++            BlockState torch=Blocks.WALL_TORCH.defaultBlockState().setValue(WallTorchBlock.FACING,face);
++            BlockPos where=at(xx,3,zz);
++            if(torch.canSurvive(world,where)) set(xx,3,zz,torch);
++        }
++        private void column(int x,int z,int height) {
++            for(int y=1;y<=height;y++) set(x,y,z,FRAME);
++        }
++        private void lantern(int x,int z) {
++            set(x,1,z,Blocks.TORCH.defaultBlockState());
++        }
++        private void furnish(Room room) {
++            int x=room.dx(),z=room.dz();
++            switch(room.kind()) {
++                case "hall" -> {
++                    // Node stays in the air at eye height; consuming it leaves an empty central dais.
++                    for(int i=-2;i<=2;i++) for(int j=-2;j<=2;j++) floor(x+i,z+j,Blocks.POLISHED_DEEPSLATE.defaultBlockState());
++                    set(x,3,z,GeomanticNodeRegistry.block().defaultBlockState());
++                    for(int s : new int[]{-5,5}) for(int t : new int[]{-5,5}) {
++                        column(x+s,z+t,5); lantern(x+(s>0?4:-4),z+(t>0?4:-4));
++                    }
++                    spawnSites.add(at(x+3,1,z+3));
++                    spawnSites.add(at(x-3,1,z-3));
++                }
++                case "farm" -> {
++                    for(int xx=-4;xx<=4;xx++) for(int zz=-3;zz<=3;zz++) {
++                        if(xx==0 || zz==0) { floor(x+xx,z+zz,PATH); continue; }
++                        floor(x+xx,z+zz,Blocks.MYCELIUM.defaultBlockState());
++                        if ((xx+zz)%3==0) set(x+xx,1,z+zz,
++                                ((xx+zz)&1)==0 ? Blocks.RED_MUSHROOM.defaultBlockState() : Blocks.BROWN_MUSHROOM.defaultBlockState());
++                    }
++                    set(x-1,1,z-4,Blocks.COMPOSTER.defaultBlockState());
++                    set(x+1,1,z-4,Blocks.BARREL.defaultBlockState());
++                    lantern(x,z+3);
++                    spawnSites.add(at(x,1,z+2));
++                }
++                case "smith" -> {
++                    set(x-3,1,z-3,Blocks.BLAST_FURNACE.defaultBlockState());
++                    set(x-2,1,z-3,Blocks.FURNACE.defaultBlockState());
++                    set(x-1,1,z-3,Blocks.ANVIL.defaultBlockState());
++                    set(x+1,1,z-3,Blocks.GRINDSTONE.defaultBlockState());
++                    set(x+3,1,z-3,Blocks.CRAFTING_TABLE.defaultBlockState());
++                    set(x+3,1,z+2,Blocks.BARREL.defaultBlockState());
++                    set(x-3,1,z+2,Blocks.CHEST.defaultBlockState());
++                    lantern(x,z+3);
++                    spawnSites.add(at(x,1,z+1));
++                }
++                case "store" -> {
++                    for(int xx=-3;xx<=3;xx+=3) {
++                        set(x+xx,1,z+2,Blocks.BARREL.defaultBlockState());
++                        set(x+xx,1,z-2,Blocks.CHEST.defaultBlockState());
++                    }
++                    set(x,1,z+2,Blocks.CRAFTING_TABLE.defaultBlockState());
++                    lantern(x,z-3);
++                    spawnSites.add(at(x,1,z));
++                }
++                case "house" -> {
++                    for(int zz=-2;zz<=2;zz+=4) {
++                        set(x-2,1,z+zz,Blocks.SPRUCE_PLANKS.defaultBlockState());
++                        set(x+2,1,z+zz,Blocks.BARREL.defaultBlockState());
++                    }
++                    set(x,1,z-2,Blocks.CRAFTING_TABLE.defaultBlockState());
++                    lantern(x+2,z+2);
++                    spawnSites.add(at(x,1,z));
++                    spawnSites.add(at(x+1,1,z+1));
++                }
++            }
++        }
++        private void build() {
++            // The center is a tall carved hall. Side tunnels end in specialized chambers.
++            List<Room> rooms=new ArrayList<>();
++            rooms.add(new Room(0,0,6,6,8,"hall"));
++            rooms.add(new Room(0,-15,5,5,6,"farm"));
++            rooms.add(new Room(-15,0,5,5,6,"smith"));
++            rooms.add(new Room(15,0,5,5,6,"house"));
++            rooms.add(new Room(0,15,5,5,6,"store"));
++            // Second residential chamber varies by seed. This remains within village boundaries.
++            boolean northeast=random.nextBoolean();
++            rooms.add(new Room(northeast?14:-14,northeast?-14:14,4,4,5,"house"));
++            for(Room room:rooms) chamber(room);
++            tunnel(0,-5,0,-15);
++            tunnel(-5,0,-15,0);
++            tunnel(5,0,15,0);
++            tunnel(0,5,0,15);
++            // Connect the diagonal residence with an L-shaped side corridor.
++            int extraX=rooms.get(5).dx(), extraZ=rooms.get(5).dz();
++            tunnel(extraX>0?15:-15,0,extraX,0);
++            tunnel(extraX,0,extraX,extraZ);
++            // Re-furnish AFTER passages: they should not erase beds, forges or farmland.
++            for(Room room:rooms) furnish(room);
++            // Main-hall approach points receive extra illumination.
++            for(int[] loc:new int[][]{{0,7},{0,-7},{7,0},{-7,0}}) lantern(loc[0],loc[1]);
++            populate();
++        }
++        private void populate() {
++            // Every settlement has 8-12 standard Gnomes and ceil(count/8) Elders.
++            UUID village=UUID.randomUUID();
++            int residents=8+random.nextInt(5);
++            for(int i=0;i<residents;i++) {
++                BlockPos site=spawnSites.get(i%spawnSites.size());
++                GnomeEntity gnome=SyntacticWizardry.GNOME.get().create(world.getLevel());
++                if(gnome==null) continue;
++                gnome.setVillage(village,center);
++                gnome.moveTo(site.getX()+0.5,site.getY(),site.getZ()+0.5,random.nextFloat()*360F,0);
++                world.addFreshEntity(gnome);
++            }
++            for(int i=0;i<(residents+7)/8;i++) {
++                ElderGnomeEntity elder=SyntacticWizardry.GNOME_ELDER.get().create(world.getLevel());
++                if(elder==null) continue;
++                elder.setVillage(village,center);
++                BlockPos pos=spawnSites.get(i%2);
++                elder.moveTo(pos.getX()+0.5,pos.getY(),pos.getZ()+0.5,random.nextFloat()*360F,0);
++                world.addFreshEntity(elder);
++            }
++        }
++    }
++}
+diff --git a/src/main/java/com/proxpero/syntacticwizardry/SyntacticWizardry.java b/src/main/java/com/proxpero/syntacticwizardry/SyntacticWizardry.java
+index 6005e0f..180b1a1 100644
+--- a/src/main/java/com/proxpero/syntacticwizardry/SyntacticWizardry.java
++++ b/src/main/java/com/proxpero/syntacticwizardry/SyntacticWizardry.java
+@@ -57,6 +57,8 @@ public final class SyntacticWizardry {
+  public static final DeferredHolder<Potion,Potion> AWAKENING_POTION=POTIONS.register("awakening",()->new Potion());
+  private static final DeferredRegister<FluidType> FLUID_TYPES=DeferredRegister.create(NeoForgeRegistries.Keys.FLUID_TYPES,MOD_ID);
+  private static final DeferredRegister<Fluid> FLUIDS=DeferredRegister.create(Registries.FLUID,MOD_ID);
++ private static final DeferredRegister<net.minecraft.world.level.levelgen.feature.Feature<?>> FEATURES=DeferredRegister.create(Registries.FEATURE,MOD_ID);
++ public static final DeferredHolder<net.minecraft.world.level.levelgen.feature.Feature<?>,GnomeVillageFeature> GNOME_VILLAGE_FEATURE=FEATURES.register("gnome_village",()->new GnomeVillageFeature(net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration.CODEC));
+  public static final java.util.List<DeferredHolder<MobEffect,MobEffect>> PROTECTION_STATUS_EFFECTS=createProtectionStatusEffects();
+  public static final DeferredHolder<MobEffect,MobEffect> FLIGHT_STATUS_EFFECT=MOB_EFFECTS.register("flight",()->new MagicStatusMobEffect(MobEffectCategory.BENEFICIAL,0x79C6FF));
+  public static final DeferredHolder<FluidType,FluidType> ALCHEMICAL_POTION_FLUID_TYPE=FLUID_TYPES.register("alchemical_potion",AlchemicalPotionFluidType::new);
+@@ -252,5 +254,5 @@ public final class SyntacticWizardry {
+  private static ArmorItem robePiece(Holder<ArmorMaterial> material,ArmorItem.Type type,float spellDiscount){return new RobeArmorItem(material,type,new Item.Properties().durability(type.getDurability(5)),spellDiscount);}
+  private static ScribesLecternMenu createScribesLecternMenu(int id,Inventory inv,RegistryFriendlyByteBuf data){return new ScribesLecternMenu(id,inv);}
+  private static void registerGnomeAttributes(EntityAttributeCreationEvent event){event.put(GNOME.get(),GnomeEntity.createAttributes().build());event.put(GNOME_DELVER.get(),GnomeDelverEntity.createAttributes().build());event.put(GNOME_SMITH.get(),GnomeSmithEntity.createAttributes().build());event.put(GNOME_ELDER.get(),ElderGnomeEntity.createAttributes().build());}
+- public SyntacticWizardry(IEventBus bus){FLUID_TYPES.register(bus);FLUIDS.register(bus);BLOCKS.register(bus);ARMOR_MATERIALS.register(bus);MOB_EFFECTS.register(bus);POTIONS.register(bus);ITEMS.register(bus);ENTITIES.register(bus);BLOCK_ENTITY_TYPES.register(bus);MENUS.register(bus);CREATIVE_TABS.register(bus);GLOBAL_LOOT_MODIFIER_SERIALIZERS.register(bus);bus.addListener(SyntacticWizardry::registerGnomeAttributes);OptionalCreateCompat.init(bus);net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(AwakeningPotionBrewing::register);}
++ public SyntacticWizardry(IEventBus bus){FEATURES.register(bus);FLUID_TYPES.register(bus);FLUIDS.register(bus);BLOCKS.register(bus);ARMOR_MATERIALS.register(bus);MOB_EFFECTS.register(bus);POTIONS.register(bus);ITEMS.register(bus);ENTITIES.register(bus);BLOCK_ENTITY_TYPES.register(bus);MENUS.register(bus);CREATIVE_TABS.register(bus);GLOBAL_LOOT_MODIFIER_SERIALIZERS.register(bus);bus.addListener(SyntacticWizardry::registerGnomeAttributes);OptionalCreateCompat.init(bus);net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(AwakeningPotionBrewing::register);}
+ }
+diff --git a/src/main/resources/data/syntacticwizardry/neoforge/biome_modifier/gnome_villages.json b/src/main/resources/data/syntacticwizardry/neoforge/biome_modifier/gnome_villages.json
+new file mode 100644
+index 0000000..ba815a1
+--- /dev/null
++++ b/src/main/resources/data/syntacticwizardry/neoforge/biome_modifier/gnome_villages.json
+@@ -0,0 +1,6 @@
++{
++  "type":"neoforge:add_features",
++  "biomes":"#minecraft:is_overworld",
++  "features":"syntacticwizardry:gnome_village",
++  "step":"underground_structures"
++}
+diff --git a/src/main/resources/data/syntacticwizardry/worldgen/configured_feature/gnome_village.json b/src/main/resources/data/syntacticwizardry/worldgen/configured_feature/gnome_village.json
+new file mode 100644
+index 0000000..320604f
+--- /dev/null
++++ b/src/main/resources/data/syntacticwizardry/worldgen/configured_feature/gnome_village.json
+@@ -0,0 +1 @@
++{"type":"syntacticwizardry:gnome_village","config":{}}
+diff --git a/src/main/resources/data/syntacticwizardry/worldgen/placed_feature/gnome_village.json b/src/main/resources/data/syntacticwizardry/worldgen/placed_feature/gnome_village.json
+new file mode 100644
+index 0000000..b646991
+--- /dev/null
++++ b/src/main/resources/data/syntacticwizardry/worldgen/placed_feature/gnome_village.json
+@@ -0,0 +1,8 @@
++{
++  "feature":"syntacticwizardry:gnome_village",
++  "placement":[
++    {"type":"minecraft:rarity_filter","chance":144},
++    {"type":"minecraft:height_range","height":{"type":"minecraft:uniform","min_inclusive":{"absolute":-32},"max_inclusive":{"absolute":24}}},
++    {"type":"minecraft:biome"}
++  ]
++}
