@@ -1,0 +1,50 @@
+diff --git a/GNOME_BEDS.md b/GNOME_BEDS.md
+index 603958c..686e213 100644
+--- a/GNOME_BEDS.md
++++ b/GNOME_BEDS.md
+@@ -9,3 +9,5 @@
+ - No effect on Elder spells, workstation claims, or Geomantic Nodes.
+ 
+ - v0.3.87 registration fix: avoid copying `Blocks.RED_BED` state-specific properties. Its state-specific light/behavior lookup requires vanilla BedPart, which the one-block Gnome Bed intentionally lacks. Copy basic properties from `Blocks.RED_WOOL` instead; the Gnome Bed appearance and interaction are unchanged.
++
++- v0.3.92 crafting: one wool directly above one plank, producing one Gnome Bed. Any vanilla wool and plank types are accepted. Fits the 2×2 inventory crafting grid.
+diff --git a/gradle.properties b/gradle.properties
+index 131265b..5074137 100644
+--- a/gradle.properties
++++ b/gradle.properties
+@@ -11,7 +11,7 @@ loader_version_range=[1,)
+ mod_id=syntacticwizardry
+ mod_name=Syntactic Wizardry
+ mod_license=All Rights Reserved
+-mod_version=0.3.91
++mod_version=0.3.92
+ mod_group_id=com.proxpero.syntacticwizardry
+ 
+ # build_marker=v0.2.85
+\ No newline at end of file
+diff --git a/src/main/resources/data/syntacticwizardry/recipe/gnome_bed.json b/src/main/resources/data/syntacticwizardry/recipe/gnome_bed.json
+new file mode 100644
+index 0000000..ea12fdc
+--- /dev/null
++++ b/src/main/resources/data/syntacticwizardry/recipe/gnome_bed.json
+@@ -0,0 +1,20 @@
++{
++  "type": "minecraft:crafting_shaped",
++  "category": "decoration",
++  "pattern": [
++    "W",
++    "P"
++  ],
++  "key": {
++    "W": {
++      "tag": "minecraft:wool"
++    },
++    "P": {
++      "tag": "minecraft:planks"
++    }
++  },
++  "result": {
++    "id": "syntacticwizardry:gnome_bed",
++    "count": 1
++  }
++}
