@@ -1,0 +1,43 @@
+diff --git a/GNOME_BEDS.md b/GNOME_BEDS.md
+index aae3c6d..603958c 100644
+--- a/GNOME_BEDS.md
++++ b/GNOME_BEDS.md
+@@ -1,4 +1,4 @@
+-# Gnome Bed (v0.3.85)
++# Gnome Bed (v0.3.87)
+ 
+ - One-block red bed with white pillow and oak legs. Uses vanilla Minecraft wool and planks textures.
+ - Place facing any cardinal direction; appears in the Syntactic Wizardry creative tab.
+@@ -7,3 +7,5 @@
+ - Ordinary Gnomes search for unoccupied Gnome Beds at night, walk to bed, lie down, and wake during the day or if threatened.
+ - New underground village residence chambers contain four Gnome Beds in place of decorative planks.
+ - No effect on Elder spells, workstation claims, or Geomantic Nodes.
++
++- v0.3.87 registration fix: avoid copying `Blocks.RED_BED` state-specific properties. Its state-specific light/behavior lookup requires vanilla BedPart, which the one-block Gnome Bed intentionally lacks. Copy basic properties from `Blocks.RED_WOOL` instead; the Gnome Bed appearance and interaction are unchanged.
+diff --git a/gradle.properties b/gradle.properties
+index 82ede6e..fd8f279 100644
+--- a/gradle.properties
++++ b/gradle.properties
+@@ -11,7 +11,7 @@ loader_version_range=[1,)
+ mod_id=syntacticwizardry
+ mod_name=Syntactic Wizardry
+ mod_license=All Rights Reserved
+-mod_version=0.3.86
++mod_version=0.3.87
+ mod_group_id=com.proxpero.syntacticwizardry
+ 
+ # build_marker=v0.2.85
+\ No newline at end of file
+diff --git a/src/main/java/com/proxpero/syntacticwizardry/SyntacticWizardry.java b/src/main/java/com/proxpero/syntacticwizardry/SyntacticWizardry.java
+index ccf01fa..08acfcf 100644
+--- a/src/main/java/com/proxpero/syntacticwizardry/SyntacticWizardry.java
++++ b/src/main/java/com/proxpero/syntacticwizardry/SyntacticWizardry.java
+@@ -99,7 +99,7 @@ public final class SyntacticWizardry {
+  public static final DeferredBlock<SpellRandomizerBlock> SPELL_RANDOMIZER=BLOCKS.register("spell_randomizer",()->new SpellRandomizerBlock(Block.Properties.ofFullCopy(Blocks.ENCHANTING_TABLE).strength(-1.0F,3600000.0F)));
+  public static final DeferredBlock<RuneBlock> RUNE_BLOCK=BLOCKS.register("rune",()->new RuneBlock(Block.Properties.of().noCollission().noOcclusion().strength(0.0F)));
+  public static final DeferredBlock<Block> TEMPORARY_BLOCK=BLOCKS.register("temporary_block",()->new Block(Block.Properties.of().instabreak().noOcclusion().noLootTable().isSuffocating((state,level,pos)->false).isViewBlocking((state,level,pos)->false).isRedstoneConductor((state,level,pos)->false)));
+- public static final DeferredBlock<GnomeBedBlock> GNOME_BED=BLOCKS.register("gnome_bed",()->new GnomeBedBlock(Block.Properties.ofFullCopy(Blocks.RED_BED).noOcclusion().strength(0.3F)));
++ public static final DeferredBlock<GnomeBedBlock> GNOME_BED=BLOCKS.register("gnome_bed",()->new GnomeBedBlock(Block.Properties.ofFullCopy(Blocks.RED_WOOL).noOcclusion().strength(0.3F)));
+  public static final DeferredBlock<MatureCrystalBlock> MATURE_CRYSTAL=BLOCKS.register("mature_crystal",()->new MatureCrystalBlock(Block.Properties.ofFullCopy(Blocks.AMETHYST_BLOCK).strength(2.0F).noOcclusion()));
+  public static final DeferredBlock<ResearchDeskBlock> RESEARCH_DESK_TABLE=BLOCKS.register("research_desk_table",()->new ResearchDeskBlock(Block.Properties.ofFullCopy(Blocks.CRAFTING_TABLE).noOcclusion().noLootTable(),false));
+  public static final DeferredBlock<ResearchDeskBlock> RESEARCH_DESK_BOOKCASE=BLOCKS.register("research_desk_bookcase",()->new ResearchDeskBlock(Block.Properties.ofFullCopy(Blocks.BOOKSHELF).noOcclusion().noLootTable(),true));
