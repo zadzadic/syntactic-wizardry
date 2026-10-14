@@ -687,6 +687,14 @@ jobs:
           test -s src/main/resources/assets/syntacticwizardry/geo/undine.geo.json
           test -s src/main/resources/assets/syntacticwizardry/textures/entity/undine.png
           grep -q 'UNDINE_SPAWN_EGG' src/main/java/com/proxpero/syntacticwizardry/SyntacticWizardry.java
+      - name: Integrate Wisp v0.3.96 (model, warm particles, spawn egg)
+        run: |
+          base64 -d .build/v0.3.96-wisp-overlay.zip.b64 > /tmp/wisp-v0.3.96.zip
+          unzip -oq /tmp/wisp-v0.3.96.zip -d .
+          python3 tools/apply_wisp_v0_3_96.py
+          grep -q 'WISP_SPAWN_EGG' src/main/java/com/proxpero/syntacticwizardry/SyntacticWizardry.java
+          test -s src/main/resources/assets/syntacticwizardry/geo/wisp.geo.json
+          test -s src/main/resources/assets/syntacticwizardry/textures/entity/wisp.png
       - name: Read mod version
         run: echo "MOD_VERSION=$(grep '^mod_version=' gradle.properties | cut -d= -f2)" >> "$GITHUB_ENV"
       - name: Install Gradle 9.2.1
