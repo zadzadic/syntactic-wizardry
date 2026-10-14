@@ -44,11 +44,10 @@ public final class UndineEntity extends PathfinderMob implements GeoEntity {
         goalSelector.addGoal(6, new RandomLookAroundGoal(this));
     }
 
-    @Override public boolean canBreatheUnderwater() { return true; }
-
     @Override
     public void tick() {
         super.tick();
+        if (isInWaterOrBubble()) setAirSupply(getMaxAirSupply());
         if (!level().isClientSide() && tickCount % 16 == 0 && level() instanceof ServerLevel server) {
             server.sendParticles(isInWater() ? ParticleTypes.BUBBLE : ParticleTypes.DRIPPING_WATER,
                     getX(), getY() + getBbHeight() * 0.6D, getZ(),
