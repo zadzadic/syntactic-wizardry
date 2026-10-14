@@ -681,6 +681,12 @@ jobs:
           base64 -d .build/v0.3.94-salamander-walk-overlay.zip.b64 > /tmp/salamander-v0.3.94.zip
           unzip -oq /tmp/salamander-v0.3.94.zip -d .
           grep -q 'entity.getX()-x' src/main/java/com/proxpero/syntacticwizardry/client/SalamanderMesh.java
+      - name: Integrate Undine v0.3.95 and translucent texture
+        run: |
+          python3 tools/apply_undine_v0_3_95.py
+          test -s src/main/resources/assets/syntacticwizardry/geo/undine.geo.json
+          test -s src/main/resources/assets/syntacticwizardry/textures/entity/undine.png
+          grep -q 'UNDINE_SPAWN_EGG' src/main/java/com/proxpero/syntacticwizardry/SyntacticWizardry.java
       - name: Read mod version
         run: echo "MOD_VERSION=$(grep '^mod_version=' gradle.properties | cut -d= -f2)" >> "$GITHUB_ENV"
       - name: Install Gradle 9.2.1
